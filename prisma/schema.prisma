@@ -21,7 +21,9 @@ model Admin {
   role      AdminRoles @default(admin)
   createdAt DateTime   @default(now()) @map("created_at")
   updateAt  DateTime   @updatedAt @map("updated_at")
-  QrLink    QrLink[]
+  QrLink    QrLinks[]
+
+  @@map("admin")
 }
 
 enum AdminRoles {
@@ -29,7 +31,7 @@ enum AdminRoles {
   admin
 }
 
-model QrLink {
+model QrLinks {
   id           String   @id @default(uuid())
   name         String   @db.VarChar(255)
   link         String   @db.VarChar(255)
@@ -40,4 +42,6 @@ model QrLink {
   adminId      String?
 
   admin Admin? @relation(fields: [adminId], references: [id], onDelete: SetNull)
+
+  @@map("qr_links")
 }
