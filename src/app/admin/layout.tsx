@@ -11,7 +11,7 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen">
       <Header />
-      <main className="p-8">{children}</main>
+      <main>{children}</main>
       <Footer />
     </div>
   );

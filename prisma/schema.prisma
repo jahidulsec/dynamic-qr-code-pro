@@ -35,7 +35,7 @@ model QrLinks {
   id           String   @id @default(uuid())
   name         String   @db.VarChar(255)
   link         String   @db.VarChar(255)
-  visitedCount Int      @map("visited_count")
+  visitedCount Int?      @map("visited_count") @default(0)
   isTrashed    Boolean? @default(false) @map("is_trashed")
   createdAt    DateTime @default(now()) @map("created_at")
   updateAt     DateTime @updatedAt @map("updated_at")

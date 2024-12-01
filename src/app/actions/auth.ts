@@ -1,7 +1,6 @@
 "use server";
 
-import { createSession, deleteSession, encrypt } from "@/lib/session";
-import { redirect } from "next/navigation";
+import { createSession, deleteSession } from "@/lib/session";
 import db from "../../../db/db";
 import { z } from "zod";
 
