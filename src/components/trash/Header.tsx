@@ -9,7 +9,7 @@ export default function TrashHeader() {
   const router = useRouter();
 
   return (
-    <section className="flex items-center gap-5">
+    <section className="flex items-center gap-5 mb-6">
       <Button
         variant={"outline"}
         size={"icon"}

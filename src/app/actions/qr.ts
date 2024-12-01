@@ -123,7 +123,48 @@ export const moveQrTrash = async (id: string) => {
       isTrashed: true,
     },
   });
-  revalidatePath("/");
+  revalidatePath("/admin");
   revalidatePath("/qr/" + id);
+  return;
+};
+
+export const restoreQrTrash = async (id: string) => {
+  const qr = await db.qrLinks.findUnique({
+    where: { id: id },
+  });
+
+  if (!qr) {
+    throw new Error("No data found to take action");
+  }
+  await db.qrLinks.update({
+    where: {
+      id: id,
+    },
+    data: {
+      isTrashed: false,
+    },
+  });
+  revalidatePath("/admin");
+  revalidatePath("/qr/" + id);
+  return;
+};
+
+export const deleteQr = async (id: string) => {
+  const qr = await db.qrLinks.findUnique({
+    where: { id: id },
+  });
+
+  if (!qr) {
+    throw new Error("No data found to take action");
+  }
+  await db.qrLinks.delete({
+    where: {
+      id: id,
+    },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/trash");
+
   return;
 };

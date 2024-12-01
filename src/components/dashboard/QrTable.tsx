@@ -29,6 +29,7 @@ import {
   MessageSquareOff,
   QrCode,
   Trash,
+  Undo2,
 } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -38,7 +39,8 @@ import Tooltips from "@/components/tooltips/Tooltips";
 import { formatNumber } from "@/lib/formatter";
 import QrForm from "@/components/dashboard/QrForm";
 import db from "../../../db/db";
-import { moveQrTrash } from "@/app/actions/qr";
+import { deleteQr, moveQrTrash, restoreQrTrash } from "@/app/actions/qr";
+import { usePathname } from "next/navigation";
 
 function QrTable({ qrLinks }: { qrLinks: QrLinks[] }) {
   const [editQr, setEditQr] = useState<any>();
@@ -46,6 +48,7 @@ function QrTable({ qrLinks }: { qrLinks: QrLinks[] }) {
   const [previewQR, setPreviewQR] = useState<any>();
 
   const [isPending, startTransition] = useTransition();
+  const pathname = usePathname();
 
   const handleQrDownload = () => {
     const qrCode = document.getElementById("qrCodeEl") as HTMLCanvasElement;
@@ -84,29 +87,52 @@ function QrTable({ qrLinks }: { qrLinks: QrLinks[] }) {
                   {formatNumber(Number(item.visitedCount))}
                 </TableCell>
                 <TableCell className="flex gap-2 justify-end">
-                  <Tooltips title="QR Code">
-                    <Button
-                      size={"icon"}
-                      variant={"outline"}
-                      className="rounded-full size-8"
-                      onClick={() => {
-                        setPreviewQR(item);
-                      }}
-                    >
-                      <QrCode className="size-4" />
-                    </Button>
-                  </Tooltips>
-
-                  <Tooltips title="Edit">
-                    <Button
-                      size={"icon"}
-                      variant={"outline"}
-                      className="rounded-full size-8"
-                      onClick={() => setEditQr(item)}
-                    >
-                      <Edit className="size-4" />
-                    </Button>
-                  </Tooltips>
+                  {pathname === "/admin" && (
+                    <>
+                      {" "}
+                      <Tooltips title="QR Code">
+                        <Button
+                          size={"icon"}
+                          variant={"outline"}
+                          className="rounded-full size-8"
+                          onClick={() => {
+                            setPreviewQR(item);
+                          }}
+                        >
+                          <QrCode className="size-4" />
+                        </Button>
+                      </Tooltips>
+                      <Tooltips title="Edit">
+                        <Button
+                          size={"icon"}
+                          variant={"outline"}
+                          className="rounded-full size-8"
+                          onClick={() => setEditQr(item)}
+                        >
+                          <Edit className="size-4" />
+                        </Button>
+                      </Tooltips>
+                    </>
+                  )}
+                  {pathname !== "/admin" && (
+                    <Tooltips title="Restore">
+                      <Button
+                        size={"icon"}
+                        variant={"outline"}
+                        className="rounded-full size-8"
+                        onClick={async () => {
+                          try {
+                            await restoreQrTrash(item.id);
+                            toast.success("QR is restored!");
+                          } catch (error: any) {
+                            toast.error(error);
+                          }
+                        }}
+                      >
+                        <Undo2 className="size-4" />
+                      </Button>
+                    </Tooltips>
+                  )}
                   <Tooltips title="Move to trash">
                     <Button
                       size={"icon"}
@@ -153,7 +179,10 @@ function QrTable({ qrLinks }: { qrLinks: QrLinks[] }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              Do you want to move this QR on trash?
+              {pathname === "/admin"
+                ? "Do you want to move this QR on trash?"
+                : `This action cannot be undone. This will permanently delete this Doctor and remove data from servers.
+                    `}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -163,10 +192,15 @@ function QrTable({ qrLinks }: { qrLinks: QrLinks[] }) {
               onClick={() => {
                 startTransition(async () => {
                   try {
-                    await moveQrTrash(delQr);
-                    toast.success("Move to trash successfully");
+                    if (pathname === "/admin") {
+                      await moveQrTrash(delQr);
+                      toast.success("Move to trash successfully");
+                    } else {
+                      await deleteQr(delQr);
+                      toast.success("Deleted successfully");
+                    }
                   } catch (error: any) {
-                    toast.success(error);
+                    toast.error(error);
                   }
                 });
               }}
