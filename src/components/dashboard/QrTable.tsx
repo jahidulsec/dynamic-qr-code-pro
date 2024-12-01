@@ -37,10 +37,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Tooltips from "@/components/tooltips/Tooltips";
 import { formatNumber } from "@/lib/formatter";
 import QrForm from "@/components/dashboard/QrForm";
+import db from "../../../db/db";
+import { moveQrTrash } from "@/app/actions/qr";
 
 function QrTable({ qrLinks }: { qrLinks: QrLinks[] }) {
   const [editQr, setEditQr] = useState<any>();
-  const [delDoctor, setDelDoctor] = useState<any>();
+  const [delQr, setdelQr] = useState<any>();
   const [previewQR, setPreviewQR] = useState<any>();
 
   const [isPending, startTransition] = useTransition();
@@ -105,12 +107,12 @@ function QrTable({ qrLinks }: { qrLinks: QrLinks[] }) {
                       <Edit className="size-4" />
                     </Button>
                   </Tooltips>
-                  <Tooltips title="Delete">
+                  <Tooltips title="Move to trash">
                     <Button
                       size={"icon"}
                       variant={"destructive"}
                       className="rounded-full size-8"
-                      onClick={() => setDelDoctor(item.id)}
+                      onClick={() => setdelQr(item.id)}
                     >
                       <Trash className="size-4" />
                     </Button>
@@ -121,7 +123,7 @@ function QrTable({ qrLinks }: { qrLinks: QrLinks[] }) {
           ) : (
             <TableRow>
               <TableCell
-                colSpan={7}
+                colSpan={6}
                 align="center"
                 className="py-20 text-gray-400 pointer-events-none"
               >
@@ -146,13 +148,12 @@ function QrTable({ qrLinks }: { qrLinks: QrLinks[] }) {
       </Dialog>
 
       {/* alert delete vehicle modal */}
-      <AlertDialog open={!!delDoctor} onOpenChange={setDelDoctor}>
+      <AlertDialog open={!!delQr} onOpenChange={setdelQr}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this
-              Doctor and remove data from servers.
+              Do you want to move this QR on trash?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -161,8 +162,12 @@ function QrTable({ qrLinks }: { qrLinks: QrLinks[] }) {
               disabled={isPending}
               onClick={() => {
                 startTransition(async () => {
-                  // await deleteDoctor(delDoctor);
-                  toast.success("Doctor has been deleted");
+                  try {
+                    await moveQrTrash(delQr);
+                    toast.success("Move to trash successfully");
+                  } catch (error: any) {
+                    toast.success(error);
+                  }
                 });
               }}
             >

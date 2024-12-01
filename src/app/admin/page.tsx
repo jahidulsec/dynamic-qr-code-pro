@@ -4,6 +4,7 @@ import PagePagination from "@/components/pagination/PagePagination";
 import { TableSkeleton } from "@/components/ui/skeleton";
 import React, { Suspense } from "react";
 import db from "../../../db/db";
+import { QrLinks } from "@prisma/client";
 
 export default function DashboardPage({
   searchParams,
@@ -26,10 +27,36 @@ async function DataTable({
 }: {
   searchParams: { q: string; p: string };
 }) {
-  const [qrLinks, count] = await Promise.all([
-    db.qrLinks.findMany(),
-    db.qrLinks.count(),
-  ]);
+  const limit = 20;
+  const page = Number(searchParams?.p ?? 1) || 1;
+
+  let qrLinks: QrLinks[], count: number;
+
+  try {
+    [qrLinks, count] = await Promise.all([
+      db.qrLinks.findMany({
+        where: {
+          AND: [
+            { name: { contains: searchParams.q || undefined } },
+            { isTrashed: false },
+          ],
+        },
+        take: limit,
+        skip: (page - 1) * limit,
+      }),
+      db.qrLinks.count({
+        where: {
+          AND: [
+            { name: { contains: searchParams.q || undefined } },
+            { isTrashed: false },
+          ],
+        },
+      }),
+    ]);
+  } catch (error) {
+    qrLinks = [];
+    count = 0;
+  }
 
   return (
     <>

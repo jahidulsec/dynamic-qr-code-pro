@@ -106,3 +106,24 @@ export const updateQr = async (
 
   return { error: null, success: "Doctor has been added", toast: null };
 };
+
+export const moveQrTrash = async (id: string) => {
+  const qr = await db.qrLinks.findUnique({
+    where: { id: id },
+  });
+
+  if (!qr) {
+    throw new Error("No data found to take action");
+  }
+  await db.qrLinks.update({
+    where: {
+      id: id,
+    },
+    data: {
+      isTrashed: true,
+    },
+  });
+  revalidatePath("/");
+  revalidatePath("/qr/" + id);
+  return;
+};
