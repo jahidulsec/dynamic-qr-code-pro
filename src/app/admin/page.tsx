@@ -12,13 +12,13 @@ export default function DashboardPage({
   searchParams: { q: string; p: string };
 }) {
   return (
-    <div className="container my-6 mx-auto">
+    <>
       <FilterSection />
       {/* table */}
       <Suspense fallback={<TableSkeleton />}>
         <DataTable searchParams={searchParams} />
       </Suspense>
-    </div>
+    </>
   );
 }
 

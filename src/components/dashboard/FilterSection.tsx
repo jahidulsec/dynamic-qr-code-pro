@@ -16,6 +16,7 @@ import { useRouter } from "next-nprogress-bar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDebounce } from "@/hooks/useDebounce";
 import QrForm from "./QrForm";
+import Link from "next/link";
 
 export default function FilterSections() {
   const [addQr, setAddQr] = useState(false);
@@ -62,7 +63,12 @@ export default function FilterSections() {
           </div>
         </div>
         {/* buttons */}
-        <Button onClick={() => setAddQr(true)}>Generate QR</Button>
+        <div className="flex gap-3 items-center">
+          <Button asChild variant={"secondary"}>
+            <Link href={'/admin/trash'}>Trash</Link>
+          </Button>
+          <Button onClick={() => setAddQr(true)}>Generate QR</Button>
+        </div>
       </div>
 
       {/* add doctor dialog */}
