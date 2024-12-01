@@ -41,8 +41,9 @@ import QrForm from "@/components/dashboard/QrForm";
 import db from "../../../db/db";
 import { deleteQr, moveQrTrash, restoreQrTrash } from "@/app/actions/qr";
 import { usePathname } from "next/navigation";
+import { QrTableProps } from "@/app/admin/page";
 
-function QrTable({ qrLinks }: { qrLinks: QrLinks[] }) {
+function QrTable({ qrLinks }: { qrLinks: QrTableProps[] }) {
   const [editQr, setEditQr] = useState<any>();
   const [delQr, setdelQr] = useState<any>();
   const [previewQR, setPreviewQR] = useState<any>();
@@ -72,6 +73,7 @@ function QrTable({ qrLinks }: { qrLinks: QrLinks[] }) {
             <TableHead>Name</TableHead>
             <TableHead>Qr Text</TableHead>
             <TableHead className="text-center">Viewer&apos;s Count</TableHead>
+            <TableHead>Created by</TableHead>
             <TableHead className="text-right">Action</TableHead>
           </TableRow>
         </TableHeader>
@@ -80,12 +82,13 @@ function QrTable({ qrLinks }: { qrLinks: QrLinks[] }) {
           {qrLinks.length > 0 ? (
             qrLinks.map((item, index) => (
               <TableRow key={item.id}>
-                <TableCell>{index}</TableCell>
+                <TableCell># {index + 1}</TableCell>
                 <TableCell>{item.name}</TableCell>
                 <TableCell>{item.link}</TableCell>
                 <TableCell className="text-right">
                   {formatNumber(Number(item.visitedCount))}
                 </TableCell>
+                <TableCell>{item.admin?.name}</TableCell>
                 <TableCell className="flex gap-2 justify-end">
                   {pathname === "/admin" && (
                     <>

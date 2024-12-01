@@ -4,7 +4,7 @@ import PagePagination from "@/components/pagination/PagePagination";
 import { TableSkeleton } from "@/components/ui/skeleton";
 import React, { Suspense } from "react";
 import db from "../../../db/db";
-import { QrLinks } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 export default function DashboardPage({
   searchParams,
@@ -22,34 +22,37 @@ export default function DashboardPage({
   );
 }
 
+export type QrTableProps = Prisma.QrLinksGetPayload<{
+  include: { admin: true };
+}>;
+
 async function DataTable({
   searchParams,
 }: {
   searchParams: { q: string; p: string };
 }) {
-  const limit = 20;
-  const page = Number(searchParams?.p ?? 1) || 1;
+  const { q, p } = await searchParams;
 
-  let qrLinks: QrLinks[], count: number;
+  const limit = 20;
+  const page = Number(p ?? 1) || 1;
+
+  let qrLinks: QrTableProps[], count: number;
 
   try {
     [qrLinks, count] = await Promise.all([
       db.qrLinks.findMany({
         where: {
-          AND: [
-            { name: { contains: searchParams.q || undefined } },
-            { isTrashed: false },
-          ],
+          AND: [{ name: { contains: q || undefined } }, { isTrashed: false }],
+        },
+        include: {
+          admin: true,
         },
         take: limit,
         skip: (page - 1) * limit,
       }),
       db.qrLinks.count({
         where: {
-          AND: [
-            { name: { contains: searchParams.q || undefined } },
-            { isTrashed: false },
-          ],
+          AND: [{ name: { contains: q || undefined } }, { isTrashed: false }],
         },
       }),
     ]);
