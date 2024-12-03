@@ -15,11 +15,10 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useRouter } from "next-nprogress-bar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDebounce } from "@/hooks/useDebounce";
-import QrForm from "./QrForm";
-import Link from "next/link";
+import AdminForm from "./AdminForm";
 
 export default function FilterSection() {
-  const [addQr, setAddQr] = useState(false);
+  const [add, setAdd] = useState(false);
   const [search, setSearch] = useState("");
   const debounceValue = useDebounce(search, 1000);
 
@@ -64,21 +63,18 @@ export default function FilterSection() {
         </div>
         {/* buttons */}
         <div className="flex gap-3 items-center">
-          <Button asChild variant={"secondary"}>
-            <Link href={'/admin/trash'}>Trash</Link>
-          </Button>
-          <Button onClick={() => setAddQr(true)}>Generate QR</Button>
+          <Button onClick={() => setAdd(true)}>Add user</Button>
         </div>
       </div>
 
       {/* add doctor dialog */}
-      <Dialog open={addQr} onOpenChange={setAddQr}>
+      <Dialog open={add} onOpenChange={setAdd}>
         <DialogContent className="w-[75vw] p-0">
           <ScrollArea className="max-h-[85vh] px-6 my-6">
             <DialogHeader>
-              <DialogTitle className="text-sm">Generate QR</DialogTitle>
+              <DialogTitle className="text-sm">Add User</DialogTitle>
             </DialogHeader>
-            <QrForm onClose={() => setAddQr(false)} />
+            <AdminForm onClose={() => setAdd(false)} />
           </ScrollArea>
         </DialogContent>
       </Dialog>

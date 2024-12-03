@@ -1,20 +1,21 @@
-import FilterSection from "@/components/dashboard/FilterSection";
-import QrTable from "@/components/dashboard/QrTable";
 import PagePagination from "@/components/pagination/PagePagination";
+import FilterSection from "@/components/settings/FilterSection";
+import Header from "@/components/settings/Header";
 import { TableSkeleton } from "@/components/ui/skeleton";
 import React, { Suspense } from "react";
-import db from "../../../db/db";
-import { Prisma } from "@prisma/client";
+import db from "../../../../db/db";
+import { Admin } from "@prisma/client";
+import AdminTable from "@/components/settings/AdminTable";
 
-export default function DashboardPage({
+export default function SettingsPage({
   searchParams,
 }: {
   searchParams: { q: string; p: string };
 }) {
   return (
     <>
+      <Header />
       <FilterSection />
-      {/* table */}
       <Suspense fallback={<TableSkeleton />}>
         <DataTable searchParams={searchParams} />
       </Suspense>
@@ -22,53 +23,47 @@ export default function DashboardPage({
   );
 }
 
-export type QrTableProps = Prisma.QrLinksGetPayload<{
-  include: { admin: true };
-}>;
 
-async function DataTable({
+const DataTable = async ({
   searchParams,
 }: {
   searchParams: { q: string; p: string };
-}) {
+}) => {
   const { q, p } = await searchParams;
 
   const limit = 20;
   const page = Number(p ?? 1) || 1;
 
-  let qrLinks: QrTableProps[], count: number;
+  let admin: Admin[], count: number;
 
   try {
-    [qrLinks, count] = await Promise.all([
-      db.qrLinks.findMany({
+    [admin, count] = await Promise.all([
+      db.admin.findMany({
         where: {
-          AND: [{ name: { contains: q || undefined } }, { isTrashed: false }],
-        },
-        include: {
-          admin: true,
+          name: { contains: q || undefined },
         },
         take: limit,
         skip: (page - 1) * limit,
       }),
-      db.qrLinks.count({
+      db.admin.count({
         where: {
-          AND: [{ name: { contains: q || undefined } }, { isTrashed: false }],
+          name: { contains: q || undefined },
         },
       }),
     ]);
   } catch (error) {
     console.log(error);
-    qrLinks = [];
+    admin = [];
     count = 0;
   }
 
   return (
     <>
-      <QrTable qrLinks={qrLinks} />
+      <AdminTable admin={admin} />
 
       <div className="border-t pt-5">
         <PagePagination limit={20} count={count} />
       </div>
     </>
   );
-}
+};

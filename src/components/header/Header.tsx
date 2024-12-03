@@ -13,6 +13,7 @@ function Header() {
     <header>
       <Nav>
         <NavLink href="/admin">Dashboard</NavLink>
+        <NavLink href="/admin/settings">Settings</NavLink>
         <NavLink
           href=""
           onClick={async () => {

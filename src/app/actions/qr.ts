@@ -53,13 +53,13 @@ export const addQr = async (prevData: unknown, formData: FormData) => {
     }
   }
 
-  return { error: null, success: "Doctor has been added", toast: null };
+  return { error: null, success: "QR is added", toast: null };
 };
 
 export const updateQr = async (
   id: string,
   prevData: unknown,
-  formData: FormData,
+  formData: FormData
 ) => {
   const result = qrSchema.safeParse(Object.fromEntries(formData.entries()));
 
@@ -104,7 +104,7 @@ export const updateQr = async (
     }
   }
 
-  return { error: null, success: "Doctor has been added", toast: null };
+  return { error: null, success: "QR is updated", toast: null };
 };
 
 export const moveQrTrash = async (id: string) => {
@@ -113,7 +113,11 @@ export const moveQrTrash = async (id: string) => {
   });
 
   if (!qr) {
-    throw new Error("No data found to take action");
+    return {
+      error: null,
+      success: null,
+      toast: "No data found for this action",
+    };
   }
   await db.qrLinks.update({
     where: {
@@ -125,7 +129,12 @@ export const moveQrTrash = async (id: string) => {
   });
   revalidatePath("/admin");
   revalidatePath("/qr/" + id);
-  return;
+
+  return {
+    error: null,
+    success: "Data is moved to trash",
+    toast: null,
+  };
 };
 
 export const restoreQrTrash = async (id: string) => {
@@ -134,7 +143,11 @@ export const restoreQrTrash = async (id: string) => {
   });
 
   if (!qr) {
-    throw new Error("No data found to take action");
+    return {
+      error: null,
+      success: null,
+      toast: "No data found for this action",
+    };
   }
   await db.qrLinks.update({
     where: {
@@ -146,25 +159,45 @@ export const restoreQrTrash = async (id: string) => {
   });
   revalidatePath("/admin");
   revalidatePath("/qr/" + id);
-  return;
+  return {
+    error: null,
+    success: "Data is restored",
+    toast: null,
+  };
 };
 
 export const deleteQr = async (id: string) => {
-  const qr = await db.qrLinks.findUnique({
-    where: { id: id },
-  });
+  try {
+    const qr = await db.qrLinks.findUnique({
+      where: { id: id },
+    });
 
-  if (!qr) {
-    throw new Error("No data found to take action");
+    if (!qr) {
+      return {
+        error: null,
+        success: null,
+        toast: "No data found for this action",
+      };
+    }
+    await db.qrLinks.delete({
+      where: {
+        id: id,
+      },
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/admin/trash");
+
+    return {
+      error: null,
+      success: null,
+      toast: "No data found for this action",
+    };
+  } catch (error: any) {
+    return {
+      error: error,
+      success: null,
+      toast: null,
+    };
   }
-  await db.qrLinks.delete({
-    where: {
-      id: id,
-    },
-  });
-
-  revalidatePath("/admin");
-  revalidatePath("/admin/trash");
-
-  return;
 };

@@ -3,15 +3,16 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import React, { useActionState, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { adminLogin } from "@/app/actions/auth";
 import { useRouter } from "next/navigation";
+import { useFormState, useFormStatus } from "react-dom";
 
 const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [data, action, isPending] = useActionState(adminLogin, null);
+  const [data, action] = useFormState(adminLogin, null);
 
   const router = useRouter();
 
@@ -71,14 +72,16 @@ const LoginForm = () => {
             )}
           </p>
 
-          <SubmitButton pending={isPending} />
+          <SubmitButton />
         </form>
       </div>
     </main>
   );
 };
 
-const SubmitButton = ({ pending }: { pending: boolean }) => {
+const SubmitButton = () => {
+  const { pending } = useFormStatus();
+
   return (
     <Button type="submit" disabled={pending}>
       {pending ? `Login...` : `Login`}

@@ -11,7 +11,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -20,17 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Prisma, QrLinks } from "@prisma/client";
-import { DialogTitle } from "@radix-ui/react-dialog";
-import {
-  Download,
-  Edit,
-  Folder,
-  MessageSquareOff,
-  QrCode,
-  Trash,
-  Undo2,
-} from "lucide-react";
+import { Edit, MessageSquareOff, QrCode, Trash, Undo2 } from "lucide-react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import QRCode from "qrcode.react";
@@ -38,7 +33,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Tooltips from "@/components/tooltips/Tooltips";
 import { formatNumber } from "@/lib/formatter";
 import QrForm from "@/components/dashboard/QrForm";
-import db from "../../../db/db";
 import { deleteQr, moveQrTrash, restoreQrTrash } from "@/app/actions/qr";
 import { usePathname } from "next/navigation";
 import { QrTableProps } from "@/app/admin/page";
@@ -56,7 +50,7 @@ function QrTable({ qrLinks }: { qrLinks: QrTableProps[] }) {
     const qrCodeURL = qrCode
       .toDataURL("image/png")
       .replace("image/png", "image/octet-stream");
-    let aEl = document.createElement("a");
+    const aEl = document.createElement("a");
     aEl.href = qrCodeURL;
     aEl.download = `${previewQR != undefined ? previewQR.name : ""}.png`;
     document.body.appendChild(aEl);
@@ -194,16 +188,24 @@ function QrTable({ qrLinks }: { qrLinks: QrTableProps[] }) {
               disabled={isPending}
               onClick={() => {
                 startTransition(async () => {
-                  try {
-                    if (pathname === "/admin") {
-                      await moveQrTrash(delQr);
-                      toast.success("Move to trash successfully");
+                  if (pathname === "/admin") {
+                    const data = await moveQrTrash(delQr);
+                    if (data.toast) {
+                      toast.error(data.toast);
+                    } else if (data.success) {
+                      toast.success(data.success);
                     } else {
-                      await deleteQr(delQr);
-                      toast.success("Deleted successfully");
+                      toast.error(data.error);
                     }
-                  } catch (error: any) {
-                    toast.error(error);
+                  } else {
+                    const data = await deleteQr(delQr);
+                    if (data.toast) {
+                      toast.error(data.toast);
+                    } else if (data.success) {
+                      toast.success(data.success);
+                    } else {
+                      toast.error(data.error);
+                    }
                   }
                 });
               }}

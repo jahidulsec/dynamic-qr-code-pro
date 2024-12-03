@@ -36,6 +36,7 @@ export const getUser = cache(async () => {
         id: true,
         name: true,
         username: true,
+        role: true,
       },
     });
 

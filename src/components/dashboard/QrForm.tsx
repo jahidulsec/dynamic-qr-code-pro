@@ -5,18 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { QrLinks } from "@prisma/client";
 import { Label } from "@radix-ui/react-label";
-import React, { useActionState, useEffect } from "react";
+import React, { useEffect } from "react";
+import { useFormState, useFormStatus } from "react-dom";
 import { toast } from "sonner";
 
-interface qrLinkFromProps {
+interface qrLinkFormProps {
   qrLink?: QrLinks;
   onClose: () => void;
 }
 
-export default function QrForm({ onClose, qrLink }: qrLinkFromProps) {
-  const [data, action, isPending] = useActionState(
+export default function QrForm({ onClose, qrLink }: qrLinkFormProps) {
+  const [data, action] = useFormState(
     qrLink == null ? addQr : updateQr.bind(null, qrLink.id),
-    null,
+    null
   );
 
   useEffect(() => {
@@ -54,13 +55,15 @@ export default function QrForm({ onClose, qrLink }: qrLinkFromProps) {
           )}
         </p>
 
-        <SubmitButton pending={isPending} />
+        <SubmitButton />
       </form>
     </>
   );
 }
 
-const SubmitButton = ({ pending }: { pending: boolean }) => {
+const SubmitButton = () => {
+  const { pending } = useFormStatus();
+
   return (
     <Button className="col-span-2" type="submit" disabled={pending}>
       {pending ? `Saving...` : `Save`}
