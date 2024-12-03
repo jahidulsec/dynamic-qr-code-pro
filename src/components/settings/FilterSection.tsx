@@ -26,9 +26,9 @@ export default function FilterSection() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const params = new URLSearchParams(searchParams);
-
+  
   useEffect(() => {
+    const params = new URLSearchParams(searchParams);
     if (search) {
       params.set("q", debounceValue);
       params.delete("p");
@@ -36,7 +36,7 @@ export default function FilterSection() {
       params.delete("q");
     }
     router.push(pathname + "?" + params.toString());
-  }, [debounceValue]);
+  }, [debounceValue, searchParams, pathname, router, search]);
 
   return (
     <>

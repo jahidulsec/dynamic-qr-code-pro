@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 import {
   Pagination,
   PaginationContent,
@@ -9,10 +9,10 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from '@/components/ui/pagination';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { useRouter } from 'next-nprogress-bar';
-import { range } from '@/lib/utils';
+} from "@/components/ui/pagination";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useRouter } from "next-nprogress-bar";
+import { range } from "@/lib/utils";
 
 function PagePagination({ limit, count }: { limit: number; count: number }) {
   const searchParams = useSearchParams();
@@ -22,10 +22,11 @@ function PagePagination({ limit, count }: { limit: number; count: number }) {
   const params = new URLSearchParams(searchParams);
 
   const noOfPages = Math.ceil(count / limit);
-  const currentPage = Number(searchParams.get('p')) || 1;
+  const currentPage = Number(searchParams.get("p")) || 1;
 
-  let pageStart = currentPage <= 4 ? 2 : currentPage - 2;
-  let pageStop = currentPage >= noOfPages - 2 ? noOfPages - 1 : currentPage + 2;
+  const pageStart = currentPage <= 4 ? 2 : currentPage - 2;
+  const pageStop =
+    currentPage >= noOfPages - 2 ? noOfPages - 1 : currentPage + 2;
 
   return (
     <Pagination>
@@ -33,12 +34,12 @@ function PagePagination({ limit, count }: { limit: number; count: number }) {
         <PaginationItem>
           <PaginationPrevious
             onClick={() => {
-              let value = Number(searchParams.get('p')) || 1;
+              let value = Number(searchParams.get("p")) || 1;
               if (value > 1) {
                 value -= 1;
-                params.set('p', value.toString());
+                params.set("p", value.toString());
                 params.toString();
-                router.push(pathname + '?' + params.toString());
+                router.push(pathname + "?" + params.toString());
               }
             }}
           />
@@ -49,9 +50,9 @@ function PagePagination({ limit, count }: { limit: number; count: number }) {
             <PaginationLink
               isActive={currentPage === 1}
               onClick={() => {
-                params.set('p', '1');
+                params.set("p", "1");
                 params.toString();
-                router.push(pathname + '?' + params.toString());
+                router.push(pathname + "?" + params.toString());
               }}
             >
               1
@@ -67,12 +68,12 @@ function PagePagination({ limit, count }: { limit: number; count: number }) {
           {range(pageStart, pageStop).map((item, index) => (
             <PaginationItem key={item}>
               <PaginationLink
-                isActive={Number(searchParams.get('p') || 1) === item}
+                isActive={Number(searchParams.get("p") || 1) === item}
                 onClick={() => {
-                  let value = item;
-                  params.set('p', value.toString());
+                  const value = item;
+                  params.set("p", value.toString());
                   params.toString();
-                  router.push(pathname + '?' + params.toString());
+                  router.push(pathname + "?" + params.toString());
                 }}
               >
                 {item}
@@ -90,9 +91,9 @@ function PagePagination({ limit, count }: { limit: number; count: number }) {
             <PaginationItem>
               <PaginationLink
                 onClick={() => {
-                  params.set('p', noOfPages.toString());
+                  params.set("p", noOfPages.toString());
                   params.toString();
-                  router.push(pathname + '?' + params.toString());
+                  router.push(pathname + "?" + params.toString());
                 }}
               >
                 {noOfPages}
@@ -104,12 +105,12 @@ function PagePagination({ limit, count }: { limit: number; count: number }) {
         <PaginationItem>
           <PaginationNext
             onClick={() => {
-              let value = Number(searchParams.get('p')) || 1;
+              let value = Number(searchParams.get("p")) || 1;
               if (value < noOfPages) {
                 value += 1;
-                params.set('p', value.toString());
+                params.set("p", value.toString());
                 params.toString();
-                router.push(pathname + '?' + params.toString());
+                router.push(pathname + "?" + params.toString());
               }
             }}
           />

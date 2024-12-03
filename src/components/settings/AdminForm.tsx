@@ -36,7 +36,7 @@ export default function AdminForm({ admin, onClose }: AdminFormProps) {
       toast.success(data.success);
       onClose();
     }
-  }, [data]);
+  }, [data, onClose]);
 
   return (
     <form action={action} className="flex flex-col gap-5 mt-5 px-1">

@@ -27,7 +27,7 @@ export default function QrForm({ onClose, qrLink }: qrLinkFormProps) {
       toast.success(data.success);
       onClose();
     }
-  }, [data]);
+  }, [data, onClose]);
 
   return (
     <>
