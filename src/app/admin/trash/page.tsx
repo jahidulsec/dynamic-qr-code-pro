@@ -43,10 +43,7 @@ async function DataTable({
     [qrLinks, count] = await Promise.all([
       db.qrLinks.findMany({
         where: {
-          AND: [
-            { name: { contains: q || undefined } },
-            { isTrashed: true },
-          ],
+          AND: [{ name: { contains: q || undefined } }, { isTrashed: true }],
         },
         include: { admin: true },
         take: limit,
@@ -54,14 +51,12 @@ async function DataTable({
       }),
       db.qrLinks.count({
         where: {
-          AND: [
-            { name: { contains: q || undefined } },
-            { isTrashed: true },
-          ],
+          AND: [{ name: { contains: q || undefined } }, { isTrashed: true }],
         },
       }),
     ]);
   } catch (error) {
+    console.log(error);
     qrLinks = [];
     count = 0;
   }
