@@ -5,6 +5,11 @@ import { TableSkeleton } from "@/components/ui/skeleton";
 import React, { Suspense } from "react";
 import db from "../../../db/db";
 import { Prisma } from "@prisma/client";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Dashboard - Dynamic QR Code Pro",
+};
 
 
 export default async function DashboardPage({

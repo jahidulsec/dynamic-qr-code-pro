@@ -5,6 +5,11 @@ import React, { Suspense } from "react";
 import db from "../../../../db/db";
 import { TableSkeleton } from "@/components/ui/skeleton";
 import { QrTableProps } from "../page";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Trash - Dynamic QR Code Pro",
+};
 
 export default function TrashPage({
   searchParams,

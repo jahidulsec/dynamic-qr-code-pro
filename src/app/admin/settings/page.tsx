@@ -6,6 +6,11 @@ import React, { Suspense } from "react";
 import db from "../../../../db/db";
 import { Admin } from "@prisma/client";
 import AdminTable from "@/components/settings/AdminTable";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Settings - Dynamic QR Code Pro",
+};
 
 export default function SettingsPage({
   searchParams,
