@@ -6,11 +6,14 @@ import React, { Suspense } from "react";
 import db from "../../../db/db";
 import { Prisma } from "@prisma/client";
 
-export default function DashboardPage({
+
+export default async function DashboardPage({
   searchParams,
 }: {
   searchParams: { q: string; p: string };
 }) {
+  
+
   return (
     <>
       <FilterSection />

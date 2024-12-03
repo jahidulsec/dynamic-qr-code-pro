@@ -34,9 +34,13 @@ export const adminLogin = async (prevData: unknown, formData: FormData) => {
     return { error: null, success: null, db: "Invalid password" };
   }
 
-  const userId = user.id;
+  const authUser = {
+    userId: user.id,
+    name: user.name,
+    role: user.role,
+  };
 
-  await createSession(userId);
+  await createSession({ ...authUser });
 
   return { error: null, success: true, db: null };
 };

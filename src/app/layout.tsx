@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import "./globals.css";
 import NextProgressProvider from "@/contexts/ProgressProvider";
 import { Toaster } from "@/components/ui/sonner";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "QR App",

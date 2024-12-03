@@ -6,14 +6,16 @@ import React from "react";
 import { toast } from "sonner";
 import { Nav, NavLink } from "../navbar/nav-bar";
 
-function Header() {
+function Header({ user }: { user: any }) {
   const router = useRouter();
 
   return (
     <header>
       <Nav>
         <NavLink href="/admin">Dashboard</NavLink>
-        <NavLink href="/admin/settings">Settings</NavLink>
+        {user.role == "superadmin" && (
+          <NavLink href="/admin/settings">Settings</NavLink>
+        )}
         <NavLink
           href=""
           onClick={async () => {

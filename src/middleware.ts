@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { decrypt } from "@/lib/session";
 import { cookies } from "next/headers";
 
+const protectedRoutes = ["/admin/settings"];
+
 export default async function middleware(req: NextRequest) {
+  const path = req.nextUrl.pathname;
+  const isProtectedRoute = protectedRoutes.includes(path);
+
   // Decrypt the session from the cookie
   const cookie = (await cookies()).get("session")?.value;
   const session = await decrypt(cookie);
@@ -19,8 +24,10 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/admin", req.nextUrl));
   }
 
-  // Redirect to /admin if the user is authenticated
-  if (session?.userId && req.nextUrl.pathname.startsWith("/login")) {
+
+  const userRole = session.role;
+
+  if (isProtectedRoute && userRole == "admin") {
     return NextResponse.redirect(new URL("/admin", req.nextUrl));
   }
 
