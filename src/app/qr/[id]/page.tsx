@@ -7,6 +7,14 @@ export default async function QrPage({ params }: { params: { id: string } }) {
   const qrLink = await db.qrLinks.findUnique({
     where: { id },
   });
+
+  await db.qrLinks.update({
+    where: { id },
+    data: {
+      visitedCount: Number(qrLink?.visitedCount) + 1,
+    },
+  });
+  
   if (!qrLink) return <div>No data</div>;
   redirect(qrLink?.link);
 }
