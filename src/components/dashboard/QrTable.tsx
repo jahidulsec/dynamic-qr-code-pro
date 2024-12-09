@@ -83,7 +83,7 @@ function QrTable({
           {qrLinks.length > 0 ? (
             qrLinks.map((item, index) => (
               <TableRow key={item.id}>
-                <TableCell>
+                <TableCell className="text-nowrap">
                   #{" "}
                   {(searchParams.has("p")
                     ? Number(searchParams.get("p")) - 1
