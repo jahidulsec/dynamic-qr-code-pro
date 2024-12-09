@@ -49,6 +49,7 @@ export const addAdmin = async (prevData: unknown, formData: FormData) => {
     await db.admin.create({
       data: {
         ...data,
+        username: data.username.toLowerCase(),
       },
     });
 

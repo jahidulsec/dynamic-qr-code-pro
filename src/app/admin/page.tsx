@@ -58,7 +58,7 @@ async function DataTable({
         take: limit,
         skip: (page - 1) * limit,
         orderBy: {
-          createdAt: 'asc'
+          createdAt: 'desc'
         }
       }),
       db.qrLinks.count({
