@@ -34,16 +34,23 @@ import Tooltips from "@/components/tooltips/Tooltips";
 import { formatNumber } from "@/lib/formatter";
 import QrForm from "@/components/dashboard/QrForm";
 import { deleteQr, moveQrTrash, restoreQrTrash } from "@/app/actions/qr";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { QrTableProps } from "@/app/admin/page";
 
-function QrTable({ qrLinks }: { qrLinks: QrTableProps[] }) {
+function QrTable({
+  qrLinks,
+  limit,
+}: {
+  qrLinks: QrTableProps[];
+  limit: number;
+}) {
   const [editQr, setEditQr] = useState<any>();
   const [delQr, setdelQr] = useState<any>();
   const [previewQR, setPreviewQR] = useState<any>();
 
   const [isPending, startTransition] = useTransition();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const handleQrDownload = () => {
     const qrCode = document.getElementById("qrCodeEl") as HTMLCanvasElement;
@@ -76,7 +83,14 @@ function QrTable({ qrLinks }: { qrLinks: QrTableProps[] }) {
           {qrLinks.length > 0 ? (
             qrLinks.map((item, index) => (
               <TableRow key={item.id}>
-                <TableCell># {index + 1}</TableCell>
+                <TableCell>
+                  #{" "}
+                  {(searchParams.has("p")
+                    ? Number(searchParams.get("p")) - 1
+                    : 0) *
+                    limit +
+                    (index + 1)}
+                </TableCell>
                 <TableCell>{item.name}</TableCell>
                 <TableCell>{item.link}</TableCell>
                 <TableCell className="text-right">

@@ -15,7 +15,7 @@ export default async function AdminLayout({
   if (!user) redirect("/login");
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
       <Header user={user} />
       <main className="container my-6 mx-auto">{children}</main>
       <Footer />

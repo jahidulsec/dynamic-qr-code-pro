@@ -57,6 +57,9 @@ async function DataTable({
         },
         take: limit,
         skip: (page - 1) * limit,
+        orderBy: {
+          createdAt: 'asc'
+        }
       }),
       db.qrLinks.count({
         where: {
@@ -72,10 +75,10 @@ async function DataTable({
 
   return (
     <>
-      <QrTable qrLinks={qrLinks} />
+      <QrTable qrLinks={qrLinks} limit={limit} />
 
       <div className="border-t pt-5">
-        <PagePagination limit={20} count={count} />
+        <PagePagination limit={limit} count={count} />
       </div>
     </>
   );

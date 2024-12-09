@@ -30,34 +30,32 @@ export default function QrForm({ onClose, qrLink }: qrLinkFormProps) {
   }, [data, onClose]);
 
   return (
-    <>
-      <form action={action} className="grid grid-cols-1 gap-5 mt-5 px-1">
-        <p className="flex flex-col gap-2 col-span-2">
-          <Label htmlFor="name">Name</Label>
-          <Input
-            id="name"
-            name="name"
-            defaultValue={qrLink != null ? qrLink.name : ""}
-          />
-          {data?.error != null && data?.error.name && (
-            <p className="error-msg">{data.error.name}</p>
-          )}
-        </p>
-        <p className="flex flex-col gap-2">
-          <Label htmlFor="link">URL</Label>
-          <Input
-            id="link"
-            name="link"
-            defaultValue={qrLink != null ? (qrLink.link as string) : ""}
-          />
-          {data?.error != null && data?.error.link && (
-            <p className="error-msg">{data.error.link}</p>
-          )}
-        </p>
+    <form action={action} className="grid grid-cols-1 gap-5 mt-5 px-1">
+      <p className="flex flex-col gap-2 col-span-2">
+        <Label htmlFor="name">Name</Label>
+        <Input
+          id="name"
+          name="name"
+          defaultValue={qrLink != null ? qrLink.name : ""}
+        />
+        {data?.error != null && data?.error.name && (
+          <i className="error-msg">{data.error.name}</i>
+        )}
+      </p>
+      <p className="flex flex-col gap-2">
+        <Label htmlFor="link">URL</Label>
+        <Input
+          id="link"
+          name="link"
+          defaultValue={qrLink != null ? (qrLink.link as string) : ""}
+        />
+        {data?.error != null && data?.error.link && (
+          <i className="error-msg">{data.error.link}</i>
+        )}
+      </p>
 
-        <SubmitButton />
-      </form>
-    </>
+      <SubmitButton />
+    </form>
   );
 }
 
