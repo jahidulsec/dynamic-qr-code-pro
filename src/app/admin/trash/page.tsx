@@ -63,10 +63,10 @@ async function DataTable({
 
   return (
     <>
-      <QrTable qrLinks={qrLinks} />
+      <QrTable limit={limit} qrLinks={qrLinks} />
 
       <div className="border-t pt-5">
-        <PagePagination limit={20} count={count} />
+        <PagePagination limit={limit} count={count} />
       </div>
     </>
   );
