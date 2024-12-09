@@ -190,8 +190,8 @@ export const deleteQr = async (id: string) => {
 
     return {
       error: null,
-      success: null,
-      toast: "No data found for this action",
+      success: "Deleted successfully",
+      toast: null,
     };
   } catch (error: any) {
     return {
