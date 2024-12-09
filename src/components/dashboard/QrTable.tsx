@@ -40,9 +40,11 @@ import { QrTableProps } from "@/app/admin/page";
 function QrTable({
   qrLinks,
   limit,
+  count,
 }: {
   qrLinks: QrTableProps[];
   limit: number;
+  count: number;
 }) {
   const [editQr, setEditQr] = useState<any>();
   const [delQr, setdelQr] = useState<any>();
@@ -85,11 +87,12 @@ function QrTable({
               <TableRow key={item.id}>
                 <TableCell className="text-nowrap">
                   #{" "}
-                  {(searchParams.has("p")
-                    ? Number(searchParams.get("p")) - 1
-                    : 0) *
-                    limit +
-                    (index + 1)}
+                  {count + 1 -
+                    ((searchParams.has("p")
+                      ? Number(searchParams.get("p")) - 1
+                      : 0) *
+                      limit +
+                      (index + 1))}
                 </TableCell>
                 <TableCell>{item.name}</TableCell>
                 <TableCell>{item.link}</TableCell>
