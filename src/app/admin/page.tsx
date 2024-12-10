@@ -41,7 +41,7 @@ async function DataTable({
 }) {
   const { q, p } = await searchParams;
 
-  const limit = 10;
+  const limit = 20;
   const page = Number(p ?? 1) || 1;
 
   let qrLinks: QrTableProps[], count: number;

@@ -26,9 +26,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Edit, MessageSquareOff, QrCode, Trash, Undo2 } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import QRCode from "qrcode.react";
+import QRCode, { QRCodeSVG } from "qrcode.react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Tooltips from "@/components/tooltips/Tooltips";
 import { formatNumber } from "@/lib/formatter";
@@ -36,6 +36,17 @@ import QrForm from "@/components/dashboard/QrForm";
 import { deleteQr, moveQrTrash, restoreQrTrash } from "@/app/actions/qr";
 import { usePathname, useSearchParams } from "next/navigation";
 import { QrTableProps } from "@/app/admin/page";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectLabel,
+  SelectValue,
+} from "../ui/select";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 
 function QrTable({
   qrLinks,
@@ -49,19 +60,39 @@ function QrTable({
   const [editQr, setEditQr] = useState<any>();
   const [delQr, setdelQr] = useState<any>();
   const [previewQR, setPreviewQR] = useState<any>();
+  const [format, setFormat] = useState("png");
+  const [sizeQr, setSizeQr] = useState(350);
 
   const [isPending, startTransition] = useTransition();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  useEffect(() => {
+    console.log(format);
+  }, [format]);
+
   const handleQrDownload = () => {
-    const qrCode = document.getElementById("qrCodeEl") as HTMLCanvasElement;
-    const qrCodeURL = qrCode
-      .toDataURL("image/png")
-      .replace("image/png", "image/octet-stream");
+    let qrCodeURL;
+    if (format != "svg") {
+      const qrCode = document.getElementById("qrCodeEl") as HTMLCanvasElement;
+      qrCodeURL = qrCode
+        .toDataURL(`image/png`)
+        .replace(`image/png`, `image/${format}`);
+    } else {
+      const qrCode = document.getElementById("qrCodeEl") as any;
+
+      const serializer = new XMLSerializer();
+      qrCodeURL =
+        "data:image/svg+xml;charset=utf-8," +
+        encodeURIComponent(
+          '<?xml version="1.0" standalone="no"?>' +
+            serializer.serializeToString(qrCode)
+        );
+    }
+
     const aEl = document.createElement("a");
     aEl.href = qrCodeURL;
-    aEl.download = `${previewQR != undefined ? previewQR.name : ""}.png`;
+    aEl.download = `${previewQR != undefined ? previewQR.name : ""}.${format}`;
     document.body.appendChild(aEl);
     aEl.click();
     document.body.removeChild(aEl);
@@ -74,7 +105,7 @@ function QrTable({
           <TableRow>
             <TableHead>Id</TableHead>
             <TableHead>Name</TableHead>
-            <TableHead>Qr Text</TableHead>
+            <TableHead>Embedded URL</TableHead>
             <TableHead className="text-center">Viewer&apos;s Count</TableHead>
             <TableHead>Created by</TableHead>
             <TableHead className="text-right">Action</TableHead>
@@ -87,7 +118,8 @@ function QrTable({
               <TableRow key={item.id}>
                 <TableCell className="text-nowrap">
                   #{" "}
-                  {count + 1 -
+                  {count +
+                    1 -
                     ((searchParams.has("p")
                       ? Number(searchParams.get("p")) - 1
                       : 0) *
@@ -175,7 +207,7 @@ function QrTable({
         </TableBody>
       </Table>
 
-      {/* update doctor dialog */}
+      {/* update qr dialog */}
       <Dialog open={editQr} onOpenChange={setEditQr}>
         <DialogContent className="w-[75vw] p-0 ">
           <ScrollArea className="max-h-[85vh] px-6 my-6">
@@ -187,7 +219,7 @@ function QrTable({
         </DialogContent>
       </Dialog>
 
-      {/* alert delete vehicle modal */}
+      {/* alert delete qr modal */}
       <AlertDialog open={!!delQr} onOpenChange={setdelQr}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -195,7 +227,7 @@ function QrTable({
             <AlertDialogDescription>
               {pathname === "/admin"
                 ? "Do you want to move this QR on trash?"
-                : `This action cannot be undone. This will permanently delete this Doctor and remove data from servers.
+                : `This action cannot be undone. This will permanently delete this qr and remove data from servers.
                     `}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -233,7 +265,7 @@ function QrTable({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* doctor qr code */}
+      {/* preview qr code */}
       <Dialog open={previewQR} onOpenChange={setPreviewQR}>
         <DialogContent className="min-w-[18rem] md:max-w-[550px] aspect-square">
           <DialogHeader>
@@ -241,18 +273,31 @@ function QrTable({
           </DialogHeader>
 
           <div className="justify-center items-center hidden">
-            <QRCode
-              id="qrCodeEl"
-              size={1500}
-              includeMargin
-              value={`${process.env.NEXT_PUBLIC_DOMAIN_NAME}/qr/${
-                previewQR != undefined ? previewQR.id : ""
-              }`}
-            />
+            {format !== "svg" ? (
+              <QRCode
+                id="qrCodeEl"
+                size={1500}
+                includeMargin
+                value={`${process.env.NEXT_PUBLIC_DOMAIN_NAME}/qr/${
+                  previewQR != undefined ? previewQR.id : ""
+                }`}
+              />
+            ) : (
+              <QRCodeSVG
+                id="qrCodeEl"
+                size={sizeQr}
+                includeMargin
+                value={`${process.env.NEXT_PUBLIC_DOMAIN_NAME}/qr/${
+                  previewQR != undefined ? previewQR.id : ""
+                }`}
+              />
+            )}
           </div>
 
           <div className="flex justify-center items-center">
-            <QRCode
+            <QRCodeSVG
+              id="qrCodeEl"
+              includeMargin
               size={320}
               value={`${process.env.NEXT_PUBLIC_DOMAIN_NAME}/qr/${
                 previewQR != undefined ? previewQR.id : ""
@@ -260,9 +305,33 @@ function QrTable({
             />
           </div>
 
-          <Button type="button" onClick={handleQrDownload}>
-            Download
-          </Button>
+          <div className="flex flex-col gap-3">
+            <Label>QR Size (px)</Label>
+            <Input
+              value={sizeQr}
+              type="number"
+              onChange={(e) => setSizeQr(Number(e.target.value))}
+            />
+          </div>
+
+          <div className="flex items-center">
+            <Button className="flex-1" type="button" onClick={handleQrDownload}>
+              Download
+            </Button>
+            <Select defaultValue="png" value={format} onValueChange={setFormat}>
+              <SelectTrigger className="w-[40px] bg-foreground text-background">
+                {/* <SelectValue placeholder="Select a format" /> */}
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Formats</SelectLabel>
+                  <SelectItem value="png">PNG</SelectItem>
+                  <SelectItem value="jpg">JPG</SelectItem>
+                  <SelectItem value="svg">SVG</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
         </DialogContent>
       </Dialog>
     </>
