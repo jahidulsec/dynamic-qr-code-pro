@@ -25,8 +25,8 @@ const LoginForm = () => {
   });
 
   return (
-    <main className="flex justify-center items-center min-h-[40rem]">
-      <div className="max-w-xl min-w-[25rem] p-5 border rounded-md bg-white shadow-sm">
+    <main className="flex justify-center items-center min-h-svh p-2">
+      <div className="max-w-lg min-w-[20rem] w-full p-5 border rounded-md bg-white shadow-sm">
         <header>
           <h2 className="text-primary text-3xl text-center">Sign in</h2>
           <h4 className="text-sm text-center text-gray-400 my-3">
@@ -35,7 +35,7 @@ const LoginForm = () => {
         </header>
 
         {/* form */}
-        <form action={action} className="flex flex-col gap-5 my-8">
+        <form action={action} className="flex flex-col gap-5 my-8 [&_input]:mt-2">
           <p>
             <Label className="text-primary" htmlFor="username">
               Username
@@ -56,7 +56,7 @@ const LoginForm = () => {
               id="password"
             />
             <i
-              className="eye absolute top-9 right-3 cursor-pointer"
+              className="eye absolute top-11 right-3 cursor-pointer"
               onClick={() => {
                 setShowPassword(!showPassword);
               }}
