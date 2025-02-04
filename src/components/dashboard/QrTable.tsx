@@ -101,16 +101,16 @@ function QrTable({
 
   return (
     <>
-      <Table className="[&_th]:text-nowrap">
+      <Table className="[&_th]:text-nowrap [&_td]:border [&_td]:border-muted-foreground [&_th]:border [&_th]:border-muted-foreground [&_th]:text-center">
         <TableHeader>
           <TableRow>
             <TableHead>Id</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Embedded URL</TableHead>
-            <TableHead className="text-center">Viewer&apos;s Count</TableHead>
+            <TableHead>Viewer&apos;s Count</TableHead>
             <TableHead>Created by</TableHead>
             <TableHead>Created Date</TableHead>
-            <TableHead className="text-right">Action</TableHead>
+            <TableHead>Action</TableHead>
           </TableRow>
         </TableHeader>
 
@@ -130,70 +130,72 @@ function QrTable({
                 </TableCell>
                 <TableCell>{item.name}</TableCell>
                 <TableCell>{item.link}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-center">
                   {formatNumber(Number(item.visitedCount))}
                 </TableCell>
                 <TableCell>{item.admin?.name}</TableCell>
                 <TableCell>
                   {dateFormat(item.createdAt, "LLL dd, yyyy (eeee)")}
                 </TableCell>
-                <TableCell className="flex gap-2 justify-end">
-                  {pathname === "/admin" && (
-                    <>
-                      {" "}
-                      <Tooltips title="QR Code">
+                <TableCell>
+                  <div className="flex gap-2 justify-end">
+                    {pathname === "/admin" && (
+                      <>
+                        {" "}
+                        <Tooltips title="QR Code">
+                          <Button
+                            size={"icon"}
+                            variant={"outline"}
+                            className="rounded-full size-8"
+                            onClick={() => {
+                              setPreviewQR(item);
+                            }}
+                          >
+                            <QrCode className="size-4" />
+                          </Button>
+                        </Tooltips>
+                        <Tooltips title="Edit">
+                          <Button
+                            size={"icon"}
+                            variant={"outline"}
+                            className="rounded-full size-8"
+                            onClick={() => setEditQr(item)}
+                          >
+                            <Edit className="size-4" />
+                          </Button>
+                        </Tooltips>
+                      </>
+                    )}
+                    {pathname !== "/admin" && (
+                      <Tooltips title="Restore">
                         <Button
                           size={"icon"}
                           variant={"outline"}
                           className="rounded-full size-8"
-                          onClick={() => {
-                            setPreviewQR(item);
+                          onClick={async () => {
+                            try {
+                              await restoreQrTrash(item.id);
+                              toast.success("QR is restored!");
+                            } catch (error: any) {
+                              toast.error(error);
+                            }
                           }}
                         >
-                          <QrCode className="size-4" />
+                          <Undo2 className="size-4" />
                         </Button>
                       </Tooltips>
-                      <Tooltips title="Edit">
-                        <Button
-                          size={"icon"}
-                          variant={"outline"}
-                          className="rounded-full size-8"
-                          onClick={() => setEditQr(item)}
-                        >
-                          <Edit className="size-4" />
-                        </Button>
-                      </Tooltips>
-                    </>
-                  )}
-                  {pathname !== "/admin" && (
-                    <Tooltips title="Restore">
+                    )}
+                    <Tooltips title="Move to trash">
                       <Button
                         size={"icon"}
-                        variant={"outline"}
+                        variant={"destructive"}
                         className="rounded-full size-8"
-                        onClick={async () => {
-                          try {
-                            await restoreQrTrash(item.id);
-                            toast.success("QR is restored!");
-                          } catch (error: any) {
-                            toast.error(error);
-                          }
-                        }}
+                        onClick={() => setdelQr(item.id)}
                       >
-                        <Undo2 className="size-4" />
+                        <Trash className="size-4" />
                       </Button>
                     </Tooltips>
-                  )}
-                  <Tooltips title="Move to trash">
-                    <Button
-                      size={"icon"}
-                      variant={"destructive"}
-                      className="rounded-full size-8"
-                      onClick={() => setdelQr(item.id)}
-                    >
-                      <Trash className="size-4" />
-                    </Button>
-                  </Tooltips>
+                  </div>
                 </TableCell>
               </TableRow>
             ))

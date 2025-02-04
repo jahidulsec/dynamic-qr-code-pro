@@ -17,7 +17,7 @@ export default async function AdminLayout({
   return (
     <div className="min-h-screen relative">
       <Header user={user} />
-      <main className="container pt-6 pb-16 mx-auto">{children}</main>
+      <main className="container pt-6 pb-16 mx-auto px-4">{children}</main>
       <Footer />
     </div>
   );

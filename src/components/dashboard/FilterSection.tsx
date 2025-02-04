@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Search } from "lucide-react";
+import { PlusCircle, Search, Trash } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useRouter } from "next-nprogress-bar";
@@ -64,10 +64,15 @@ export default function FilterSection() {
         </div>
         {/* buttons */}
         <div className="flex gap-3 items-center">
-          <Button asChild variant={"secondary"}>
-            <Link href={'/admin/trash'}>Trash</Link>
+          <Button asChild variant={"secondary"} className="border border-muted-foreground hover:border-muted-foreground/50">
+            <Link href={"/admin/trash"}>
+              <Trash />
+              Trash
+            </Link>
           </Button>
-          <Button onClick={() => setAddQr(true)}>Generate QR</Button>
+          <Button onClick={() => setAddQr(true)}>
+            <PlusCircle />
+            Generate QR</Button>
         </div>
       </div>
 
