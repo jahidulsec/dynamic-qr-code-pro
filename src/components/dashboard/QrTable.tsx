@@ -133,8 +133,8 @@ function QrTable({
                 <TableCell className="text-center">
                   {formatNumber(Number(item.visitedCount))}
                 </TableCell>
-                <TableCell>{item.admin?.name}</TableCell>
-                <TableCell>
+                <TableCell className="text-center text-nowrap">{item.admin?.name}</TableCell>
+                <TableCell className="text-center">
                   {dateFormat(item.createdAt, "LLL dd, yyyy (eeee)")}
                 </TableCell>
                 <TableCell>
