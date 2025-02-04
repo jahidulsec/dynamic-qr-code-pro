@@ -47,6 +47,7 @@ import {
 } from "../ui/select";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { format as dateFormat } from "date-fns";
 
 function QrTable({
   qrLinks,
@@ -100,7 +101,7 @@ function QrTable({
 
   return (
     <>
-      <Table>
+      <Table className="[&_th]:text-nowrap">
         <TableHeader>
           <TableRow>
             <TableHead>Id</TableHead>
@@ -108,6 +109,7 @@ function QrTable({
             <TableHead>Embedded URL</TableHead>
             <TableHead className="text-center">Viewer&apos;s Count</TableHead>
             <TableHead>Created by</TableHead>
+            <TableHead>Created Date</TableHead>
             <TableHead className="text-right">Action</TableHead>
           </TableRow>
         </TableHeader>
@@ -132,6 +134,9 @@ function QrTable({
                   {formatNumber(Number(item.visitedCount))}
                 </TableCell>
                 <TableCell>{item.admin?.name}</TableCell>
+                <TableCell>
+                  {dateFormat(item.createdAt, "LLL dd, yyyy (eeee)")}
+                </TableCell>
                 <TableCell className="flex gap-2 justify-end">
                   {pathname === "/admin" && (
                     <>

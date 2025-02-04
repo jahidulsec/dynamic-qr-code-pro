@@ -18,7 +18,7 @@ export const formatNumber = (number: number) => {
 };
 
 const DATE_FORMATTER = new Intl.DateTimeFormat("en-us", {
-  dateStyle: "medium",
+  dateStyle: "long",
 });
 
 export const formatDate = (date: Date) => {
