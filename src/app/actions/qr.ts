@@ -8,7 +8,7 @@ import { Prisma } from "@prisma/client";
 
 const qrSchema = z.object({
   name: z.string().min(1),
-  link: z.string().min(1),
+  link: z.string().url(),
 });
 
 export const addQr = async (prevData: unknown, formData: FormData) => {

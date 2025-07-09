@@ -30,8 +30,8 @@ export default function QrForm({ onClose, qrLink }: qrLinkFormProps) {
   }, [data]);
 
   return (
-    <form action={action} className="grid grid-cols-1 gap-5 mt-5 px-1">
-      <p className="flex flex-col gap-2 col-span-2">
+    <form action={action} className="flex flex-col gap-5 mt-5 px-1">
+      <p className="flex flex-col gap-2">
         <Label htmlFor="name">Name</Label>
         <Input
           id="name"
@@ -42,7 +42,7 @@ export default function QrForm({ onClose, qrLink }: qrLinkFormProps) {
           <i className="error-msg">{data.error.name}</i>
         )}
       </p>
-      <p className="flex flex-col gap-2">
+      <p className="flex flex-col gap-2 w-full">
         <Label htmlFor="link">URL</Label>
         <Input
           id="link"

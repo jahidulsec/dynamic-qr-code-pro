@@ -41,14 +41,14 @@ export default function FilterSection() {
 
   return (
     <>
-      <div className="flex justify-between items-center gap-5 my-6">
+      <div className="flex justify-between items-center flex-col sm:flex-row gap-5 my-6">
         {/* filters */}
-        <div className="filters">
+        <div className="filters flex-1 w-full">
           {/* search */}
           <div className="search relative">
             <Input
               title="Search"
-              className="pl-10 max-w-[18rem]"
+              className="pl-10 sm:max-w-[18rem]"
               id="search"
               placeholder="Search by name"
               value={search}

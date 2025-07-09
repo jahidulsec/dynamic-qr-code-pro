@@ -48,6 +48,7 @@ import {
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { format as dateFormat } from "date-fns";
+import RoundedQRCode from "./RoundedQrCode";
 
 function QrTable({
   qrLinks,
@@ -133,7 +134,9 @@ function QrTable({
                 <TableCell className="text-center">
                   {formatNumber(Number(item.visitedCount))}
                 </TableCell>
-                <TableCell className="text-center text-nowrap">{item.admin?.name}</TableCell>
+                <TableCell className="text-center text-nowrap">
+                  {item.admin?.name}
+                </TableCell>
                 <TableCell className="text-center">
                   {dateFormat(item.createdAt, "LLL dd, yyyy (eeee)")}
                 </TableCell>
@@ -279,7 +282,7 @@ function QrTable({
             <DialogTitle className="text-sm font-cb">QR Code</DialogTitle>
           </DialogHeader>
 
-          <div className="justify-center items-center hidden">
+          {/* <div className="justify-center items-center hidden">
             {format !== "svg" ? (
               <QRCode
                 id="qrCodeEl"
@@ -299,17 +302,19 @@ function QrTable({
                 }`}
               />
             )}
-          </div>
+          </div> */}
 
           <div className="flex justify-center items-center">
-            <QRCodeSVG
+            {/* <QRCodeSVG
               id="qrCodeEl"
               includeMargin
               size={320}
+              className="[&_path]:rounded-full"
               value={`${process.env.NEXT_PUBLIC_DOMAIN_NAME}/qr/${
                 previewQR != undefined ? previewQR.id : ""
               }`}
-            />
+            /> */}
+            <RoundedQRCode />
           </div>
 
           <div className="flex flex-col gap-3">
