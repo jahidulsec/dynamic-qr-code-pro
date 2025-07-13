@@ -28,7 +28,6 @@ import {
 import { Edit, MessageSquareOff, QrCode, Trash, Undo2 } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import QRCode, { QRCodeSVG } from "qrcode.react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Tooltips from "@/components/tooltips/Tooltips";
 import { formatNumber } from "@/lib/formatter";
@@ -36,18 +35,7 @@ import QrForm from "@/components/dashboard/QrForm";
 import { deleteQr, moveQrTrash, restoreQrTrash } from "@/app/actions/qr";
 import { usePathname, useSearchParams } from "next/navigation";
 import { QrTableProps } from "@/app/admin/page";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectLabel,
-} from "../ui/select";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
 import { format as dateFormat } from "date-fns";
-import RoundedQRCode from "./RoundedQrCode";
 import QRPreviewSection from "./QrPreviewSection";
 import useHost from "@/hooks/useHost";
 
@@ -63,44 +51,13 @@ function QrTable({
   const [editQr, setEditQr] = useState<any>();
   const [delQr, setdelQr] = useState<any>();
   const [previewQR, setPreviewQR] = useState<any>();
-  const [format, setFormat] = useState("png");
-  const [sizeQr, setSizeQr] = useState(350);
   const { hostname } = useHost();
 
   const [isPending, startTransition] = useTransition();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  useEffect(() => {
-    console.log(format);
-  }, [format]);
 
-  const handleQrDownload = () => {
-    let qrCodeURL;
-    if (format != "svg") {
-      const qrCode = document.getElementById("qrCodeEl") as HTMLCanvasElement;
-      qrCodeURL = qrCode
-        .toDataURL(`image/png`)
-        .replace(`image/png`, `image/${format}`);
-    } else {
-      const qrCode = document.getElementById("qrCodeEl") as any;
-
-      const serializer = new XMLSerializer();
-      qrCodeURL =
-        "data:image/svg+xml;charset=utf-8," +
-        encodeURIComponent(
-          '<?xml version="1.0" standalone="no"?>' +
-            serializer.serializeToString(qrCode)
-        );
-    }
-
-    const aEl = document.createElement("a");
-    aEl.href = qrCodeURL;
-    aEl.download = `${previewQR != undefined ? previewQR.name : ""}.${format}`;
-    document.body.appendChild(aEl);
-    aEl.click();
-    document.body.removeChild(aEl);
-  };
 
   return (
     <>
@@ -306,49 +263,11 @@ function QrTable({
             )}
           </div> */}
 
-          <div className="flex justify-center items-center">
-            {/* <QRCodeSVG
-              id="qrCodeEl"
-              includeMargin
-              size={320}
-              className="[&_path]:rounded-full"
-              value={`${process.env.NEXT_PUBLIC_DOMAIN_NAME}/qr/${
-                previewQR != undefined ? previewQR.id : ""
-              }`}
-            /> */}
-            {/* <RoundedQRCode size={320} /> */}
-          </div>
-
-          {/* <div className="flex flex-col gap-3">
-            <Label>QR Size (px)</Label>
-            <Input
-              value={sizeQr}
-              type="number"
-              onChange={(e) => setSizeQr(Number(e.target.value))}
-            />
-          </div>
-
-          <div className="flex items-center">
-            <Button className="flex-1" type="button" onClick={handleQrDownload}>
-              Download
-            </Button>
-            <Select defaultValue="png" value={format} onValueChange={setFormat}>
-              <SelectTrigger className="w-[40px] bg-foreground text-background"></SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Formats</SelectLabel>
-                  <SelectItem value="png">PNG</SelectItem>
-                  <SelectItem value="jpg">JPG</SelectItem>
-                  <SelectItem value="svg">SVG</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div> */}
-          {hostname}
           <QRPreviewSection
             data={`${hostname}/qr/${
               previewQR != undefined ? previewQR.id : ""
             }`}
+            name={previewQR?.name ?? "QR"}
           />
         </DialogContent>
       </Dialog>
