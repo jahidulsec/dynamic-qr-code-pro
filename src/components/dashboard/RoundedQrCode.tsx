@@ -1,12 +1,15 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import QRCodeStyling from "qr-code-styling";
 
-const initialSize = 200;
-
-const RoundedQRCodeDynamic = () => {
+const RoundedQRCodeDynamic = ({
+  size = 320,
+  data,
+}: {
+  size?: number;
+  data: string;
+}) => {
   const ref = useRef<HTMLDivElement>(null);
   const qrCodeRef = useRef<QRCodeStyling | null>(null);
-  const [size, setSize] = useState(initialSize);
 
   // Initialize QR code only once
   useEffect(() => {
@@ -48,14 +51,6 @@ const RoundedQRCodeDynamic = () => {
   return (
     <div className="flex flex-col items-center gap-4">
       <div ref={ref} />
-      <input
-        type="range"
-        min="100"
-        max="400"
-        value={size}
-        onChange={(e) => setSize(Number(e.target.value))}
-      />
-      <p>Size: {size}px</p>
     </div>
   );
 };

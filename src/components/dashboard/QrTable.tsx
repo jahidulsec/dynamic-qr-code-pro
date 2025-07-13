@@ -43,12 +43,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectLabel,
-  SelectValue,
 } from "../ui/select";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { format as dateFormat } from "date-fns";
 import RoundedQRCode from "./RoundedQrCode";
+import QRPreviewSection from "./QrPreviewSection";
+import useHost from "@/hooks/useHost";
 
 function QrTable({
   qrLinks,
@@ -64,6 +65,7 @@ function QrTable({
   const [previewQR, setPreviewQR] = useState<any>();
   const [format, setFormat] = useState("png");
   const [sizeQr, setSizeQr] = useState(350);
+  const { hostname } = useHost();
 
   const [isPending, startTransition] = useTransition();
   const pathname = usePathname();
@@ -314,10 +316,10 @@ function QrTable({
                 previewQR != undefined ? previewQR.id : ""
               }`}
             /> */}
-            <RoundedQRCode />
+            {/* <RoundedQRCode size={320} /> */}
           </div>
 
-          <div className="flex flex-col gap-3">
+          {/* <div className="flex flex-col gap-3">
             <Label>QR Size (px)</Label>
             <Input
               value={sizeQr}
@@ -331,9 +333,7 @@ function QrTable({
               Download
             </Button>
             <Select defaultValue="png" value={format} onValueChange={setFormat}>
-              <SelectTrigger className="w-[40px] bg-foreground text-background">
-                {/* <SelectValue placeholder="Select a format" /> */}
-              </SelectTrigger>
+              <SelectTrigger className="w-[40px] bg-foreground text-background"></SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   <SelectLabel>Formats</SelectLabel>
@@ -343,7 +343,13 @@ function QrTable({
                 </SelectGroup>
               </SelectContent>
             </Select>
-          </div>
+          </div> */}
+          {hostname}
+          <QRPreviewSection
+            data={`${hostname}/qr/${
+              previewQR != undefined ? previewQR.id : ""
+            }`}
+          />
         </DialogContent>
       </Dialog>
     </>
