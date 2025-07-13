@@ -81,7 +81,9 @@ function QrTable({
                       limit +
                       (index + 1))}
                 </TableCell>
-                <TableCell className="w-10/12">{item.name}</TableCell>
+                <TableCell className="min-w-[25rem] text-center">
+                  {item.name}
+                </TableCell>
                 <TableCell>{item.link}</TableCell>
                 <TableCell className="text-center">
                   {formatNumber(Number(item.visitedCount))}
