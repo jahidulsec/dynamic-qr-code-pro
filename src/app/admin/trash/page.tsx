@@ -48,6 +48,9 @@ async function DataTable({
         include: { admin: true },
         take: limit,
         skip: (page - 1) * limit,
+        orderBy: {
+          createdAt: 'desc'
+        }
       }),
       db.qrLinks.count({
         where: {
