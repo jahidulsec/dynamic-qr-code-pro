@@ -23,23 +23,21 @@ export default function QRPreviewSection({
   name?: string;
 }) {
   const [format, setFormat] = useState<any>("png");
-  const [sizeQr, setSizeQr] = useState(350);
+  const [sizeQr, setSizeQr] = useState(320);
   const [option, setOption] = useState<"rounded" | "square">("square");
 
   const ref = useRef<HTMLDivElement>(null);
   const qrCodeRef = useRef<QRCodeStyling | null>(null);
   const qrCodeDownRef = useRef<QRCodeStyling | null>(null);
+  const [file, setFile] = useState<File | null>(null);
 
   // Initialize QR code only once
   useEffect(() => {
     qrCodeRef.current = new QRCodeStyling({
       width: sizeQr,
       height: sizeQr,
-      margin: 40,
+      margin: 30,
       data: data,
-      //   image:
-      //     "https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg",
-
       backgroundOptions: {
         color: "#fff",
       },
@@ -48,7 +46,7 @@ export default function QRPreviewSection({
     qrCodeDownRef.current = new QRCodeStyling({
       width: sizeQr,
       height: sizeQr,
-      margin: 40,
+      margin: 30,
       data: data,
       backgroundOptions: {
         color: "#fff",
@@ -80,6 +78,9 @@ export default function QRPreviewSection({
         cornersDotOptions: {
           type: option === "rounded" ? "dot" : "square",
         },
+        ...(file && {
+          image: URL.createObjectURL(file),
+        }),
       });
     }
 
@@ -96,9 +97,12 @@ export default function QRPreviewSection({
         cornersDotOptions: {
           type: option === "rounded" ? "dot" : "square",
         },
+        ...(file && {
+          image: URL.createObjectURL(file),
+        }),
       });
     }
-  }, [sizeQr, option]);
+  }, [sizeQr, option, file]);
 
   return (
     <div className="flex flex-col justify-between">
@@ -139,6 +143,21 @@ export default function QRPreviewSection({
               </SelectGroup>
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <Label>Add Image</Label>
+          <Input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files;
+
+              if (file && file.length > 0 && file?.[0].size > 0) {
+                setFile(file[0]);
+              }
+            }}
+          />
         </div>
 
         <div className="flex items-center">
