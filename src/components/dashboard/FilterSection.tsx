@@ -1,12 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PlusCircle, Search, Trash } from "lucide-react";
@@ -17,6 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDebounce } from "@/hooks/useDebounce";
 import QrForm from "./QrForm";
 import Link from "next/link";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
 
 export default function FilterSection() {
   const [addQr, setAddQr] = useState(false);
@@ -64,7 +59,11 @@ export default function FilterSection() {
         </div>
         {/* buttons */}
         <div className="flex gap-3 items-center">
-          <Button asChild variant={"secondary"} className="border border-muted-foreground hover:border-muted-foreground/50">
+          <Button
+            asChild
+            variant={"secondary"}
+            className="border border-muted-foreground hover:border-muted-foreground/50"
+          >
             <Link href={"/admin/trash"}>
               <Trash />
               Trash
@@ -72,21 +71,22 @@ export default function FilterSection() {
           </Button>
           <Button onClick={() => setAddQr(true)}>
             <PlusCircle />
-            Generate QR</Button>
+            Generate QR
+          </Button>
         </div>
       </div>
 
       {/* add doctor dialog */}
-      <Dialog open={addQr} onOpenChange={setAddQr}>
-        <DialogContent className="w-[75vw] p-0">
+      <Sheet open={addQr} onOpenChange={setAddQr}>
+        <SheetContent className="w-[75vw] p-0">
           <ScrollArea className="max-h-[85vh] px-6 my-6">
-            <DialogHeader>
-              <DialogTitle className="text-sm">Generate QR</DialogTitle>
-            </DialogHeader>
+            <SheetHeader>
+              <SheetTitle className="text-sm">Generate QR</SheetTitle>
+            </SheetHeader>
             <QrForm onClose={() => setAddQr(false)} />
           </ScrollArea>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

@@ -12,12 +12,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Table,
   TableBody,
   TableCell,
@@ -38,6 +32,7 @@ import { QrTableProps } from "@/app/admin/page";
 import { format as dateFormat } from "date-fns";
 import QRPreviewSection from "./QrPreviewSection";
 import useHost from "@/hooks/useHost";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
 
 function QrTable({
   qrLinks,
@@ -56,8 +51,6 @@ function QrTable({
   const [isPending, startTransition] = useTransition();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-
-
 
   return (
     <>
@@ -177,16 +170,16 @@ function QrTable({
       </Table>
 
       {/* update qr dialog */}
-      <Dialog open={editQr} onOpenChange={setEditQr}>
-        <DialogContent className="w-[75vw] p-0 ">
+      <Sheet open={editQr} onOpenChange={setEditQr}>
+        <SheetContent className="w-[75vw] p-0 ">
           <ScrollArea className="max-h-[85vh] px-6 my-6">
-            <DialogHeader>
-              <DialogTitle className="text-sm font-cb">Edit Qr</DialogTitle>
-            </DialogHeader>
+            <SheetHeader>
+              <SheetTitle className="text-sm font-cb">Edit Qr</SheetTitle>
+            </SheetHeader>
             <QrForm qrLink={editQr} onClose={() => setEditQr(false)} />
           </ScrollArea>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       {/* alert delete qr modal */}
       <AlertDialog open={!!delQr} onOpenChange={setdelQr}>
@@ -235,33 +228,11 @@ function QrTable({
       </AlertDialog>
 
       {/* preview qr code */}
-      <Dialog open={previewQR} onOpenChange={setPreviewQR}>
-        <DialogContent className="min-w-[18rem] md:max-w-[550px] aspect-square">
-          <DialogHeader>
-            <DialogTitle className="text-sm font-cb">QR Code</DialogTitle>
-          </DialogHeader>
-
-          {/* <div className="justify-center items-center hidden">
-            {format !== "svg" ? (
-              <QRCode
-                id="qrCodeEl"
-                size={1500}
-                includeMargin
-                value={`${process.env.NEXT_PUBLIC_DOMAIN_NAME}/qr/${
-                  previewQR != undefined ? previewQR.id : ""
-                }`}
-              />
-            ) : (
-              <QRCodeSVG
-                id="qrCodeEl"
-                size={sizeQr}
-                includeMargin
-                value={`${process.env.NEXT_PUBLIC_DOMAIN_NAME}/qr/${
-                  previewQR != undefined ? previewQR.id : ""
-                }`}
-              />
-            )}
-          </div> */}
+      <Sheet open={previewQR} onOpenChange={setPreviewQR}>
+        <SheetContent className="min-w-[18rem] md:max-w-[550px] aspect-square overflow-hidden">
+          <SheetHeader>
+            <SheetTitle className="text-sm font-cb">QR Code</SheetTitle>
+          </SheetHeader>
 
           <QRPreviewSection
             data={`${hostname}/qr/${
@@ -269,8 +240,8 @@ function QrTable({
             }`}
             name={previewQR?.name ?? "QR"}
           />
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
