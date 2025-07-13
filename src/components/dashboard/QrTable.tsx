@@ -81,7 +81,7 @@ function QrTable({
                       limit +
                       (index + 1))}
                 </TableCell>
-                <TableCell className="min-w-[25rem] text-center">
+                <TableCell className="min-w-[13.5rem] text-center">
                   {item.name}
                 </TableCell>
                 <TableCell>{item.link}</TableCell>
