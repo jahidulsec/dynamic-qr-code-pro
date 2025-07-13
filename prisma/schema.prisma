@@ -32,7 +32,7 @@ enum AdminRoles {
 }
 
 model QrLinks {
-  id           String   @id @default(uuid())
+  id           String   @id @default(nanoid())
   name         String   @db.VarChar(255)
   link         String   @db.VarChar(255)
   visitedCount Int?     @default(0) @map("visited_count")
