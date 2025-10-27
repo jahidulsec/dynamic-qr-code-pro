@@ -33,6 +33,7 @@ import { format as dateFormat } from "date-fns";
 import QRPreviewSection from "./QrPreviewSection";
 import useHost from "@/hooks/useHost";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
+import Link from "next/link";
 
 function QrTable({
   qrLinks,
@@ -81,10 +82,12 @@ function QrTable({
                       limit +
                       (index + 1))}
                 </TableCell>
-                <TableCell className="min-w-[13.5rem] text-center">
+                <TableCell className="min-w-[13.5rem]  text-center">
                   {item.name}
                 </TableCell>
-                <TableCell>{item.link}</TableCell>
+                <TableCell className="max-w-sm">
+                  <Link href={item.link} target="_blank" className="line-clamp-1 hover:underline">{item.link}</Link>
+                </TableCell>
                 <TableCell className="text-center">
                   {formatNumber(Number(item.visitedCount))}
                 </TableCell>
