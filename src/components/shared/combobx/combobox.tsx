@@ -104,7 +104,7 @@ export default function Combobox<T>({
             variant="outline"
             role="combobox"
             className={cn("overflow-hidden justify-between", className)}
-            disabled={pending}
+            // disabled={pending}
           >
             <span className="text-left overflow-hidden">
               {select ? getLabel(select) : (placeholder ?? "Select")}

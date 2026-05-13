@@ -8,7 +8,7 @@ import { QrTableProps } from "@/app/admin/page";
 
 export const getQRlist = async (query: QrQuerySchemaType) => {
   try {
-    const { page, size, search, isTrash } = qrQuerySchema.parse(query);
+    const { page, size, search, isTrash, tag } = qrQuerySchema.parse(query);
 
     const filter: Prisma.QrLinksWhereInput = {
       ...(search && {
@@ -28,6 +28,15 @@ export const getQRlist = async (query: QrQuerySchemaType) => {
       ...(isTrash && {
         isTrashed: isTrash === "yes",
       }),
+      ...(tag && {
+        qr_tag: {
+          some: {
+            tags: {
+              slug: tag,
+            },
+          },
+        },
+      }),
     };
 
     const [data, count] = await Promise.all([
@@ -36,7 +45,7 @@ export const getQRlist = async (query: QrQuerySchemaType) => {
         take: size,
         skip: (page - 1) * size,
         orderBy: {
-            createdAt: 'desc'
+          createdAt: "desc",
         },
         include: {
           admin: true,

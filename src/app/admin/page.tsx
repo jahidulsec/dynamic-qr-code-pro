@@ -3,7 +3,6 @@ import QrTable from "@/components/dashboard/QrTable";
 import PagePagination from "@/components/pagination/PagePagination";
 import { TableSkeleton } from "@/components/ui/skeleton";
 import React, { Suspense } from "react";
-import db from "../../../db/db";
 import { Prisma } from "@prisma/client";
 import type { Metadata } from "next";
 import { getAuthUser } from "@/lib/dal";
@@ -17,7 +16,7 @@ export const metadata: Metadata = {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: { search: string; p: string; size: string };
+  searchParams: { search: string; p: string; size: string; tag: string };
 }) {
   const user = await getAuthUser();
 
@@ -53,9 +52,9 @@ export type QrTableProps = Prisma.QrLinksGetPayload<{
 async function DataTable({
   searchParams,
 }: {
-  searchParams: { search: string; p: string; size: string };
+  searchParams: { search: string; p: string; size: string; tag: string };
 }) {
-  const { search, p, size } = await searchParams;
+  const { search, p, size, tag } = await searchParams;
 
   const limit = Number(size || 20);
 
@@ -64,6 +63,7 @@ async function DataTable({
     size: limit,
     search,
     isTrash: "no",
+    tag: tag,
   });
 
   return (

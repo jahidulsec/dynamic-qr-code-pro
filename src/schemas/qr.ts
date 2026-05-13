@@ -15,6 +15,7 @@ export const qrSchema = z.object({
 
 export const qrQuerySchema = baseQuerySchema.extend({
   isTrash: z.enum(["yes", "no"]).optional(),
+  tag: z.string().trim().optional(),
 });
 
 export type QrSchemaType = z.infer<typeof qrSchema>;

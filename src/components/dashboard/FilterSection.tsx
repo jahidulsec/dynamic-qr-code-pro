@@ -1,46 +1,40 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { PlusCircle, Search, Trash } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
-import { useRouter } from "next-nprogress-bar";
+import { PlusCircle, Trash } from "lucide-react";
+import React, { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useDebounce } from "@/hooks/useDebounce";
 import QrForm from "./QrForm";
 import Link from "next/link";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
 import { AuthUser } from "@/types/auth-user";
 import { SearchForm } from "../shared/input/search";
+import Combobox from "../shared/combobx/combobox";
+import { getTags } from "@/servers/lib/tag";
+import { tags } from "@prisma/client";
 
 export default function FilterSection({ user }: { user: AuthUser }) {
   const [addQr, setAddQr] = useState(false);
-  const [search, setSearch] = useState("");
-  const debounceValue = useDebounce(search, 1000);
-
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  const params = new URLSearchParams(searchParams);
-
-  useEffect(() => {
-    if (search) {
-      params.set("q", debounceValue);
-      params.delete("p");
-    } else {
-      params.delete("q");
-    }
-    router.push(pathname + "?" + params.toString());
-  }, [debounceValue]);
+  const value = searchParams.get("tag") ?? undefined;
 
   return (
     <>
       <div className="flex justify-between items-center flex-col sm:flex-row gap-5 my-6">
         {/* filters */}
-        <SearchForm />
+        <div className="flex items-center flex-col sm:flex-row gap-3">
+          <SearchForm />
+          <Combobox
+            className="w-full sm:w-fit min-w-[9rem]"
+            defaultValue={value}
+            paramName={"tag"}
+            placeholder="Select Tag"
+            fetcher={(params) => getTags({ ...params })}
+            getKey={(item: tags) => item.slug ?? ""}
+            getLabel={(item: tags) => item.name}
+          />
+        </div>
         {/* buttons */}
         <div className="flex gap-3 items-center">
           <Button
