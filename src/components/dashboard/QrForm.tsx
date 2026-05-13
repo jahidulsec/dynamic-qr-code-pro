@@ -1,70 +1,92 @@
 "use client";
 
 import { addQr, updateQr } from "@/app/actions/qr";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { QrLinks } from "@prisma/client";
-import { Label } from "@radix-ui/react-label";
 import React, { useEffect } from "react";
-import { useFormState, useFormStatus } from "react-dom";
 import { toast } from "sonner";
+import { Controller, useForm } from "react-hook-form";
+import { qrSchema, QrSchemaType } from "@/schemas/qr";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { FormButton } from "../shared/button/button";
+import {
+  FieldGroup,
+  FieldLabel,
+  FieldError,
+  Field,
+} from "@/components/ui/field";
+import { Input } from "../ui/input";
 
 interface qrLinkFormProps {
-  qrLink?: QrLinks;
+  qrLink?: Partial<QrLinks>;
   onClose: () => void;
 }
 
 export default function QrForm({ onClose, qrLink }: qrLinkFormProps) {
-  const [data, action] = useFormState(
-    qrLink == null ? addQr : updateQr.bind(null, qrLink.id),
-    null
-  );
+  const form = useForm<QrSchemaType>({
+    resolver: zodResolver(qrSchema),
+    defaultValues: {
+      name: qrLink?.name,
+      link: qrLink?.link,
+      adminId: qrLink?.adminId ?? "",
+    },
+  });
 
-  useEffect(() => {
-    if (data?.toast != null) {
-      toast.error(data.toast);
-    } else if (data?.success) {
-      toast.success(data.success);
+  const onSubmit = async (data: QrSchemaType) => {
+    const res = qrLink?.id
+      ? await updateQr(qrLink?.id, data)
+      : await addQr(data);
+
+    toast[res.success ? "success" : "error"](res.message);
+
+    if (res.success) {
       onClose();
     }
-  }, [data]);
+  };
 
   return (
-    <form action={action} className="flex flex-col gap-5 mt-5 px-1">
-      <p className="flex flex-col gap-2">
-        <Label htmlFor="name">Name</Label>
-        <Input
-          id="name"
+    <form
+      onSubmit={form.handleSubmit(onSubmit)}
+      className="flex flex-col gap-5 mt-5 px-1"
+    >
+      <FieldGroup>
+        <Controller
+          control={form.control}
           name="name"
-          defaultValue={qrLink != null ? qrLink.name : ""}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Name</FieldLabel>
+              <Input
+                {...field}
+                id={field.name}
+                aria-invalid={fieldState.invalid}
+                placeholder="QR name"
+                autoComplete="off"
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
         />
-        {data?.error != null && data?.error.name && (
-          <i className="error-msg">{data.error.name}</i>
-        )}
-      </p>
-      <p className="flex flex-col gap-2 w-full">
-        <Label htmlFor="link">URL</Label>
-        <Input
-          id="link"
-          name="link"
-          defaultValue={qrLink != null ? (qrLink.link as string) : ""}
-        />
-        {data?.error != null && data?.error.link && (
-          <i className="error-msg">{data.error.link}</i>
-        )}
-      </p>
 
-      <SubmitButton />
+        <Controller
+          control={form.control}
+          name="link"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>URL</FieldLabel>
+              <Input
+                {...field}
+                id={field.name}
+                aria-invalid={fieldState.invalid}
+                placeholder="Link"
+                autoComplete="off"
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+      </FieldGroup>
+
+      <FormButton isPending={form.formState.isSubmitting}>Submit</FormButton>
     </form>
   );
 }
-
-const SubmitButton = () => {
-  const { pending } = useFormStatus();
-
-  return (
-    <Button className="col-span-2" type="submit" disabled={pending}>
-      {pending ? `Saving...` : `Save`}
-    </Button>
-  );
-};

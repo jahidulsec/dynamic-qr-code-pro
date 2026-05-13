@@ -1,6 +1,6 @@
 import Footer from "@/components/footer/Footer";
 import Header from "@/components/header/Header";
-import { getUser } from "@/lib/dal";
+import { getAuthUser } from "@/lib/dal";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }>) {
 
-  const user = await getUser();
+  const user = await getAuthUser();
   if (!user) redirect("/login");
 
   return (

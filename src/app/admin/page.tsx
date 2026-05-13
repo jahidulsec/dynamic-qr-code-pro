@@ -6,22 +6,25 @@ import React, { Suspense } from "react";
 import db from "../../../db/db";
 import { Prisma } from "@prisma/client";
 import type { Metadata } from "next";
+import { getAuthUser } from "@/lib/dal";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Dashboard - Dynamic QR Code Pro",
 };
-
 
 export default async function DashboardPage({
   searchParams,
 }: {
   searchParams: { q: string; p: string };
 }) {
-  
+  const user = await getAuthUser();
+
+  if (!user) redirect("/login");
 
   return (
     <>
-      <FilterSection />
+      <FilterSection user={user} />
       {/* table */}
       <Suspense fallback={<TableSkeleton />}>
         <DataTable searchParams={searchParams} />
@@ -58,8 +61,8 @@ async function DataTable({
         take: limit,
         skip: (page - 1) * limit,
         orderBy: {
-          createdAt: 'desc'
-        }
+          createdAt: "desc",
+        },
       }),
       db.qrLinks.count({
         where: {
@@ -75,7 +78,7 @@ async function DataTable({
 
   return (
     <>
-      <QrTable  count={count} qrLinks={qrLinks} limit={limit} />
+      <QrTable count={count} qrLinks={qrLinks} limit={limit} />
 
       <div className="border-t pt-5">
         <PagePagination limit={limit} count={count} />

@@ -1,50 +1,40 @@
-import "server-only";
-
+"use server";
+import { decrypt } from "@/lib/session";
+import { AuthUser, } from "@/types/auth-user";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { decrypt } from "./session";
-import db from "../../db/db";
-import { cache } from "react";
 
-export const verifySession = cache(async () => {
-  const cookie = (await cookies()).get("session")?.value;
-  const session = await decrypt(cookie);
-
-  if (!session?.userId) {
-    redirect("/login");
-  }
-
-  const user = await db.admin.findUnique({
-    where: { id: session.userId as string },
-  });
-
-  if (user == null) {
-    return { isAuth: false, userId: null };
-  }
-
-  return { isAuth: true, userId: session.userId };
-});
-
-export const getUser = cache(async () => {
-  const session = await verifySession();
-  if (!session) return null;
-
+export const getAuthUser = async () => {
   try {
-    const data = await db.admin.findUnique({
-      where: { id: session.userId as string },
-      select: {
-        id: true,
-        name: true,
-        username: true,
-        role: true,
-      },
-    });
+    // get cookie
+    const cookie = await cookies();
 
-    const user = data;
+    // get session
+    const session = cookie.get("session")?.value;
 
-    return user;
+    // get user data
+    const user = await decrypt(session);
+
+    return user as AuthUser;
   } catch (error) {
-    console.log("Failed to fetch user");
+    console.error(error);
     return null;
   }
-});
+};
+
+export const getDashboardRole = async () => {
+  try {
+    // get cookie
+    const cookie = await cookies();
+
+    // get session
+    const session = cookie.get("role")?.value;
+
+    // get user data
+    const role = await decrypt(session);
+
+    return role?.role as string;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+};

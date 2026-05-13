@@ -12,8 +12,9 @@ import { useDebounce } from "@/hooks/useDebounce";
 import QrForm from "./QrForm";
 import Link from "next/link";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
+import { AuthUser } from "@/types/auth-user";
 
-export default function FilterSection() {
+export default function FilterSection({ user }: { user: AuthUser }) {
   const [addQr, setAddQr] = useState(false);
   const [search, setSearch] = useState("");
   const debounceValue = useDebounce(search, 1000);
@@ -83,7 +84,10 @@ export default function FilterSection() {
             <SheetHeader>
               <SheetTitle className="text-sm">Generate QR</SheetTitle>
             </SheetHeader>
-            <QrForm onClose={() => setAddQr(false)} />
+            <QrForm
+              qrLink={{ adminId: user.userId }}
+              onClose={() => setAddQr(false)}
+            />
           </ScrollArea>
         </SheetContent>
       </Sheet>

@@ -1,110 +1,52 @@
 "use server";
 
-import { getUser } from "@/lib/dal";
 import db from "../../../db/db";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
+import { QrSchemaType } from "@/schemas/qr";
+import { getAuthUser } from "@/lib/dal";
+import { apiResponse } from "@/lib/response";
 
-const qrSchema = z.object({
-  name: z.string().min(1),
-  link: z.string().url(),
-});
-
-export const addQr = async (prevData: unknown, formData: FormData) => {
-  const result = qrSchema.safeParse(Object.fromEntries(formData.entries()));
-
-  if (result.success === false) {
-    return {
-      error: result.error.formErrors.fieldErrors,
-      success: null,
-      db: null,
-    };
-  }
-
-  const data = result.data;
-
+export const addQr = async (data: QrSchemaType) => {
   try {
-    const user = await getUser();
-
-    if (!user) {
-      return {
-        error: null,
-        success: null,
-        toast: "Invalid user, please login again",
-      };
-    }
-
-    await db.qrLinks.create({
+    const { tags, ...rest } = data;
+    const res = await db.qrLinks.create({
       data: {
-        ...data,
-        adminId: user.id,
+        ...rest,
       },
     });
 
     revalidatePath("/admin");
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      return {
-        error: null,
-        success: null,
-        toast: error.message.split("\n").pop(),
-      };
-    }
-  }
 
-  return { error: null, success: "QR is added", toast: null };
+    return apiResponse.single({
+      message: "Create qr links successful",
+      data: res,
+    });
+  } catch (error) {
+    return apiResponse.error({ error });
+  }
 };
 
-export const updateQr = async (
-  id: string,
-  prevData: unknown,
-  formData: FormData
-) => {
-  const result = qrSchema.safeParse(Object.fromEntries(formData.entries()));
-
-  if (result.success === false) {
-    return {
-      error: result.error.formErrors.fieldErrors,
-      success: null,
-      db: null,
-    };
-  }
-
-  const data = result.data;
-
+export const updateQr = async (id: string, data: QrSchemaType) => {
   try {
-    const user = await getUser();
-
-    if (!user) {
-      return {
-        error: null,
-        success: null,
-        toast: "Invalid user, please login again",
-      };
-    }
-
-    await db.qrLinks.update({
+    const { tags, ...rest } = data;
+    const res = await db.qrLinks.update({
       where: { id },
       data: {
-        ...data,
-        adminId: user.id,
+        ...rest,
       },
     });
 
     revalidatePath("/admin");
-    revalidatePath("/admin");
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      return {
-        error: null,
-        success: null,
-        toast: error.message.split("\n").pop(),
-      };
-    }
-  }
 
-  return { error: null, success: "QR is updated", toast: null };
+    return apiResponse.single({
+      message: "Create qr links successful",
+      data: res,
+    });
+  } catch (error) {
+    return apiResponse.error({ error });
+  }
 };
 
 export const moveQrTrash = async (id: string) => {
