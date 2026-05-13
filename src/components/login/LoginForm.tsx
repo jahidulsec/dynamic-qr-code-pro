@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import React, { useEffect, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import { adminLogin } from "@/app/actions/auth";
 import { useRouter } from "next/navigation";
@@ -27,15 +27,29 @@ const LoginForm = () => {
   return (
     <main className="flex justify-center items-center min-h-svh p-2">
       <div className="max-w-lg min-w-[20rem] w-full p-5 border rounded-md bg-white shadow-sm">
+        <div className="flex items-center w-full justify-center flex-col mb-3 ">
+          <div className="bg-muted p-1 rounded-md">
+            <QrCode className="size-4" />
+          </div>
+          <h1 className="relative">
+            Dynamic QR{" "}
+            <span className=" absolute -top-1 text-[10px] border rounded-full px-1.5 ">
+              Pro
+            </span>
+          </h1>
+        </div>
         <header>
           <h2 className="text-primary text-3xl text-center">Sign in</h2>
           <h4 className="text-sm text-center text-gray-400 my-3">
-            Welcome back! Please enter your details
+            Welcome back! Please enter your credential
           </h4>
         </header>
 
         {/* form */}
-        <form action={action} className="flex flex-col gap-5 my-8 [&_input]:mt-2">
+        <form
+          action={action}
+          className="flex flex-col gap-5 my-8 [&_input]:mt-2"
+        >
           <p>
             <Label className="text-primary" htmlFor="username">
               Username
