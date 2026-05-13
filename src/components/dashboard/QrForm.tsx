@@ -1,8 +1,8 @@
 "use client";
 
 import { addQr, updateQr } from "@/app/actions/qr";
-import { QrLinks } from "@prisma/client";
-import React, { useEffect } from "react";
+import { QrLinks, tags } from "@prisma/client";
+import React from "react";
 import { toast } from "sonner";
 import { Controller, useForm } from "react-hook-form";
 import { qrSchema, QrSchemaType } from "@/schemas/qr";
@@ -15,9 +15,21 @@ import {
   Field,
 } from "@/components/ui/field";
 import { Input } from "../ui/input";
+import Combobox from "../shared/combobx/combobox";
+import { getTags } from "@/servers/lib/tag";
+import TagInput from "../shared/input/tag-input";
 
 interface qrLinkFormProps {
-  qrLink?: Partial<QrLinks>;
+  qrLink?: {
+    id?: string;
+    name?: string;
+    link?: string;
+    adminId?: string;
+    tags?: {
+      slug: string;
+      name: string;
+    }[];
+  };
   onClose: () => void;
 }
 
@@ -28,6 +40,7 @@ export default function QrForm({ onClose, qrLink }: qrLinkFormProps) {
       name: qrLink?.name,
       link: qrLink?.link,
       adminId: qrLink?.adminId ?? "",
+      tags: qrLink?.tags
     },
   });
 
@@ -81,6 +94,24 @@ export default function QrForm({ onClose, qrLink }: qrLinkFormProps) {
                 autoComplete="off"
               />
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
+
+        <Controller
+          control={form.control}
+          name="tags"
+          render={({ field }) => (
+            <Field>
+              <FieldLabel>Tags</FieldLabel>
+              <TagInput
+                value={field.value || []}
+                onChange={field.onChange}
+                fetchSuggestions={async (q) => {
+                  const res = await getTags({ page: 1, size: 5, search: q });
+                  return res.data ?? []; // adjust based on API
+                }}
+              />
             </Field>
           )}
         />

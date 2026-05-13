@@ -34,7 +34,19 @@ export default async function DashboardPage({
 }
 
 export type QrTableProps = Prisma.QrLinksGetPayload<{
-  include: { admin: true };
+  include: {
+    admin: true;
+    qr_tag: {
+      select: {
+        tags: {
+          select: {
+            name: true;
+            slug: true;
+          };
+        };
+      };
+    };
+  };
 }>;
 
 async function DataTable({
@@ -57,6 +69,16 @@ async function DataTable({
         },
         include: {
           admin: true,
+          qr_tag: {
+            select: {
+              tags: {
+                select: {
+                  name: true,
+                  slug: true,
+                },
+              },
+            },
+          },
         },
         take: limit,
         skip: (page - 1) * limit,

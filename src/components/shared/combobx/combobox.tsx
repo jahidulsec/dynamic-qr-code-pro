@@ -31,7 +31,7 @@ type FetchParams = {
 
 type FetchResult<T> = {
   success: boolean;
-  data?: T[];
+  data?: T[] | null;
 };
 
 interface AsyncComboboxProps<T> {

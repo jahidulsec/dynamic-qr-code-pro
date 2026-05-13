@@ -62,6 +62,7 @@ function QrTable({
             <TableHead>Name</TableHead>
             <TableHead>Embedded URL</TableHead>
             <TableHead>Viewer&apos;s Count</TableHead>
+            <TableHead>Tags</TableHead>
             <TableHead>Created by</TableHead>
             <TableHead>Created Date</TableHead>
             <TableHead>Action</TableHead>
@@ -86,10 +87,30 @@ function QrTable({
                   {item.name}
                 </TableCell>
                 <TableCell className="max-w-sm">
-                  <Link href={item.link} target="_blank" className="line-clamp-1 hover:underline">{item.link}</Link>
+                  <Link
+                    href={item.link}
+                    target="_blank"
+                    className="line-clamp-1 hover:underline"
+                  >
+                    {item.link}
+                  </Link>
                 </TableCell>
                 <TableCell className="text-center">
                   {formatNumber(Number(item.visitedCount))}
+                </TableCell>
+                <TableCell className="text-center text-nowrap">
+                  <div className="flex flex-col gap-1">
+                    {item.qr_tag.length > 0
+                      ? item.qr_tag.map((item, index) => (
+                          <div
+                            className="border rounded-full w-fit font-semibold px-2 text-[11px] bg-muted"
+                            key={index}
+                          >
+                            {item.tags?.name}
+                          </div>
+                        ))
+                      : "-"}
+                  </div>
                 </TableCell>
                 <TableCell className="text-center text-nowrap">
                   {item.admin?.name}
@@ -119,7 +140,18 @@ function QrTable({
                             size={"icon"}
                             variant={"outline"}
                             className="rounded-full size-8"
-                            onClick={() => setEditQr(item)}
+                            onClick={() =>
+                              setEditQr({
+                                id: item.id,
+                                name: item.name,
+                                link: item.link,
+                                adminId: item.adminId,
+                                tags: item.qr_tag.map((item) => ({
+                                  slug: item.tags?.slug,
+                                  name: item.tags?.name,
+                                })),
+                              })
+                            }
                           >
                             <Edit className="size-4" />
                           </Button>

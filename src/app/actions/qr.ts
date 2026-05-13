@@ -7,13 +7,44 @@ import { Prisma } from "@prisma/client";
 import { QrSchemaType } from "@/schemas/qr";
 import { getAuthUser } from "@/lib/dal";
 import { apiResponse } from "@/lib/response";
+import { generateSlug } from "@/lib/formatter";
 
 export const addQr = async (data: QrSchemaType) => {
   try {
     const { tags, ...rest } = data;
+
+    const tagIds: string[] = [];
+
+    // create or update tags
+    if (tags?.length) {
+      for (const tag of tags) {
+        const slug = tag.slug ?? generateSlug(tag.name);
+
+        const res = await db.tags.upsert({
+          where: { slug },
+          create: {
+            name: tag.name,
+            slug,
+          },
+          update: {
+            name: tag.name,
+          },
+        });
+
+        tagIds.push(res.slug);
+      }
+    }
+
     const res = await db.qrLinks.create({
       data: {
         ...rest,
+        qr_tag: {
+          createMany: {
+            data: tagIds.map((slug) => ({
+              tag_slug: slug,
+            })),
+          },
+        },
       },
     });
 
@@ -31,17 +62,50 @@ export const addQr = async (data: QrSchemaType) => {
 export const updateQr = async (id: string, data: QrSchemaType) => {
   try {
     const { tags, ...rest } = data;
+
+    // 1. Upsert tags and collect slugs
+    const tagSlugs = await Promise.all(
+      (tags ?? []).map(async (tag) => {
+        const slug = tag.slug ?? generateSlug(tag.name);
+
+        const res = await db.tags.upsert({
+          where: { slug },
+          create: {
+            name: tag.name,
+            slug,
+          },
+          update: {
+            name: tag.name,
+          },
+        });
+
+        return res.slug;
+      }),
+    );
+
+    // 2. Update QR + reset relations
     const res = await db.qrLinks.update({
       where: { id },
       data: {
         ...rest,
+
+        qr_tag: {
+          deleteMany: {}, // remove old relations
+
+          createMany: {
+            data: tagSlugs.map((slug) => ({
+              tag_slug: slug,
+            })),
+            skipDuplicates: true,
+          },
+        },
       },
     });
 
     revalidatePath("/admin");
 
     return apiResponse.single({
-      message: "Create qr links successful",
+      message: "Update qr links successful",
       data: res,
     });
   } catch (error) {
