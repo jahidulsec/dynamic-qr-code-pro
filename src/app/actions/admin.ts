@@ -1,11 +1,11 @@
 "use server";
 
-import { getUser } from "@/lib/dal";
 import { z } from "zod";
 import db from "../../../db/db";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { deleteSession } from "@/lib/session";
+import { getAuthUser } from "@/lib/dal";
 
 const addSchema = z.object({
   username: z.string().min(3),
@@ -28,7 +28,7 @@ export const addAdmin = async (prevData: unknown, formData: FormData) => {
   const data = result.data;
 
   try {
-    const user = await getUser();
+    const user = await getAuthUser();
 
     if (!user) {
       return {
@@ -86,7 +86,7 @@ export const updateAdmin = async (
   const data = result.data;
 
   try {
-    const user = await getUser();
+    const user = await getAuthUser();
 
     if (!user) {
       return {
@@ -123,7 +123,7 @@ export const updateAdmin = async (
       },
     });
 
-    if (admin.id == user.id) {
+    if (admin.id == user.userId) {
       await deleteSession();
     }
 
@@ -142,7 +142,7 @@ export const updateAdmin = async (
 
 export const deleteAdmin = async (id: string) => {
   try {
-    const user = await getUser();
+    const user = await getAuthUser();
 
     if (!user) {
       return {
@@ -173,7 +173,7 @@ export const deleteAdmin = async (id: string) => {
       },
     });
 
-    if (admin.id == user.id) {
+    if (admin.id == user.userId) {
       await deleteSession();
     }
 
