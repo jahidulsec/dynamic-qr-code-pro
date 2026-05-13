@@ -8,6 +8,7 @@ import { Prisma } from "@prisma/client";
 import type { Metadata } from "next";
 import { getAuthUser } from "@/lib/dal";
 import { redirect } from "next/navigation";
+import { getQRlist } from "@/servers/lib/qr";
 
 export const metadata: Metadata = {
   title: "Dashboard - Dynamic QR Code Pro",
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: { q: string; p: string };
+  searchParams: { search: string; p: string; size: string };
 }) {
   const user = await getAuthUser();
 
@@ -52,58 +53,25 @@ export type QrTableProps = Prisma.QrLinksGetPayload<{
 async function DataTable({
   searchParams,
 }: {
-  searchParams: { q: string; p: string };
+  searchParams: { search: string; p: string; size: string };
 }) {
-  const { q, p } = await searchParams;
+  const { search, p, size } = await searchParams;
 
-  const limit = 20;
-  const page = Number(p ?? 1) || 1;
+  const limit = Number(size || 20);
 
-  let qrLinks: QrTableProps[], count: number;
-
-  try {
-    [qrLinks, count] = await Promise.all([
-      db.qrLinks.findMany({
-        where: {
-          AND: [{ name: { contains: q || undefined } }, { isTrashed: false }],
-        },
-        include: {
-          admin: true,
-          qr_tag: {
-            select: {
-              tags: {
-                select: {
-                  name: true,
-                  slug: true,
-                },
-              },
-            },
-          },
-        },
-        take: limit,
-        skip: (page - 1) * limit,
-        orderBy: {
-          createdAt: "desc",
-        },
-      }),
-      db.qrLinks.count({
-        where: {
-          AND: [{ name: { contains: q || undefined } }, { isTrashed: false }],
-        },
-      }),
-    ]);
-  } catch (error) {
-    console.log(error);
-    qrLinks = [];
-    count = 0;
-  }
+  const res = await getQRlist({
+    page: Number(p || 1),
+    size: limit,
+    search,
+    isTrash: "no",
+  });
 
   return (
     <>
-      <QrTable count={count} qrLinks={qrLinks} limit={limit} />
+      <QrTable count={res.count} qrLinks={res.data ?? []} limit={limit} />
 
       <div className="border-t pt-5">
-        <PagePagination limit={limit} count={count} />
+        <PagePagination limit={limit} count={res.count} />
       </div>
     </>
   );

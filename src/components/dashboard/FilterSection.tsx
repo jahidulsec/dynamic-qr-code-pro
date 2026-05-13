@@ -13,6 +13,7 @@ import QrForm from "./QrForm";
 import Link from "next/link";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
 import { AuthUser } from "@/types/auth-user";
+import { SearchForm } from "../shared/input/search";
 
 export default function FilterSection({ user }: { user: AuthUser }) {
   const [addQr, setAddQr] = useState(false);
@@ -39,25 +40,7 @@ export default function FilterSection({ user }: { user: AuthUser }) {
     <>
       <div className="flex justify-between items-center flex-col sm:flex-row gap-5 my-6">
         {/* filters */}
-        <div className="filters flex-1 w-full">
-          {/* search */}
-          <div className="search relative">
-            <Input
-              title="Search"
-              className="pl-10 sm:max-w-[18rem]"
-              id="search"
-              placeholder="Search by name"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <Label
-              htmlFor="search"
-              className="absolute top-[50%] -translate-y-[50%] left-3"
-            >
-              <Search className="size-4" />
-            </Label>
-          </div>
-        </div>
+        <SearchForm />
         {/* buttons */}
         <div className="flex gap-3 items-center">
           <Button

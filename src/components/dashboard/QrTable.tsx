@@ -226,7 +226,7 @@ function QrTable({
             <AlertDialogDescription>
               {pathname === "/admin"
                 ? "Do you want to move this QR on trash?"
-                : `This action cannot be undone. This will permanently delete this qr and remove data from servers.
+                : `This action cannot be undone. This will permanently delete this QR and remove data from servers.
                     `}
             </AlertDialogDescription>
           </AlertDialogHeader>

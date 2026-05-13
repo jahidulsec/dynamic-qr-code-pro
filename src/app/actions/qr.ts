@@ -174,17 +174,6 @@ export const restoreQrTrash = async (id: string) => {
 
 export const deleteQr = async (id: string) => {
   try {
-    const qr = await db.qrLinks.findUnique({
-      where: { id: id },
-    });
-
-    if (!qr) {
-      return {
-        error: null,
-        success: null,
-        toast: "No data found for this action",
-      };
-    }
     await db.qrLinks.delete({
       where: {
         id: id,
