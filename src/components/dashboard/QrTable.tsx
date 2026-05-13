@@ -246,14 +246,8 @@ function QrTable({
                       toast.error(data.error);
                     }
                   } else {
-                    const data = await deleteQr(delQr);
-                    if (data.toast) {
-                      toast.error(data.toast);
-                    } else if (data.success) {
-                      toast.success(data.success);
-                    } else {
-                      toast.error(data.error);
-                    }
+                    const res = await deleteQr(delQr);
+                    toast[res.success ? "success" : "error"](res.message);
                   }
                 });
               }}

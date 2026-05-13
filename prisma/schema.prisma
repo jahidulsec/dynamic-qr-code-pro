@@ -37,11 +37,11 @@ model QrLinks {
 }
 
 model qr_tag {
-  id         String   @id @db.VarChar(36) @default(uuid())
+  id         String   @id @default(uuid()) @db.VarChar(36)
   qr_id      String?  @db.VarChar(36)
   tag_slug   String?  @db.VarChar(80)
   created_at DateTime @default(now()) @db.Timestamp(0)
-  qr_links   QrLinks? @relation(fields: [qr_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "qr_fk")
+  qr_links   QrLinks? @relation(fields: [qr_id], references: [id], onDelete: Cascade, map: "qr_fk")
   tags       tags?    @relation(fields: [tag_slug], references: [slug], onDelete: Cascade, map: "tag_fk")
 
   @@index([qr_id], map: "qr_fk")

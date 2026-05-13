@@ -183,16 +183,11 @@ export const deleteQr = async (id: string) => {
     revalidatePath("/admin");
     revalidatePath("/admin/trash");
 
-    return {
-      error: null,
-      success: "Deleted successfully",
-      toast: null,
-    };
+    return apiResponse.single({
+      data: null,
+      message: "QR is permanently deleted",
+    });
   } catch (error: any) {
-    return {
-      error: error,
-      success: null,
-      toast: null,
-    };
+    return apiResponse.error({ error });
   }
 };
