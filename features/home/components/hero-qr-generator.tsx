@@ -45,6 +45,7 @@ export function HeroQrGenerator() {
           value={deferredValue}
           level="M"
           marginSize={2}
+          background="#ffffff"
           dataModulesSettings={{ style: 'circle', color: "#18181b" }}
           finderPatternOuterSettings={{ style: "rounded-lg", }}
           finderPatternInnerSettings={{ style: "rounded", }}
