@@ -15,13 +15,16 @@ export const env = createEnv({
       .default("0")
       .transform((value) => value === "1" || value === "true"),
   },
-  client: {},
+  client: {
+    NEXT_PUBLIC_SITE_URL: z.url().default("http://localhost:3000"),
+  },
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
     DATABASE_URL: process.env.DATABASE_URL,
     SESSION_SECRET: process.env.SESSION_SECRET,
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
     COOKIE_SECURE: process.env.COOKIE_SECURE,
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   emptyStringAsUndefined: true,
