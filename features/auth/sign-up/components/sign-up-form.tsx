@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 import { PasswordInput } from "@/components/shared/input/password";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,6 @@ import { signUpSchema, type SignUpValues } from "@/features/auth/sign-up/schemas
 import { cn } from "@/lib/utils";
 
 export function SignUpForm({ className, ...props }: React.ComponentProps<"form">) {
-  const [formError, setFormError] = useState<string | null>(null);
-
   const {
     control,
     handleSubmit,
@@ -26,11 +24,9 @@ export function SignUpForm({ className, ...props }: React.ComponentProps<"form">
   });
 
   const onSubmit = handleSubmit(async (values) => {
-    setFormError(null);
-
     // redirects to email verification on success
     const result = await signUpAction(values);
-    if (!result.success) setFormError(result.message);
+    if (!result.success) toast.error(result.message);
   });
 
   return (
@@ -116,8 +112,6 @@ export function SignUpForm({ className, ...props }: React.ComponentProps<"form">
             </Field>
           )}
         />
-
-        {formError && <FieldError>{formError}</FieldError>}
 
         <Field>
           <Button type="submit" disabled={isSubmitting}>

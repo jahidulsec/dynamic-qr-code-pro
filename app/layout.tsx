@@ -3,10 +3,15 @@ import { Geist, Geist_Mono, Outfit, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
+import { NavigationProgress } from "@/components/shared/nav-progressbar/progress-bar";
+import { Toaster } from "@/components/ui/sonner";
 
-const spaceGroteskHeading = Space_Grotesk({subsets:['latin'],variable:'--font-heading'});
+const spaceGroteskHeading = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-heading",
+});
 
-const outfit = Outfit({subsets:['latin'],variable:'--font-sans'});
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-sans" });
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -64,9 +69,21 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", outfit.variable, spaceGroteskHeading.variable)}
+      className={cn(
+        "h-full",
+        "antialiased",
+        geistSans.variable,
+        geistMono.variable,
+        "font-sans",
+        outfit.variable,
+        spaceGroteskHeading.variable,
+      )}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <NavigationProgress />
+        <Toaster richColors position="top-right" closeButton />
+        {children}
+      </body>
     </html>
   );
 }

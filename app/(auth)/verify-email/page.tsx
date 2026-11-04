@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { VerifyEmailForm } from "@/features/auth/verify-email/components/verify-email-form";
+import { VerifyEmailNotice } from "@/features/auth/verify-email/components/verify-email-notice";
+import { auth } from "@/lib/auth/auth";
 
 export const metadata: Metadata = {
   title: "Verify email",
@@ -9,8 +11,13 @@ export const metadata: Metadata = {
 };
 
 export default async function VerifyEmailPage({ searchParams }: PageProps<"/verify-email">) {
-  const { email } = await searchParams;
+  const { email, error } = await searchParams;
+
+  // a valid link signs the user in (autoSignInAfterVerification) and lands here
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (session?.user.emailVerified) redirect("/organizations");
+
   if (typeof email !== "string" || !email) redirect("/sign-up");
 
-  return <VerifyEmailForm email={email} />;
+  return <VerifyEmailNotice email={email} error={typeof error === "string" ? error : undefined} />;
 }

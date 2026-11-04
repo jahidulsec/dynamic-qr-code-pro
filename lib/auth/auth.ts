@@ -1,9 +1,9 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
-import { emailOTP, organization } from "better-auth/plugins";
+import { organization } from "better-auth/plugins";
 import prisma from "@/config/db";
-import { sendEmail, verificationCodeEmail, welcomeEmail } from "@/features/email";
+import { sendEmail, verificationLinkEmail, welcomeEmail } from "@/features/email";
 import { env } from "@/lib/env";
 
 export const auth = betterAuth({
@@ -18,6 +18,11 @@ export const auth = betterAuth({
     sendOnSignUp: true,
     sendOnSignIn: true,
     autoSignInAfterVerification: true,
+    // keep in sync with the expiry stated in verificationLinkEmail
+    expiresIn: 60 * 60,
+    async sendVerificationEmail({ user, url }) {
+      await sendEmail({ to: user.email, ...verificationLinkEmail(url) });
+    },
     async afterEmailVerification(user) {
       // a failed welcome email must not block verification
       await sendEmail({ to: user.email, ...welcomeEmail(user.name) }).catch((error) =>
@@ -29,17 +34,7 @@ export const auth = betterAuth({
     useSecureCookies: env.COOKIE_SECURE,
   },
   // must be the last plugin so cookies set in server actions are applied
-  plugins: [
-    organization(),
-    emailOTP({
-      // send a code instead of a verification link
-      overrideDefaultEmailVerification: true,
-      async sendVerificationOTP({ email, otp }) {
-        await sendEmail({ to: email, ...verificationCodeEmail(otp) });
-      },
-    }),
-    nextCookies(),
-  ],
+  plugins: [organization(), nextCookies()],
 });
 
 export type Session = typeof auth.$Infer.Session;
