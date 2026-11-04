@@ -1,20 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 
+import { PasswordInput } from "@/components/shared/input/password";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { signUpAction } from "@/features/auth/sign-up/actions/sign-up";
 import { signUpSchema, type SignUpValues } from "@/features/auth/sign-up/schemas/sign-up-schema";
-import { signUp } from "@/lib/auth/auth-client";
 import { cn } from "@/lib/utils";
 
 export function SignUpForm({ className, ...props }: React.ComponentProps<"form">) {
-  const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -26,17 +25,12 @@ export function SignUpForm({ className, ...props }: React.ComponentProps<"form">
     defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
   });
 
-  const onSubmit = handleSubmit(async ({ name, email, password }) => {
+  const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
 
-    const { error } = await signUp.email({ name, email, password });
-    if (error) {
-      setFormError(error.message ?? "Unable to create your account. Please try again.");
-      return;
-    }
-
-    router.push("/");
-    router.refresh();
+    // redirects to email verification on success
+    const result = await signUpAction(values);
+    if (!result.success) setFormError(result.message);
   });
 
   return (
@@ -91,10 +85,9 @@ export function SignUpForm({ className, ...props }: React.ComponentProps<"form">
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor={field.name}>Password</FieldLabel>
-              <Input
+              <PasswordInput
                 {...field}
                 id={field.name}
-                type="password"
                 autoComplete="new-password"
                 aria-invalid={fieldState.invalid}
               />
@@ -113,10 +106,9 @@ export function SignUpForm({ className, ...props }: React.ComponentProps<"form">
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor={field.name}>Confirm password</FieldLabel>
-              <Input
+              <PasswordInput
                 {...field}
                 id={field.name}
-                type="password"
                 autoComplete="new-password"
                 aria-invalid={fieldState.invalid}
               />

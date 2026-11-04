@@ -1,20 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 
+import { PasswordInput } from "@/components/shared/input/password";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { signInAction } from "@/features/auth/sign-in/actions/sign-in";
 import { signInSchema, type SignInValues } from "@/features/auth/sign-in/schemas/sign-in-schema";
-import { signIn } from "@/lib/auth/auth-client";
 import { cn } from "@/lib/utils";
 
 export function SignInForm({ className, ...props }: React.ComponentProps<"form">) {
-  const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -29,14 +28,9 @@ export function SignInForm({ className, ...props }: React.ComponentProps<"form">
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
 
-    const { error } = await signIn.email(values);
-    if (error) {
-      setFormError(error.message ?? "Unable to sign in. Please try again.");
-      return;
-    }
-
-    router.push("/");
-    router.refresh();
+    // redirects on success or when the email still needs verifying
+    const result = await signInAction(values);
+    if (!result.success) setFormError(result.message);
   });
 
   return (
@@ -80,10 +74,9 @@ export function SignInForm({ className, ...props }: React.ComponentProps<"form">
                   Forgot your password?
                 </Link>
               </div>
-              <Input
+              <PasswordInput
                 {...field}
                 id={field.name}
-                type="password"
                 autoComplete="current-password"
                 aria-invalid={fieldState.invalid}
               />
