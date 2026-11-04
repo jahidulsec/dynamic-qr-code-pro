@@ -43,8 +43,12 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
+    "minimatch-patched": "npm:minimatch@^11.0.4",
     "prisma": "^7.10.1",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "minimatch": "file:./vendor/minimatch-compat"
   }
 }

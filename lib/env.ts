@@ -10,10 +10,11 @@ export const env = createEnv({
     DATABASE_URL: z.url(),
     SESSION_SECRET: z.string().min(32),
     BETTER_AUTH_URL: z.url(),
+    // unset means "derive from BETTER_AUTH_URL"
     COOKIE_SECURE: z
       .enum(["0", "1", "true", "false"])
-      .default("0")
-      .transform((value) => value === "1" || value === "true"),
+      .optional()
+      .transform((value) => (value === undefined ? undefined : value === "1" || value === "true")),
     SMTP_HOST: z.string().min(1),
     SMTP_PORT: z.coerce.number().int().positive().default(587),
     SMTP_SECURE: z

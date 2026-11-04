@@ -1,9 +1,11 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { organization } from "better-auth/plugins";
 import prisma from "@/config/db";
 import { sendEmail, verificationLinkEmail, welcomeEmail } from "@/features/email";
+import { createOrganizationSchema } from "@/features/organizations/schemas/create-organization-schema";
 import { env } from "@/lib/env";
 
 export const auth = betterAuth({
@@ -31,11 +33,32 @@ export const auth = betterAuth({
     },
   },
   advanced: {
-    useSecureCookies: env.COOKIE_SECURE,
+    // secure by default whenever the app is served over HTTPS
+    useSecureCookies: env.COOKIE_SECURE ?? env.BETTER_AUTH_URL.startsWith("https://"),
   },
   // must be the last plugin so cookies set in server actions are applied
-  plugins: [organization(), nextCookies()],
+  plugins: [
+    organization({
+      // the client can call these endpoints directly, so the server action's validation isn't enough
+      organizationHooks: {
+        beforeCreateOrganization: async ({ organization }) => ({ data: parseOrganization(organization) }),
+        beforeUpdateOrganization: async ({ organization }) => ({ data: parseOrganization(organization, true) }),
+      },
+    }),
+    nextCookies(),
+  ],
 });
+
+function parseOrganization(organization: { name?: string; slug?: string; logo?: string | null }, partial = false) {
+  // there's no logo upload yet; allow only our own upload host once there is
+  if (organization.logo) throw new APIError("BAD_REQUEST", { message: "Custom logos aren't supported yet" });
+
+  const schema = partial ? createOrganizationSchema.partial() : createOrganizationSchema;
+  const result = schema.safeParse(organization);
+  if (!result.success) throw new APIError("BAD_REQUEST", { message: result.error.issues[0].message });
+
+  return result.data;
+}
 
 export type Session = typeof auth.$Infer.Session;
 export type Organization = typeof auth.$Infer.Organization;

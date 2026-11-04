@@ -1,3 +1,4 @@
+import { APIError } from "better-auth/api";
 import z, { ZodError } from "zod";
 
 export const DATABASE_UNREACHABLE_MESSAGE =
@@ -66,10 +67,11 @@ export function handleError(error: any) {
     };
   }
 
-  if (error instanceof Error) {
+  // Better Auth messages are written for users; other errors may expose internals
+  if (error instanceof APIError) {
     return {
-      status: 500,
-      message: error.message.split("\n").pop(),
+      status: error.statusCode,
+      message: error.message,
     };
   }
 
