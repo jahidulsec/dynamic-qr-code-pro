@@ -11,6 +11,7 @@ export const qrListSelect = {
   id: true,
   name: true,
   slug: true,
+  type: true,
   destination: true,
   status: true,
   style: true,

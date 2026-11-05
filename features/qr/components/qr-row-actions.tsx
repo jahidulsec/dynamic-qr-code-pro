@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import {
   IconChartBar,
   IconDotsVertical,
-  IconExternalLink,
+  IconScan,
   IconPencil,
   IconPlayerPause,
   IconPlayerPlay,
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { setQrStatusAction, trashQrAction } from "@/features/qr/actions/manage-qr";
 import { QrAnalyticsButton } from "@/features/qr/components/qr-analytics-button";
+import { QrCheckDialog, type QrCheckState } from "@/features/qr/components/qr-check-dialog";
 import { QrExportButton } from "@/features/qr/components/qr-export-button";
 import { QrFormDialog } from "@/features/qr/components/qr-form-dialog";
 import type { QrFormInput, QrStyle } from "@/features/qr/schemas/qr-schema";
@@ -29,8 +30,11 @@ import type { QrFormInput, QrStyle } from "@/features/qr/schemas/qr-schema";
 type QrRowActionsProps = {
   organizationSlug: string;
   qr: { id: number; name: string; slug: string; destination: string; status: "ACTIVE" | "PAUSED"; tag: string | null };
-  // the encoded short link and saved style, used by the export menu
+  // check dialog inputs
+  check: { state: QrCheckState; createdBy: string; scanCount: number; createdLabel: string };
+  // the encoded short link and saved style, used by the check dialog and export menu
   qrValue: string;
+  qrLabel: string;
   qrStyle: QrStyle;
   // edit dialog inputs
   baseUrl: string;
@@ -41,7 +45,9 @@ type QrRowActionsProps = {
 export function QrRowActions({
   organizationSlug,
   qr,
+  check,
   qrValue,
+  qrLabel,
   qrStyle,
   baseUrl,
   tags,
@@ -57,6 +63,15 @@ export function QrRowActions({
     setEditOpen(true);
   };
 
+  const [checkOpen, setCheckOpen] = useState(false);
+  // same per-opening key, so the scan counter restarts from the latest saved count
+  const [checkKey, setCheckKey] = useState(0);
+
+  const openCheck = () => {
+    setCheckKey((key) => key + 1);
+    setCheckOpen(true);
+  };
+
   const run = (action: () => Promise<{ success: boolean; message: string }>) =>
     startTransition(async () => {
       const result = await action();
@@ -66,15 +81,13 @@ export function QrRowActions({
 
   return (
     <div className="flex items-center justify-end gap-1">
-      {/* opens the destination directly, so checking a link never counts as a scan */}
       <Button
         variant="ghost"
         size="sm"
         className="text-emerald-700 hover:text-emerald-800 dark:text-emerald-400"
-        render={<a href={qr.destination} target="_blank" rel="noopener noreferrer" />}
-        nativeButton={false}
+        onClick={openCheck}
       >
-        <IconExternalLink data-icon="inline-start" />
+        <IconScan data-icon="inline-start" />
         Check
       </Button>
       <Button
@@ -117,6 +130,31 @@ export function QrRowActions({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {checkKey > 0 && (
+        <QrCheckDialog
+          key={checkKey}
+          qr={{
+            id: qr.id,
+            name: qr.name,
+            destination: qr.destination,
+            tag: qr.tag,
+            createdBy: check.createdBy,
+            scanCount: check.scanCount,
+          }}
+          state={check.state}
+          createdLabel={check.createdLabel}
+          qrValue={qrValue}
+          qrLabel={qrLabel}
+          qrStyle={qrStyle}
+          open={checkOpen}
+          onOpenChange={setCheckOpen}
+          onEditUrl={() => {
+            setCheckOpen(false);
+            openEdit();
+          }}
+        />
+      )}
 
       {editKey > 0 && (
         <QrFormDialog

@@ -90,12 +90,24 @@ export function QrTable({
                 )}
               </TableCell>
               <TableCell className="max-w-64">
-                <span
-                  className="block truncate font-mono text-xs"
-                  title={qr.destination}
-                >
-                  {qr.destination}
-                </span>
+                {qr.type === "WEBSITE" ? (
+                  <a
+                    href={qr.destination}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block truncate font-mono text-xs hover:underline"
+                    title={qr.destination}
+                  >
+                    {qr.destination}
+                  </a>
+                ) : (
+                  <span
+                    className="block truncate font-mono text-xs"
+                    title={qr.destination}
+                  >
+                    {qr.destination}
+                  </span>
+                )}
               </TableCell>
               <TableCell className="text-right">
                 <QrAnalyticsButton
@@ -126,7 +138,14 @@ export function QrTable({
                     status: qr.status,
                     tag: qr.tag?.name ?? null,
                   }}
+                  check={{
+                    state: expired ? "expired" : qr.status === "PAUSED" ? "paused" : "ready",
+                    createdBy: qr.createdBy.name,
+                    scanCount: qr.scanCount,
+                    createdLabel: formatCreatedDate(qr.createdAt),
+                  }}
                   qrValue={shortLink(baseUrl, qr.slug)}
+                  qrLabel={shortLinkLabel(baseUrl, qr.slug)}
                   qrStyle={style}
                   baseUrl={baseUrl}
                   tags={tags}
