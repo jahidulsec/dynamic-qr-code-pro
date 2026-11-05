@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import Link from "next/link"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -21,6 +22,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { IconSelector, IconPlus } from "@tabler/icons-react"
+
+import { brandConfig } from "@/config/brand"
 
 type Organization = {
   name: string
@@ -63,12 +66,11 @@ export function TeamSwitcher({
               />
             }
           >
-            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-              <OrganizationLogo organization={activeOrganization} />
-            </div>
+            {/* Served from app/icon.svg, the same file used for the favicon */}
+            <Image src="/icon.svg" alt="" width={32} height={32} unoptimized className="size-8 shrink-0" />
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">{activeOrganization.name}</span>
-              <span className="truncate text-xs">/{activeOrganization.slug}</span>
+              <span className="truncate text-xs text-muted-foreground">{brandConfig.shortName}</span>
             </div>
             <IconSelector className="ml-auto" />
           </DropdownMenuTrigger>

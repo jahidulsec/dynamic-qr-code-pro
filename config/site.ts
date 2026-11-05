@@ -1,8 +1,8 @@
+import { brandConfig } from "@/config/brand";
 import { env } from "@/lib/env";
 
 export const siteConfig = {
-  name: "Dynamic QR Code Pro",
-  shortName: "Dynamic QR Pro",
+  ...brandConfig,
   title: "Dynamic QR Code Generator — Edit, Track & Brand QR Codes",
   description:
     "Create branded, dynamic QR codes you can edit after printing. Change destinations anytime, track scans in real time and manage codes with your team.",

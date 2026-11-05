@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/features/dashboard/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
   getOrganizationBySlug,
