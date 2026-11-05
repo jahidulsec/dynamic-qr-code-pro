@@ -2,17 +2,13 @@
 
 import { APIError } from "better-auth/api";
 
+import { buildQrAnalytics } from "@/features/qr/libs/qr-analytics";
+import { buildQrWhere, liveQrWhere, qrListSelect, qrTopSelect, type QrStatsData } from "@/features/qr/libs/qr-query";
 import { qrIdSchema, qrQuerySchema, type QrQuerySchemaType } from "@/features/qr/schemas/qr-schema";
-import { getQrAnalytics as buildQrAnalytics, listQrScans } from "@/features/qr/services/get-qr-analytics";
-import {
-  getQrCode as findQrCode,
-  getQrStats as findQrStats,
-  getTagCounts,
-  listAllQrCodes,
-  listQrCodes,
-  listTrashedQrCodes,
-} from "@/features/qr/services/get-qrs";
+import { countQrCodes, getQrCode as findQrCode, getQrCodes as findQrCodes } from "@/features/qr/services/qr";
+import { countQrScans, getQrScans } from "@/features/qr/services/qr-scan";
 import { requireOrganization } from "@/features/qr/services/require-organization";
+import { cacheTags } from "@/lib/cache/cache-tags";
 import { toCsv } from "@/utils/csv";
 import { shortLink } from "@/utils/format";
 import { apiResponse } from "@/utils/response";
@@ -23,16 +19,19 @@ const MAX_SCAN_ROWS = 100_000;
 
 const notFound = () => new APIError("NOT_FOUND", { message: "QR code not found" });
 
+const findLiveQrCode = (organizationId: string, id: number) =>
+  findQrCode({ where: { id, ...liveQrWhere(organizationId) }, include: { tag: { select: { name: true } } } });
+
 export const getQrCodes = async (organizationSlug: string, query: QrQuerySchemaType) => {
   try {
     const { page, size, search, tag, status } = qrQuerySchema.parse(query);
     const { organization } = await requireOrganization(organizationSlug);
+    const where = buildQrWhere(organization.id, { search, tag, status });
 
-    const { items: data, count } = await listQrCodes(
-      organization.id,
-      { search, tag, status },
-      { take: size, skip: (page - 1) * size },
-    );
+    const [data, count] = await Promise.all([
+      findQrCodes({ where, select: qrListSelect, orderBy: { id: "desc" }, skip: (page - 1) * size, take: size }),
+      countQrCodes({ where }),
+    ]);
 
     return apiResponse.multi({ data, count });
   } catch (error) {
@@ -45,7 +44,7 @@ export const getQrCode = async (organizationSlug: string, id: number) => {
     const qrId = qrIdSchema.parse(id);
     const { organization } = await requireOrganization(organizationSlug);
 
-    const data = await findQrCode(organization.id, qrId);
+    const data = await findLiveQrCode(organization.id, qrId);
     if (!data) throw notFound();
 
     return apiResponse.single({ data, message: "GET QR code successful" });
@@ -57,20 +56,22 @@ export const getQrCode = async (organizationSlug: string, id: number) => {
 export const getQrStats = async (organizationSlug: string) => {
   try {
     const { organization } = await requireOrganization(organizationSlug);
-    const data = await findQrStats(organization.id);
+    const live = liveQrWhere(organization.id);
 
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const [total, active, scans, scansToday, top] = await Promise.all([
+      countQrCodes({ where: live }),
+      countQrCodes({ where: { ...live, status: "ACTIVE" } }),
+      // scans are trashed along with their code, so they're tagged with QR codes too
+      countQrScans({ where: { qrCode: live } }, { tags: cacheTags.qrCodes }),
+      countQrScans({ where: { scannedAt: { gte: startOfToday }, qrCode: live } }, { tags: cacheTags.qrCodes }),
+      findQrCode({ where: { ...live, scanCount: { gt: 0 } }, orderBy: { scanCount: "desc" }, select: qrTopSelect }),
+    ]);
+
+    const data: QrStatsData = { total, active, scans, scansToday, top };
     return apiResponse.single({ data });
-  } catch (error) {
-    return apiResponse.error({ error });
-  }
-};
-
-export const getQrTags = async (organizationSlug: string) => {
-  try {
-    const { organization } = await requireOrganization(organizationSlug);
-    const data = await getTagCounts(organization.id);
-
-    return apiResponse.multi({ data, count: data.length });
   } catch (error) {
     return apiResponse.error({ error });
   }
@@ -81,7 +82,7 @@ export const getQrAnalytics = async (organizationSlug: string, id: number) => {
     const qrId = qrIdSchema.parse(id);
     const { organization } = await requireOrganization(organizationSlug);
 
-    const qr = await findQrCode(organization.id, qrId);
+    const qr = await findLiveQrCode(organization.id, qrId);
     if (!qr) throw notFound();
 
     const analytics = await buildQrAnalytics(qr.id);
@@ -97,7 +98,11 @@ export const getQrAnalytics = async (organizationSlug: string, id: number) => {
 export const getTrashedQrCodes = async (organizationSlug: string) => {
   try {
     const { organization } = await requireOrganization(organizationSlug);
-    const data = await listTrashedQrCodes(organization.id);
+    const data = await findQrCodes({
+      where: { organizationId: organization.id, deletedAt: { not: null } },
+      select: qrListSelect,
+      orderBy: { deletedAt: "desc" },
+    });
 
     return apiResponse.multi({ data, count: data.length });
   } catch (error) {
@@ -111,7 +116,11 @@ export const exportQrCodes = async (organizationSlug: string, query: QrQuerySche
     const { search, tag, status } = qrQuerySchema.parse(query);
     const { organization } = await requireOrganization(organizationSlug);
 
-    const rows = await listAllQrCodes(organization.id, { search, tag, status });
+    // a one-off download: don't keep the whole list in the cache
+    const rows = await findQrCodes(
+      { where: buildQrWhere(organization.id, { search, tag, status }), select: qrListSelect, orderBy: { id: "desc" } },
+      { cache: false },
+    );
     const baseUrl = getQrBaseUrl();
 
     const csv = toCsv(
@@ -141,10 +150,19 @@ export const exportQrScans = async (organizationSlug: string, id: number) => {
     const qrId = qrIdSchema.parse(id);
     const { organization } = await requireOrganization(organizationSlug);
 
-    const qr = await findQrCode(organization.id, qrId);
+    const qr = await findLiveQrCode(organization.id, qrId);
     if (!qr) throw notFound();
 
-    const scans = await listQrScans(qr.id, MAX_SCAN_ROWS);
+    // newest first; a one-off download, so skip the cache
+    const scans = await getQrScans(
+      {
+        where: { qrCodeId: qr.id },
+        select: { scannedAt: true, visitorHash: true, device: true, country: true, region: true },
+        orderBy: { scannedAt: "desc" },
+        take: MAX_SCAN_ROWS,
+      },
+      { cache: false },
+    );
 
     const csv = toCsv(
       ["Scanned at (UTC)", "Visitor", "Device", "Country", "Region"],

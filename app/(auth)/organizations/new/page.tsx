@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { CreateOrganizationForm } from "@/features/organizations/components/create-organization-form";
-import { getSession, listOrganizations } from "@/features/organizations/services/get-organization";
+import { CreateOrganizationForm } from "@/features/organizations";
+import { getSession, listOrganizations } from "@/features/organizations/server";
 
 export const metadata: Metadata = {
   title: "Create organization",

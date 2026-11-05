@@ -4,7 +4,7 @@ import { IconQrcode } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { QrRowActions } from "@/features/qr/components/qr-row-actions";
-import type { QrListItem } from "@/features/qr/services/get-qrs";
+import type { QrListItem } from "@/features/qr/libs/qr-query";
 import { formatCreatedDate, formatDate, shortLinkLabel } from "@/utils/format";
 
 type QrTableProps = {

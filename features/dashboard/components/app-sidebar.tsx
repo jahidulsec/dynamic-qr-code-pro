@@ -10,6 +10,7 @@ import {
   IconPlus,
   IconScan,
   IconStack2,
+  IconTags,
   IconTrash,
   IconUsers,
 } from "@tabler/icons-react"
@@ -41,6 +42,7 @@ function getNavItems(slug: string, qrCount: number): NavMainItem[] {
     { title: "Yearly Subscription", url: `${base}/subscription`, icon: <IconCreditCard />, badge: { label: "250 QRs", tone: "outline" } },
     { title: "Billing History", url: `${base}/billing`, icon: <IconFileInvoice />, badge: { label: "PDF", tone: "info" } },
     { title: "Team & Permissions", url: `${base}/team`, icon: <IconUsers />, badge: { label: "5 Seats", tone: "outline" } },
+    { title: "Department Tags", url: `${base}/tags`, icon: <IconTags /> },
     { title: "Trash Bin", url: `${base}/trash`, icon: <IconTrash /> },
   ]
 }

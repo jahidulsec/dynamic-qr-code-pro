@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { exportQrScans } from "@/features/qr/libs/qr";
-import type { QrAnalytics, Share } from "@/features/qr/services/get-qr-analytics";
+import type { QrAnalytics, Share } from "@/features/qr/libs/qr-analytics";
 import { downloadCsv } from "@/utils/csv";
 
 type QrAnalyticsDialogProps = {

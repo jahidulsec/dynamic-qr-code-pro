@@ -2,14 +2,15 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
-import { AppSidebar } from "@/features/dashboard/components/app-sidebar";
+import { AppSidebar } from "@/features/dashboard";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
   getOrganizationBySlug,
   getSession,
   listOrganizations,
-} from "@/features/organizations/services/get-organization";
-import { getQrStats, getQrTags } from "@/features/qr/libs/qr";
+} from "@/features/organizations/server";
+import { getQrStats } from "@/features/qr";
+import { getQrTags } from "@/features/qr-tags";
 
 export const metadata: Metadata = {
   robots: { index: false },

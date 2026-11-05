@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import prisma from "@/config/db";
+import { recordQrScan } from "@/features/qr/services/qr-scan";
 import { env } from "@/lib/env";
 
 // link previews and crawlers follow short links too; they aren't scans
@@ -57,15 +57,10 @@ export async function recordScan(qrCodeId: number, headers: Headers) {
   const userAgent = headers.get("user-agent") ?? "";
   if (isBot(userAgent)) return;
 
-  await prisma.$transaction([
-    prisma.qrScan.create({
-      data: {
-        qrCodeId,
-        visitorHash: visitorHash(clientIp(headers), userAgent),
-        device: detectDevice(userAgent),
-        ...detectLocation(headers),
-      },
-    }),
-    prisma.qrCode.update({ where: { id: qrCodeId }, data: { scanCount: { increment: 1 } } }),
-  ]);
+  await recordQrScan({
+    qrCodeId,
+    visitorHash: visitorHash(clientIp(headers), userAgent),
+    device: detectDevice(userAgent),
+    ...detectLocation(headers),
+  });
 }

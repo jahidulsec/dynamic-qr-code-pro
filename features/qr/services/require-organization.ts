@@ -1,6 +1,6 @@
 import { APIError } from "better-auth/api";
 
-import { getOrganizationBySlug, getSession } from "@/features/organizations/services/get-organization";
+import { getOrganizationBySlug, getSession } from "@/features/organizations/server";
 
 export const ADMIN_ROLES = ["owner", "admin"];
 

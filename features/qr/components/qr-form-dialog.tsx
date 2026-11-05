@@ -33,7 +33,7 @@ import {
   type QrFormValues,
 } from "@/features/qr/schemas/qr-schema";
 import { randomSlug, shortLink, shortLinkLabel } from "@/utils/format";
-import { slugify } from "@/features/organizations/schemas/create-organization-schema";
+import { slugify } from "@/features/organizations";
 import { cn } from "@/lib/utils";
 
 const DESTINATION_TYPES = [

@@ -3,11 +3,10 @@ import { notFound } from "next/navigation";
 import { IconTrash } from "@tabler/icons-react";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PageHeader } from "@/features/dashboard/components/page-header";
-import { getOrganizationBySlug, getSession } from "@/features/organizations/services/get-organization";
-import { TrashRowActions } from "@/features/qr/components/trash-row-actions";
-import { getTrashedQrCodes } from "@/features/qr/libs/qr";
-import { isAdminRole } from "@/features/qr/services/require-organization";
+import { PageHeader } from "@/features/dashboard";
+import { getOrganizationBySlug, getSession } from "@/features/organizations/server";
+import { getTrashedQrCodes, TrashRowActions } from "@/features/qr";
+import { isAdminRole } from "@/features/qr/server";
 import { formatDate, shortLinkLabel } from "@/utils/format";
 import { getQrBaseUrl } from "@/utils/short-link";
 

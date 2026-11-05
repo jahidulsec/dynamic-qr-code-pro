@@ -6,8 +6,8 @@ import { Suspense } from "react";
 
 import prisma from "@/config/db";
 import { brandConfig } from "@/config/brand";
-import { recordScan } from "@/features/qr/services/record-scan";
-import { qrSlugSchema } from "@/features/qr/schemas/qr-schema";
+import { recordScan } from "@/features/qr/server";
+import { qrSlugSchema } from "@/features/qr";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },

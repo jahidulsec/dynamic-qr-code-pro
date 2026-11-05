@@ -3,7 +3,7 @@ import { IconChartBar, IconQrcode, IconScan, IconTrophy } from "@tabler/icons-re
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { QR_QUOTA } from "@/features/qr/constants";
-import type { QrStatsData } from "@/features/qr/services/get-qrs";
+import type { QrStatsData } from "@/features/qr/libs/qr-query";
 
 type QrStatsProps = {
   stats: QrStatsData;

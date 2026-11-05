@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { VerifyEmailNotice } from "@/features/auth/verify-email/components/verify-email-notice";
+import { VerifyEmailNotice } from "@/features/auth";
 import { auth } from "@/lib/auth/auth";
 
 export const metadata: Metadata = {

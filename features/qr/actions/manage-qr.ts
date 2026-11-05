@@ -4,15 +4,25 @@ import { refresh } from "next/cache";
 import { APIError } from "better-auth/api";
 import { z } from "zod";
 
-import prisma from "@/config/db";
 import { QR_QUOTA } from "@/features/qr/constants";
-import { countQrCodes } from "@/features/qr/services/get-qrs";
+import { liveQrWhere } from "@/features/qr/libs/qr-query";
+import { countQrCodes, deleteQrCode, updateQrCode } from "@/features/qr/services/qr";
 import { isAdminRole, requireOrganization } from "@/features/qr/services/require-organization";
+import { cacheTags } from "@/lib/cache/cache-tags";
 import { apiResponse } from "@/utils/response";
 
 const idSchema = z.number().int().positive();
 
 const notFound = () => new APIError("NOT_FOUND", { message: "QR code not found" });
+
+// P2025: the scoped where matched no row (wrong organization, or not in the expected trash state)
+const orNotFound = (error: unknown): never => {
+  if (typeof error === "object" && error !== null && "code" in error && error.code === "P2025") throw notFound();
+  throw error;
+};
+
+// tag counts include only codes outside the trash, so trash moves bust them too
+const revalidateTags = [cacheTags.qrTags];
 
 export const setQrStatusAction = async (organizationSlug: string, id: number, status: "ACTIVE" | "PAUSED") => {
   try {
@@ -20,11 +30,11 @@ export const setQrStatusAction = async (organizationSlug: string, id: number, st
     const nextStatus = z.enum(["ACTIVE", "PAUSED"]).parse(status);
     const { organization } = await requireOrganization(organizationSlug);
 
-    const { count } = await prisma.qrCode.updateMany({
-      where: { id: qrId, organizationId: organization.id, deletedAt: null },
+    await updateQrCode({
+      where: { id: qrId, ...liveQrWhere(organization.id) },
       data: { status: nextStatus },
-    });
-    if (!count) throw notFound();
+      select: { id: true },
+    }).catch(orNotFound);
 
     refresh();
     return apiResponse.single({ message: nextStatus === "PAUSED" ? "QR code paused" : "QR code resumed", data: null });
@@ -39,11 +49,10 @@ export const trashQrAction = async (organizationSlug: string, id: number) => {
     const qrId = idSchema.parse(id);
     const { organization } = await requireOrganization(organizationSlug);
 
-    const { count } = await prisma.qrCode.updateMany({
-      where: { id: qrId, organizationId: organization.id, deletedAt: null },
-      data: { deletedAt: new Date() },
-    });
-    if (!count) throw notFound();
+    await updateQrCode(
+      { where: { id: qrId, ...liveQrWhere(organization.id) }, data: { deletedAt: new Date() }, select: { id: true } },
+      revalidateTags,
+    ).catch(orNotFound);
 
     refresh();
     return apiResponse.single({ message: "Moved to trash", data: null });
@@ -57,14 +66,18 @@ export const restoreQrAction = async (organizationSlug: string, id: number) => {
     const qrId = idSchema.parse(id);
     const { organization } = await requireOrganization(organizationSlug);
 
-    if ((await countQrCodes(organization.id)) >= QR_QUOTA)
+    // quota checks read fresh: a cached count could let a code slip past the limit
+    if ((await countQrCodes({ where: liveQrWhere(organization.id) }, { cache: false })) >= QR_QUOTA)
       throw new APIError("FORBIDDEN", { message: `You've reached your plan's limit of ${QR_QUOTA} QR codes.` });
 
-    const { count } = await prisma.qrCode.updateMany({
-      where: { id: qrId, organizationId: organization.id, deletedAt: { not: null } },
-      data: { deletedAt: null },
-    });
-    if (!count) throw notFound();
+    await updateQrCode(
+      {
+        where: { id: qrId, organizationId: organization.id, deletedAt: { not: null } },
+        data: { deletedAt: null },
+        select: { id: true },
+      },
+      revalidateTags,
+    ).catch(orNotFound);
 
     refresh();
     return apiResponse.single({ message: "QR code restored", data: null });
@@ -81,10 +94,10 @@ export const deleteQrAction = async (organizationSlug: string, id: number) => {
     if (!isAdminRole(role))
       throw new APIError("FORBIDDEN", { message: "Only owners and admins can permanently delete QR codes" });
 
-    const { count } = await prisma.qrCode.deleteMany({
-      where: { id: qrId, organizationId: organization.id, deletedAt: { not: null } },
-    });
-    if (!count) throw notFound();
+    await deleteQrCode(
+      { where: { id: qrId, organizationId: organization.id, deletedAt: { not: null } }, select: { id: true } },
+      [cacheTags.qrScans, cacheTags.qrScanCount],
+    ).catch(orNotFound);
 
     refresh();
     return apiResponse.single({ message: "QR code deleted permanently", data: null });

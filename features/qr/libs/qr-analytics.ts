@@ -2,6 +2,8 @@ import prisma from "@/config/db";
 import { Prisma } from "@/generated/prisma/client";
 import { QR_ACTIVITY_DAYS } from "@/features/qr/constants";
 
+// grouped and raw queries aren't supported by the cached service layer, so these read Prisma directly
+
 export type Share = { label: string; count: number; percent: number };
 
 const DEVICE_LABELS: Record<string, string> = {
@@ -24,7 +26,7 @@ const toShares = (rows: { label: string; count: number }[], total: number, limit
 const dayKey = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
-export async function getQrAnalytics(qrCodeId: number) {
+export async function buildQrAnalytics(qrCodeId: number) {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   start.setDate(start.getDate() - (QR_ACTIVITY_DAYS - 1));
@@ -85,13 +87,4 @@ export async function getQrAnalytics(qrCodeId: number) {
   };
 }
 
-export type QrAnalytics = Awaited<ReturnType<typeof getQrAnalytics>>;
-
-// newest first, capped because raw scans can grow large
-export const listQrScans = (qrCodeId: number, take: number) =>
-  prisma.qrScan.findMany({
-    where: { qrCodeId },
-    select: { scannedAt: true, visitorHash: true, device: true, country: true, region: true },
-    orderBy: { scannedAt: "desc" },
-    take,
-  });
+export type QrAnalytics = Awaited<ReturnType<typeof buildQrAnalytics>>;

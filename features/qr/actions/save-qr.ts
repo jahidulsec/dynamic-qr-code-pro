@@ -3,15 +3,19 @@
 import { refresh } from "next/cache";
 import { APIError } from "better-auth/api";
 
-import prisma from "@/config/db";
 import { QR_QUOTA } from "@/features/qr/constants";
+import { liveQrWhere } from "@/features/qr/libs/qr-query";
 import { qrFormSchema, type QrFormInput, type QrFormValues } from "@/features/qr/schemas/qr-schema";
-import { countQrCodes } from "@/features/qr/services/get-qrs";
+import { countQrCodes, createQrCode, updateQrCode } from "@/features/qr/services/qr";
 import { requireOrganization } from "@/features/qr/services/require-organization";
+import { cacheTags } from "@/lib/cache/cache-tags";
 import { apiResponse } from "@/utils/response";
 
-const isUniqueViolation = (error: unknown) =>
-  typeof error === "object" && error !== null && "code" in error && error.code === "P2002";
+const prismaCode = (error: unknown) =>
+  typeof error === "object" && error !== null && "code" in error ? error.code : undefined;
+
+// tags are created on the fly through connectOrCreate
+const revalidateTags = [cacheTags.qrTags];
 
 const tagConnect = (organizationId: string, tag: string) => ({
   connectOrCreate: {
@@ -33,13 +37,14 @@ export const createQrAction = async (organizationSlug: string, input: QrFormInpu
     const values = qrFormSchema.parse(input);
     const { session, organization } = await requireOrganization(organizationSlug);
 
-    if ((await countQrCodes(organization.id)) >= QR_QUOTA)
+    // quota checks read fresh: a cached count could let a code slip past the limit
+    if ((await countQrCodes({ where: liveQrWhere(organization.id) }, { cache: false })) >= QR_QUOTA)
       throw new APIError("FORBIDDEN", {
         message: `You've reached your plan's limit of ${QR_QUOTA} QR codes. Empty the trash or upgrade to add more.`,
       });
 
-    const qr = await prisma.qrCode
-      .create({
+    const qr = await createQrCode(
+      {
         data: {
           ...sharedData(values),
           slug: values.slug,
@@ -48,12 +53,13 @@ export const createQrAction = async (organizationSlug: string, input: QrFormInpu
           ...(values.tag ? { tag: tagConnect(organization.id, values.tag) } : {}),
         },
         select: { id: true, slug: true },
-      })
-      .catch((error) => {
-        if (isUniqueViolation(error))
-          throw new APIError("CONFLICT", { message: "This short alias is already taken. Try another one." });
-        throw error;
-      });
+      },
+      revalidateTags,
+    ).catch((error) => {
+      if (prismaCode(error) === "P2002")
+        throw new APIError("CONFLICT", { message: "This short alias is already taken. Try another one." });
+      throw error;
+    });
 
     refresh();
     return apiResponse.single({ message: "QR code created", data: qr });
@@ -68,16 +74,20 @@ export const updateQrAction = async (organizationSlug: string, id: number, input
     const values = qrFormSchema.parse(input);
     const { organization } = await requireOrganization(organizationSlug);
 
-    const { count } = await prisma.qrCode.updateMany({
-      where: { id, organizationId: organization.id, deletedAt: null },
-      data: sharedData(values),
-    });
-    if (!count) throw new APIError("NOT_FOUND", { message: "QR code not found" });
-
-    // updateMany can't touch relations, so the tag is set separately (already scoped above)
-    await prisma.qrCode.update({
-      where: { id },
-      data: { tag: values.tag ? tagConnect(organization.id, values.tag) : { disconnect: true } },
+    // the where is scoped to the organization; P2025 means no live code matched
+    await updateQrCode(
+      {
+        where: { id, ...liveQrWhere(organization.id) },
+        data: {
+          ...sharedData(values),
+          tag: values.tag ? tagConnect(organization.id, values.tag) : { disconnect: true },
+        },
+        select: { id: true },
+      },
+      revalidateTags,
+    ).catch((error) => {
+      if (prismaCode(error) === "P2025") throw new APIError("NOT_FOUND", { message: "QR code not found" });
+      throw error;
     });
 
     refresh();

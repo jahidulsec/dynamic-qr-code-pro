@@ -4,8 +4,8 @@ import { APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { organization } from "better-auth/plugins";
 import prisma from "@/config/db";
-import { sendEmail, verificationLinkEmail, welcomeEmail } from "@/features/email";
-import { createOrganizationSchema } from "@/features/organizations/schemas/create-organization-schema";
+import { sendEmail, verificationLinkEmail, welcomeEmail } from "@/features/email/server";
+import { createOrganizationSchema } from "@/features/organizations";
 import { env } from "@/lib/env";
 
 export const auth = betterAuth({

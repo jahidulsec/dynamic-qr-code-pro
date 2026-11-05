@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 
-import { OrganizationList, OrganizationListSkeleton } from "@/features/organizations/components/organization-list";
+import { OrganizationList, OrganizationListSkeleton } from "@/features/organizations/server";
 
 export const metadata: Metadata = {
   title: "Select organization",
