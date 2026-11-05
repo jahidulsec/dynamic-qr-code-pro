@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useId, useRef, useState } from "react";
+import { useDeferredValue, useId, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch, type FieldErrors } from "react-hook-form";
@@ -62,12 +62,27 @@ type QrFormDialogProps = {
   organizationSlug: string;
   baseUrl: string;
   tags: string[];
-  closeHref: string;
   /** set when editing an existing code */
   qr?: { id: number; values: QrFormInput };
+  /** overrides the default "Create new dynamic QR" / "Edit QR # id" heading */
+  title?: ReactNode;
+  /** controlled open state; omit for dialogs that are only mounted while open */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** where to navigate on close when the dialog is driven by a search param */
+  closeHref?: string;
 };
 
-export function QrFormDialog({ organizationSlug, baseUrl, tags, closeHref, qr }: QrFormDialogProps) {
+export function QrFormDialog({
+  organizationSlug,
+  baseUrl,
+  tags,
+  qr,
+  title,
+  open = true,
+  onOpenChange,
+  closeHref,
+}: QrFormDialogProps) {
   const router = useRouter();
   const tagListId = useId();
   const isEdit = !!qr;
@@ -97,7 +112,10 @@ export function QrFormDialog({ organizationSlug, baseUrl, tags, closeHref, qr }:
   const style = useDeferredValue(useWatch({ control, name: "style" }));
   const name = useWatch({ control, name: "name" });
 
-  const close = () => router.push(closeHref, { scroll: false });
+  const close = () => {
+    if (onOpenChange) onOpenChange(false);
+    else if (closeHref) router.push(closeHref, { scroll: false });
+  };
 
   const onSubmit = handleSubmit(
     async (values) => {
@@ -116,7 +134,7 @@ export function QrFormDialog({ organizationSlug, baseUrl, tags, closeHref, qr }:
   );
 
   return (
-    <Dialog open onOpenChange={(open) => !open && close()}>
+    <Dialog open={open} onOpenChange={(next) => !next && close()}>
       <DialogContent className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto p-0 sm:max-w-4xl">
         <form noValidate onSubmit={onSubmit} className="grid md:grid-cols-[1fr_20rem]">
           <div className="flex flex-col gap-6 p-6">
@@ -129,7 +147,7 @@ export function QrFormDialog({ organizationSlug, baseUrl, tags, closeHref, qr }:
                   302 redirect
                 </Badge>
               </div>
-              <DialogTitle className="text-lg">{isEdit ? `Edit QR # ${qr.id}` : "Create new dynamic QR"}</DialogTitle>
+              <DialogTitle className="text-lg">{title ?? (isEdit ? `Edit QR # ${qr.id}` : "Create new dynamic QR")}</DialogTitle>
               <DialogDescription className="sr-only">
                 Set where the code points, how it looks and when it expires.
               </DialogDescription>

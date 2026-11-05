@@ -1,32 +1,30 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
-import { toast } from "sonner";
-import { IconDownload, IconFilter, IconPlus, IconSearch } from "@tabler/icons-react";
+import { useTransition } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { exportQrCodes } from "@/features/qr/libs/qr";
+import { SearchInput } from "@/components/shared/input/search";
+import { QrCreateButton } from "@/features/qr/components/qr-create-button";
+import { QrExportCsvButton } from "@/features/qr/components/qr-export-csv-button";
 import { QR_STATUS_FILTERS, type QrStatusFilter } from "@/features/qr/schemas/qr-schema";
+import { QrTagCombobox } from "@/features/qr-tags";
 import { cn } from "@/lib/utils";
-import { downloadCsv } from "@/utils/csv";
 
-const ALL_TAGS = "__all";
-const SEARCH_DELAY_MS = 300;
+type QrToolbarProps = {
+  organizationSlug: string;
+  baseUrl: string;
+  tags: string[];
+};
 
-export function QrToolbar({ organizationSlug, tags }: { organizationSlug: string; tags: string[] }) {
+export function QrToolbar({ organizationSlug, baseUrl, tags }: QrToolbarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const [isExporting, startExport] = useTransition();
 
   const status = (searchParams.get("status") ?? "all") as QrStatusFilter;
-  const tag = searchParams.get("department") ?? ALL_TAGS;
-  const [search, setSearch] = useState(searchParams.get("q") ?? "");
+  // "" means every tag
+  const tag = searchParams.get("department") ?? "";
 
   // any filter change starts again from the first page
   const hrefWith = (changes: Record<string, string | null>) => {
@@ -43,64 +41,24 @@ export function QrToolbar({ organizationSlug, tags }: { organizationSlug: string
   const navigate = (changes: Record<string, string | null>) =>
     startTransition(() => router.replace(hrefWith(changes), { scroll: false }));
 
-  useEffect(() => {
-    if (search === (searchParams.get("q") ?? "")) return;
-    const timer = setTimeout(() => navigate({ q: search.trim() || null }), SEARCH_DELAY_MS);
-    return () => clearTimeout(timer);
-    // only the typed text should restart the debounce
-  }, [search]);
-
-  // exports what the table currently shows, across all pages
-  const exportCsv = () =>
-    startExport(async () => {
-      const result = await exportQrCodes(organizationSlug, {
-        search: searchParams.get("q") ?? undefined,
-        tag: searchParams.get("department") ?? undefined,
-        status,
-      });
-      if (result.success) downloadCsv(result.data.fileName, result.data.csv);
-      else toast.error(result.message);
-    });
-
-  const tagItems = [{ value: ALL_TAGS, label: "All tags" }, ...tags.map((name) => ({ value: name, label: name }))];
-  const createHref = (() => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("new", "1");
-    return `${pathname}?${params}`;
-  })();
-
   return (
     <div className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center" aria-busy={isPending}>
       <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="relative sm:w-72">
-          <IconSearch className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search by ID, name, URL, author…"
-            aria-label="Search QR codes"
-            className="pl-9"
-          />
-        </div>
+        <SearchInput
+          containerClassName="sm:w-72"
+          placeholder="Search by ID, name, URL, author…"
+          aria-label="Search QR codes"
+        />
 
-        <Select
-          items={tagItems}
+        <QrTagCombobox
+          organizationSlug={organizationSlug}
           value={tag}
-          onValueChange={(value) => navigate({ department: value && value !== ALL_TAGS ? String(value) : null })}
-        >
-          <SelectTrigger className="w-full sm:w-44" aria-label="Filter by tag">
-            <IconFilter className="text-muted-foreground" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {tagItems.map((item) => (
-              <SelectItem key={item.value} value={item.value}>
-                {item.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onValueChange={(value) => navigate({ department: value || null })}
+          placeholder="All tags"
+          aria-label="Filter by tag"
+          showClear
+          className="sm:w-44"
+        />
 
         <div role="group" aria-label="Filter by status" className="inline-flex w-fit rounded-lg bg-muted p-[3px]">
           {QR_STATUS_FILTERS.map((value) => (
@@ -121,14 +79,8 @@ export function QrToolbar({ organizationSlug, tags }: { organizationSlug: string
       </div>
 
       <div className="flex gap-2">
-        <Button variant="outline" onClick={exportCsv} disabled={isExporting}>
-          <IconDownload data-icon="inline-start" />
-          Export CSV
-        </Button>
-        <Button render={<Link href={createHref} scroll={false} />} nativeButton={false}>
-          <IconPlus data-icon="inline-start" />
-          Generate QR
-        </Button>
+        <QrExportCsvButton organizationSlug={organizationSlug} />
+        <QrCreateButton organizationSlug={organizationSlug} baseUrl={baseUrl} tags={tags} />
       </div>
     </div>
   );

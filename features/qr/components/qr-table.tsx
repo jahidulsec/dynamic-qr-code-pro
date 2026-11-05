@@ -1,21 +1,41 @@
-import Link from "next/link";
 import { IconQrcode } from "@tabler/icons-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { QrAnalyticsButton } from "@/features/qr/components/qr-analytics-button";
 import { QrRowActions } from "@/features/qr/components/qr-row-actions";
 import type { QrListItem } from "@/features/qr/libs/qr-query";
-import { formatCreatedDate, formatDate, shortLinkLabel } from "@/utils/format";
+import { parseQrStyle } from "@/features/qr/schemas/qr-schema";
+import {
+  formatCreatedDate,
+  formatDate,
+  shortLink,
+  shortLinkLabel,
+  toDateInput,
+} from "@/utils/format";
 
 type QrTableProps = {
   items: QrListItem[];
   organizationSlug: string;
   baseUrl: string;
-  hrefWith: (changes: Record<string, string | null>) => string;
+  tags: string[];
   emptyMessage: React.ReactNode;
 };
 
-export function QrTable({ items, organizationSlug, baseUrl, hrefWith, emptyMessage }: QrTableProps) {
+export function QrTable({
+  items,
+  organizationSlug,
+  baseUrl,
+  tags,
+  emptyMessage,
+}: QrTableProps) {
   if (!items.length)
     return (
       <div className="flex flex-col items-center gap-2 border-t px-4 py-16 text-center text-sm text-muted-foreground">
@@ -43,43 +63,81 @@ export function QrTable({ items, organizationSlug, baseUrl, hrefWith, emptyMessa
       <TableBody>
         {items.map((qr) => {
           const expired = !!qr.expiresAt && qr.expiresAt <= now;
-          const statsHref = hrefWith({ stats: String(qr.id) });
+          const style = parseQrStyle(qr.style);
 
           return (
             <TableRow key={qr.id}>
-              <TableCell className="pl-4 font-mono font-medium">#&nbsp;{qr.id}</TableCell>
+              <TableCell className="pl-4 font-mono font-medium">
+                #&nbsp;{qr.id}
+              </TableCell>
               <TableCell className="max-w-64">
                 <div className="flex items-center gap-2">
                   <span className="truncate font-medium" title={qr.name}>
                     {qr.name}
                   </span>
-                  {qr.status === "PAUSED" && <Badge variant="secondary">Paused</Badge>}
+                  {qr.status === "PAUSED" && (
+                    <Badge variant="secondary">Paused</Badge>
+                  )}
                   {expired && <Badge variant="destructive">Expired</Badge>}
                 </div>
-                <div className="truncate font-mono text-xs text-muted-foreground">{shortLinkLabel(baseUrl, qr.slug)}</div>
+                <div className="truncate font-mono text-xs text-muted-foreground">
+                  {shortLinkLabel(baseUrl, qr.slug)}
+                </div>
                 {qr.expiresAt && !expired && (
-                  <div className="text-xs text-muted-foreground">Expires {formatDate(qr.expiresAt)}</div>
+                  <div className="text-xs text-muted-foreground">
+                    Expires {formatDate(qr.expiresAt)}
+                  </div>
                 )}
               </TableCell>
               <TableCell className="max-w-64">
-                <span className="block truncate font-mono text-xs" title={qr.destination}>
+                <span
+                  className="block truncate font-mono text-xs"
+                  title={qr.destination}
+                >
                   {qr.destination}
                 </span>
               </TableCell>
               <TableCell className="text-right">
-                <Link href={statsHref} scroll={false} className="font-mono font-medium tabular-nums hover:underline">
+                <QrAnalyticsButton
+                  organizationSlug={organizationSlug}
+                  qr={{ id: qr.id, name: qr.name, tag: qr.tag?.name ?? null }}
+                  variant="link"
+                  className="h-auto p-0 font-mono font-medium tabular-nums text-foreground"
+                  aria-label={`Analytics for ${qr.name}`}
+                >
                   {qr.scanCount.toLocaleString()}
-                </Link>
+                </QrAnalyticsButton>
               </TableCell>
-              <TableCell className="font-mono text-xs font-medium">{qr.tag?.name ?? "—"}</TableCell>
+              <TableCell className="font-mono text-xs font-medium">
+                {qr.tag?.name ?? "—"}
+              </TableCell>
               <TableCell>{qr.createdBy.name}</TableCell>
-              <TableCell className="font-mono text-xs text-muted-foreground">{formatCreatedDate(qr.createdAt)}</TableCell>
+              <TableCell className="font-mono text-xs text-muted-foreground">
+                {formatCreatedDate(qr.createdAt)}
+              </TableCell>
               <TableCell className="pr-4">
                 <QrRowActions
                   organizationSlug={organizationSlug}
-                  qr={{ id: qr.id, name: qr.name, destination: qr.destination, status: qr.status }}
-                  editHref={hrefWith({ edit: String(qr.id) })}
-                  statsHref={statsHref}
+                  qr={{
+                    id: qr.id,
+                    name: qr.name,
+                    slug: qr.slug,
+                    destination: qr.destination,
+                    status: qr.status,
+                    tag: qr.tag?.name ?? null,
+                  }}
+                  qrValue={shortLink(baseUrl, qr.slug)}
+                  qrStyle={style}
+                  baseUrl={baseUrl}
+                  tags={tags}
+                  editValues={{
+                    name: qr.name,
+                    destination: qr.destination,
+                    slug: qr.slug,
+                    tag: qr.tag?.name ?? "",
+                    expiresAt: qr.expiresAt ? toDateInput(qr.expiresAt) : "",
+                    style,
+                  }}
                 />
               </TableCell>
             </TableRow>

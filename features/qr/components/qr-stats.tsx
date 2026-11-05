@@ -1,16 +1,16 @@
-import Link from "next/link";
 import { IconChartBar, IconQrcode, IconScan, IconTrophy } from "@tabler/icons-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { QrAnalyticsButton } from "@/features/qr/components/qr-analytics-button";
 import { QR_QUOTA } from "@/features/qr/constants";
 import type { QrStatsData } from "@/features/qr/libs/qr-query";
 
 type QrStatsProps = {
   stats: QrStatsData;
-  statsHref: (id: number) => string;
+  organizationSlug: string;
 };
 
-export function QrStats({ stats, statsHref }: QrStatsProps) {
+export function QrStats({ stats, organizationSlug }: QrStatsProps) {
   const used = Math.min(100, (stats.total / QR_QUOTA) * 100);
 
   return (
@@ -41,9 +41,14 @@ export function QrStats({ stats, statsHref }: QrStatsProps) {
       <StatCard label="Top campaign" icon={<IconTrophy />}>
         {stats.top ? (
           <>
-            <Link href={statsHref(stats.top.id)} scroll={false} className="line-clamp-2 font-medium hover:underline">
-              {stats.top.name}
-            </Link>
+            <QrAnalyticsButton
+              organizationSlug={organizationSlug}
+              qr={{ id: stats.top.id, name: stats.top.name, tag: stats.top.tag?.name ?? null }}
+              variant="link"
+              className="h-auto justify-start p-0 text-left whitespace-normal text-foreground"
+            >
+              <span className="line-clamp-2">{stats.top.name}</span>
+            </QrAnalyticsButton>
             <p className="text-xs text-muted-foreground">
               <span className="font-mono">{stats.top.scanCount.toLocaleString()} scans</span>
               {stats.top.tag && ` · Tag ${stats.top.tag.name}`}

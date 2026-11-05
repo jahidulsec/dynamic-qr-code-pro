@@ -13,6 +13,7 @@ export const qrListSelect = {
   slug: true,
   destination: true,
   status: true,
+  style: true,
   scanCount: true,
   expiresAt: true,
   createdAt: true,

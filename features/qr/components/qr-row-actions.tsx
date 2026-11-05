@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
   IconChartBar,
@@ -22,16 +21,41 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { setQrStatusAction, trashQrAction } from "@/features/qr/actions/manage-qr";
+import { QrAnalyticsButton } from "@/features/qr/components/qr-analytics-button";
+import { QrExportButton } from "@/features/qr/components/qr-export-button";
+import { QrFormDialog } from "@/features/qr/components/qr-form-dialog";
+import type { QrFormInput, QrStyle } from "@/features/qr/schemas/qr-schema";
 
 type QrRowActionsProps = {
   organizationSlug: string;
-  qr: { id: number; name: string; destination: string; status: "ACTIVE" | "PAUSED" };
-  editHref: string;
-  statsHref: string;
+  qr: { id: number; name: string; slug: string; destination: string; status: "ACTIVE" | "PAUSED"; tag: string | null };
+  // the encoded short link and saved style, used by the export menu
+  qrValue: string;
+  qrStyle: QrStyle;
+  // edit dialog inputs
+  baseUrl: string;
+  tags: string[];
+  editValues: QrFormInput;
 };
 
-export function QrRowActions({ organizationSlug, qr, editHref, statsHref }: QrRowActionsProps) {
+export function QrRowActions({
+  organizationSlug,
+  qr,
+  qrValue,
+  qrStyle,
+  baseUrl,
+  tags,
+  editValues,
+}: QrRowActionsProps) {
   const [isPending, startTransition] = useTransition();
+  const [editOpen, setEditOpen] = useState(false);
+  // a fresh key per opening resets the form to the latest saved values while keeping the close animation
+  const [editKey, setEditKey] = useState(0);
+
+  const openEdit = () => {
+    setEditKey((key) => key + 1);
+    setEditOpen(true);
+  };
 
   const run = (action: () => Promise<{ success: boolean; message: string }>) =>
     startTransition(async () => {
@@ -57,20 +81,20 @@ export function QrRowActions({ organizationSlug, qr, editHref, statsHref }: QrRo
         variant="ghost"
         size="icon-sm"
         aria-label={`Edit ${qr.name}`}
-        render={<Link href={editHref} scroll={false} />}
-        nativeButton={false}
+        onClick={openEdit}
       >
         <IconPencil />
       </Button>
-      <Button
+      <QrAnalyticsButton
+        organizationSlug={organizationSlug}
+        qr={{ id: qr.id, name: qr.name, tag: qr.tag }}
         variant="ghost"
         size="icon-sm"
         aria-label={`Analytics for ${qr.name}`}
-        render={<Link href={statsHref} scroll={false} />}
-        nativeButton={false}
       >
         <IconChartBar />
-      </Button>
+      </QrAnalyticsButton>
+      <QrExportButton value={qrValue} style={qrStyle} fileName={qr.slug} label={qr.name} />
       <DropdownMenu>
         <DropdownMenuTrigger
           render={<Button variant="ghost" size="icon-sm" aria-label={`More actions for ${qr.name}`} disabled={isPending} />}
@@ -93,6 +117,18 @@ export function QrRowActions({ organizationSlug, qr, editHref, statsHref }: QrRo
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {editKey > 0 && (
+        <QrFormDialog
+          key={editKey}
+          organizationSlug={organizationSlug}
+          baseUrl={baseUrl}
+          tags={tags}
+          qr={{ id: qr.id, values: editValues }}
+          open={editOpen}
+          onOpenChange={setEditOpen}
+        />
+      )}
     </div>
   );
 }

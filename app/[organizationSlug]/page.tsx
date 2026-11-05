@@ -6,13 +6,8 @@ import PagePagination from "@/components/shared/pagination/pagination";
 import { PageHeader } from "@/features/dashboard";
 import { getOrganizationBySlug } from "@/features/organizations/server";
 import {
-  getQrAnalytics,
-  getQrCode,
   getQrCodes,
   getQrStats,
-  parseQrStyle,
-  QrAnalyticsDialog,
-  QrFormDialog,
   qrQuerySchema,
   QrStats,
   QrTable,
@@ -20,26 +15,20 @@ import {
 } from "@/features/qr";
 import { getQrTags } from "@/features/qr-tags";
 import type { SearchParams } from "@/types/params";
-import { toDateInput } from "@/utils/format";
 import { getQrBaseUrl } from "@/utils/short-link";
+import { TableSkeleton } from "@/components/shared/skeleton/table";
 
 export const metadata: Metadata = {
   title: "Dashboard",
 };
 
-const stringParam = (value: string | string[] | undefined) => (typeof value === "string" ? value : undefined);
+const stringParam = (value: string | string[] | undefined) =>
+  typeof value === "string" ? value : undefined;
 
-const idParam = (value: string | string[] | undefined) => {
-  const id = Number(stringParam(value));
-  return Number.isInteger(id) && id > 0 ? id : undefined;
-};
-
-// the filters kept in every link; dialog params (new, edit, stats) are dropped unless set explicitly
-const FILTER_KEYS = ["q", "department", "status", "page", "size"];
-
-type HrefWith = (changes: Record<string, string | null>) => string;
-
-export default async function OrganizationDashboardPage({ params, searchParams }: PageProps<"/[organizationSlug]">) {
+export default async function OrganizationDashboardPage({
+  params,
+  searchParams,
+}: PageProps<"/[organizationSlug]">) {
   const { organizationSlug } = await params;
   const query: SearchParams = await searchParams;
 
@@ -55,24 +44,6 @@ export default async function OrganizationDashboardPage({ params, searchParams }
     status: stringParam(query.status),
   });
 
-  const editId = idParam(query.edit);
-  const statsId = idParam(query.stats);
-
-  const base = `/${organization.slug}`;
-  const hrefWith: HrefWith = (changes) => {
-    const next = new URLSearchParams();
-    for (const key of FILTER_KEYS) {
-      const value = stringParam(query[key]);
-      if (value) next.set(key, value);
-    }
-    for (const [key, value] of Object.entries(changes)) {
-      if (value) next.set(key, value);
-      else next.delete(key);
-    }
-    const search = next.toString();
-    return search ? `${base}?${search}` : base;
-  };
-  const closeHref = hrefWith({});
   const slug = organization.slug;
 
   return (
@@ -80,55 +51,54 @@ export default async function OrganizationDashboardPage({ params, searchParams }
       <PageHeader organizationName={organization.name} title="Dashboard" />
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <Suspense>
-          <StatsSection organizationSlug={slug} hrefWith={hrefWith} />
+          <StatsSection organizationSlug={slug} />
         </Suspense>
-        <Suspense>
-          <TableSection organizationSlug={slug} filters={filters} hrefWith={hrefWith} />
+        <Suspense fallback={<TableSkeleton />}>
+          <TableSection organizationSlug={slug} filters={filters} />
         </Suspense>
       </div>
-
-      <Suspense>
-        <DialogSection
-          organizationSlug={slug}
-          isNew={query.new === "1"}
-          editId={editId}
-          statsId={statsId}
-          closeHref={closeHref}
-        />
-      </Suspense>
     </>
   );
 }
 
-async function StatsSection({ organizationSlug, hrefWith }: { organizationSlug: string; hrefWith: HrefWith }) {
+async function StatsSection({ organizationSlug }: { organizationSlug: string }) {
   const stats = await getQrStats(organizationSlug);
   if (!stats.data) return null;
 
-  return <QrStats stats={stats.data} statsHref={(id) => hrefWith({ stats: String(id) })} />;
+  return <QrStats stats={stats.data} organizationSlug={organizationSlug} />;
 }
 
 async function TableSection({
   organizationSlug,
   filters,
-  hrefWith,
 }: {
   organizationSlug: string;
   filters: ReturnType<typeof qrQuerySchema.parse>;
-  hrefWith: HrefWith;
 }) {
-  const [list, tags] = await Promise.all([getQrCodes(organizationSlug, filters), getQrTags(organizationSlug)]);
-
-  const isFiltered = !!(filters.search || filters.tag || filters.status !== "all");
+  const [list, tags] = await Promise.all([
+    getQrCodes(organizationSlug, filters),
+    getQrTags(organizationSlug),
+  ]);
+  const baseUrl = getQrBaseUrl();
   const tagNames = (tags.data ?? []).map((tag) => tag.name);
 
+  const isFiltered = !!(
+    filters.search ||
+    filters.tag ||
+    filters.status !== "all"
+  );
   return (
     <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
-      <QrToolbar organizationSlug={organizationSlug} tags={tagNames} />
+      <QrToolbar
+        organizationSlug={organizationSlug}
+        baseUrl={baseUrl}
+        tags={tagNames}
+      />
       <QrTable
         items={list.data ?? []}
         organizationSlug={organizationSlug}
-        baseUrl={getQrBaseUrl()}
-        hrefWith={hrefWith}
+        baseUrl={baseUrl}
+        tags={tagNames}
         emptyMessage={
           !list.success
             ? list.message
@@ -143,69 +113,5 @@ async function TableSection({
         </div>
       )}
     </div>
-  );
-}
-
-async function DialogSection({
-  organizationSlug,
-  isNew,
-  editId,
-  statsId,
-  closeHref,
-}: {
-  organizationSlug: string;
-  isNew: boolean;
-  editId?: number;
-  statsId?: number;
-  closeHref: string;
-}) {
-  if (!isNew && !editId && !statsId) return null;
-
-  const [tags, editResult, statsResult] = await Promise.all([
-    isNew || editId ? getQrTags(organizationSlug) : null,
-    editId ? getQrCode(organizationSlug, editId) : null,
-    statsId ? getQrAnalytics(organizationSlug, statsId) : null,
-  ]);
-  const tagNames = (tags?.data ?? []).map((tag) => tag.name);
-  const editing = editResult?.data;
-  const analytics = statsResult?.data;
-  const baseUrl = getQrBaseUrl();
-
-  return (
-    <>
-      {isNew && (
-        <QrFormDialog organizationSlug={organizationSlug} baseUrl={baseUrl} tags={tagNames} closeHref={closeHref} />
-      )}
-
-      {editing && (
-        <QrFormDialog
-          key={editing.id}
-          organizationSlug={organizationSlug}
-          baseUrl={baseUrl}
-          tags={tagNames}
-          closeHref={closeHref}
-          qr={{
-            id: editing.id,
-            values: {
-              name: editing.name,
-              destination: editing.destination,
-              slug: editing.slug,
-              tag: editing.tag?.name ?? "",
-              expiresAt: editing.expiresAt ? toDateInput(editing.expiresAt) : "",
-              style: parseQrStyle(editing.style),
-            },
-          }}
-        />
-      )}
-
-      {analytics && (
-        <QrAnalyticsDialog
-          organizationSlug={organizationSlug}
-          qr={analytics.qr}
-          analytics={analytics.analytics}
-          closeHref={closeHref}
-        />
-      )}
-    </>
   );
 }

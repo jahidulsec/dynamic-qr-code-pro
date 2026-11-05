@@ -2,7 +2,7 @@
 // Server-only pieces (scan recording, org guards) live in "./server".
 
 /* ------------------------------- Components ------------------------------- */
-export { QrAnalyticsDialog } from "./components/qr-analytics-dialog";
+export { QrCreateButton } from "./components/qr-create-button";
 export { QrFormDialog } from "./components/qr-form-dialog";
 export { QrPreview } from "./components/qr-preview";
 export { QrStats } from "./components/qr-stats";
