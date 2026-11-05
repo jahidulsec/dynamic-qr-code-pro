@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import { FormButton } from "@/components/shared/button/button";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -104,9 +105,9 @@ export function QrTagFormDialog({ organizationSlug, trigger, children, tag }: Qr
 
           <DialogFooter>
             <DialogClose render={<Button type="button" variant="outline" />}>Cancel</DialogClose>
-            <Button type="submit" disabled={isSubmitting}>
+            <FormButton type="submit" isPending={isSubmitting}>
               {isRename ? "Save" : "Create tag"}
-            </Button>
+            </FormButton>
           </DialogFooter>
         </form>
       </DialogContent>

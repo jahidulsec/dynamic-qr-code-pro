@@ -6,7 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { PasswordInput } from "@/components/shared/input/password";
-import { Button } from "@/components/ui/button";
+import { FormButton } from "@/components/shared/button/button";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { signInAction } from "@/features/auth/sign-in/actions/sign-in";
@@ -82,9 +82,9 @@ export function SignInForm({ className, ...props }: React.ComponentProps<"form">
         />
 
         <Field>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Signing in…" : "Sign in"}
-          </Button>
+          <FormButton type="submit" isPending={isSubmitting}>
+            Sign in
+          </FormButton>
           <FieldDescription className="text-center">
             Don&apos;t have an account? <Link href="/sign-up">Sign up</Link>
           </FieldDescription>

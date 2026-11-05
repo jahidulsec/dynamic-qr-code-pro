@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import PagePagination from "@/components/shared/pagination/pagination";
+import { Section, SectionContainer } from "@/components/shared/section/section";
 import { TableSkeleton } from "@/components/shared/skeleton/table";
 import { PageHeader } from "@/features/dashboard/server";
 import {
@@ -29,7 +30,7 @@ export default async function OrganizationDashboardPage({
   return (
     <>
       <PageHeader organizationSlug={organizationSlug} title="Dashboard" />
-      <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+      <SectionContainer>
         <Suspense>
           <StatsSection organizationSlug={organizationSlug} />
         </Suspense>
@@ -39,7 +40,7 @@ export default async function OrganizationDashboardPage({
             searchParams={searchParams}
           />
         </Suspense>
-      </div>
+      </SectionContainer>
     </>
   );
 }
@@ -77,7 +78,7 @@ async function TableSection({
     filters.status !== "all"
   );
   return (
-    <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
+    <Section className="overflow-hidden">
       <QrToolbar
         organizationSlug={organizationSlug}
         baseUrl={baseUrl}
@@ -101,6 +102,6 @@ async function TableSection({
           <PagePagination count={list.count} limit={filters.size} />
         </div>
       )}
-    </div>
+    </Section>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { IconTrash } from "@tabler/icons-react";
 
+import { Section, SectionContainer, SectionDescription, SectionEmpty } from "@/components/shared/section/section";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/features/dashboard/server";
 import { getTrashedQrCodes, TrashRowActions } from "@/features/qr";
@@ -25,11 +26,11 @@ export default async function TrashPage({ params }: PageProps<"/[organizationSlu
   return (
     <>
       <PageHeader organizationSlug={organizationSlug} title="Trash Bin" />
-      <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-        <p className="text-sm text-muted-foreground">
+      <SectionContainer>
+        <SectionDescription>
           Trashed QR codes stop redirecting but keep their scan history. Restore one to switch it back on.
-        </p>
-        <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
+        </SectionDescription>
+        <Section className="overflow-hidden">
           {items.length ? (
             <Table>
               <TableHeader>
@@ -69,13 +70,12 @@ export default async function TrashPage({ params }: PageProps<"/[organizationSlu
               </TableBody>
             </Table>
           ) : (
-            <div className="flex flex-col items-center gap-2 px-4 py-16 text-center text-sm text-muted-foreground">
-              <IconTrash className="size-8" />
+            <SectionEmpty icon={<IconTrash />}>
               {trashed.success ? "The trash is empty." : trashed.message}
-            </div>
+            </SectionEmpty>
           )}
-        </div>
-      </div>
+        </Section>
+      </SectionContainer>
     </>
   );
 }

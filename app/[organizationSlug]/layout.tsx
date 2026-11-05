@@ -9,7 +9,7 @@ import {
   getSession,
   listOrganizations,
 } from "@/features/organizations/server";
-import { getQrStats } from "@/features/qr";
+import { getQrCount } from "@/features/qr";
 import { getQrTags } from "@/features/qr-tags";
 
 export const metadata: Metadata = {
@@ -33,7 +33,11 @@ async function OrganizationShell({ children, params }: LayoutProps<"/[organizati
   const [organization, organizations] = await Promise.all([getOrganizationBySlug(organizationSlug), listOrganizations()]);
   if (!organization) notFound();
 
-  const [stats, departments] = await Promise.all([getQrStats(organization.slug), getQrTags(organization.slug)]);
+  // the sidebar reads fresh so its counts never lag behind the page
+  const [qrCount, departments] = await Promise.all([
+    getQrCount(organization.slug),
+    getQrTags(organization.slug, { cache: false }),
+  ]);
 
   return (
     <SidebarProvider>
@@ -41,10 +45,10 @@ async function OrganizationShell({ children, params }: LayoutProps<"/[organizati
         user={{ name: session.user.name, email: session.user.email, image: session.user.image }}
         organizations={organizations.map(({ name, slug, logo }) => ({ name, slug, logo }))}
         activeSlug={organization.slug}
-        qrCount={stats.data?.total ?? 0}
+        qrCount={qrCount.data ?? 0}
         departments={departments.data ?? []}
       />
-      <SidebarInset>{children}</SidebarInset>
+      <SidebarInset className="min-w-0">{children}</SidebarInset>
     </SidebarProvider>
   );
 }

@@ -58,6 +58,7 @@ export function buildQrWhere(organizationId: string, { search, tag, status }: Qr
             { name: { contains: term } },
             { slug: { contains: term } },
             { destination: { contains: term } },
+            { tag: { name: { contains: term } } },
             { createdBy: { name: { contains: term } } },
           ],
         }

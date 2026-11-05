@@ -1,22 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import {
-  IconAccessPoint,
-  IconCircleCheck,
-  IconClockX,
-  IconPlayerPause,
-  IconScan,
-  IconShieldCheck,
-} from "@tabler/icons-react";
+import { IconAccessPoint, IconScan, IconShieldCheck } from "@tabler/icons-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { QrCodeImage } from "@/features/qr/components/qr-code-image";
+import { QR_CHECK_STATUS, QrTestScanButton, type QrCheckState } from "@/features/qr/components/qr-test-scan-button";
 import type { QrStyle } from "@/features/qr/schemas/qr-schema";
-
-export type QrCheckState = "ready" | "paused" | "expired";
 
 type QrCheckDialogProps = {
   qr: {
@@ -39,20 +31,6 @@ type QrCheckDialogProps = {
   onEditUrl: () => void;
 };
 
-const STATUS = {
-  ready: {
-    label: "Ready",
-    icon: IconCircleCheck,
-    className: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
-  },
-  paused: {
-    label: "Paused",
-    icon: IconPlayerPause,
-    className: "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400",
-  },
-  expired: { label: "Expired", icon: IconClockX, className: "bg-destructive/10 text-destructive" },
-} satisfies Record<QrCheckState, { label: string; icon: typeof IconCircleCheck; className: string }>;
-
 export function QrCheckDialog({
   qr,
   state,
@@ -66,7 +44,7 @@ export function QrCheckDialog({
 }: QrCheckDialogProps) {
   // bumped optimistically: the real scan is recorded by the short link after the redirect is sent
   const [scans, setScans] = useState(qr.scanCount);
-  const status = STATUS[state];
+  const status = QR_CHECK_STATUS[state];
   const ready = state === "ready";
 
   return (
@@ -105,16 +83,12 @@ export function QrCheckDialog({
               </span>
             </div>
 
-            {/* opens the real short link, so the test runs the same redirect and scan logging a phone would */}
-            <Button
+            <QrTestScanButton
               className="w-full"
-              render={<a href={qrValue} target="_blank" rel="noopener noreferrer" />}
-              nativeButton={false}
-              onClick={() => ready && setScans((count) => count + 1)}
-            >
-              <IconScan data-icon="inline-start" />
-              {ready ? "Click to Test Scan (+1 Count)" : `Test Scan (${status.label}, not counted)`}
-            </Button>
+              qrValue={qrValue}
+              state={state}
+              onScan={() => setScans((count) => count + 1)}
+            />
           </section>
 
           <div className="flex flex-col justify-between gap-4">

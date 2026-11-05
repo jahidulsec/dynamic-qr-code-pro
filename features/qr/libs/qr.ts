@@ -53,6 +53,32 @@ export const getQrCode = async (organizationSlug: string, id: number) => {
   }
 };
 
+// one code in the list shape, for pages that show a code outside the current search results
+export const getQrListItem = async (organizationSlug: string, id: number) => {
+  try {
+    const qrId = qrIdSchema.parse(id);
+    const { organization } = await requireOrganization(organizationSlug);
+
+    const data = await findQrCode({ where: { id: qrId, ...liveQrWhere(organization.id) }, select: qrListSelect });
+    if (!data) throw notFound();
+
+    return apiResponse.single({ data });
+  } catch (error) {
+    return apiResponse.error({ error });
+  }
+};
+
+// just the live total, read fresh (no `use cache`) for the sidebar
+export const getQrCount = async (organizationSlug: string) => {
+  try {
+    const { organization } = await requireOrganization(organizationSlug);
+    const data = await countQrCodes({ where: liveQrWhere(organization.id) }, { cache: false });
+    return apiResponse.single({ data });
+  } catch (error) {
+    return apiResponse.error({ error });
+  }
+};
+
 export const getQrStats = async (organizationSlug: string) => {
   try {
     const { organization } = await requireOrganization(organizationSlug);

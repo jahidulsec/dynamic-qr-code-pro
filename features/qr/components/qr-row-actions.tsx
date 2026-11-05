@@ -22,9 +22,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { setQrStatusAction, trashQrAction } from "@/features/qr/actions/manage-qr";
 import { QrAnalyticsButton } from "@/features/qr/components/qr-analytics-button";
-import { QrCheckDialog, type QrCheckState } from "@/features/qr/components/qr-check-dialog";
+import { QrCheckDialog } from "@/features/qr/components/qr-check-dialog";
 import { QrExportButton } from "@/features/qr/components/qr-export-button";
 import { QrFormDialog } from "@/features/qr/components/qr-form-dialog";
+import type { QrCheckState } from "@/features/qr/components/qr-test-scan-button";
 import type { QrFormInput, QrStyle } from "@/features/qr/schemas/qr-schema";
 
 type QrRowActionsProps = {

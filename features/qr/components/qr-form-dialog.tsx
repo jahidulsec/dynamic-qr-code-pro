@@ -16,6 +16,7 @@ import {
 } from "@tabler/icons-react";
 
 import { Badge } from "@/components/ui/badge";
+import { FormButton } from "@/components/shared/button/button";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -420,10 +421,10 @@ export function QrFormDialog({
               fileName={slug || name || "qr-code"}
             />
             <div className="mt-auto flex flex-col gap-2 pt-4">
-              <Button type="submit" disabled={isSubmitting}>
+              <FormButton type="submit" isPending={isSubmitting}>
                 <IconCheck data-icon="inline-start" />
-                {isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Save & deploy QR"}
-              </Button>
+                {isEdit ? "Save changes" : "Save & deploy QR"}
+              </FormButton>
               <Button type="button" variant="ghost" onClick={close}>
                 Discard
               </Button>

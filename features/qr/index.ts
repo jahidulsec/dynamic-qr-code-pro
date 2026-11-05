@@ -2,6 +2,7 @@
 // Server-only pieces (scan recording, org guards) live in "./server".
 
 /* ------------------------------- Components ------------------------------- */
+export { QrCheckWorkspace } from "./components/qr-check-workspace";
 export { QrCreateButton } from "./components/qr-create-button";
 export { QrFormDialog } from "./components/qr-form-dialog";
 export { QrPreview } from "./components/qr-preview";
@@ -19,6 +20,8 @@ export {
   getQrAnalytics,
   getQrCode,
   getQrCodes,
+  getQrCount,
+  getQrListItem,
   getQrStats,
   getTrashedQrCodes,
 } from "./libs/qr";
@@ -26,11 +29,13 @@ export {
 /* --------------------------- Schemas, constants, types --------------------------- */
 export { QR_ACTIVITY_DAYS, QR_PAGE_SIZE, QR_QUOTA } from "./constants";
 export type { QrAnalytics } from "./libs/qr-analytics";
+export { toQrCheckItem, type QrCheckItem } from "./libs/qr-check";
 export type { QrListItem, QrStatsData } from "./libs/qr-query";
 export {
   DEFAULT_QR_STYLE,
   parseQrStyle,
   qrFormSchema,
+  qrIdSchema,
   qrSearchParamsSchema,
   qrSlugSchema,
   QR_STATUS_FILTERS,

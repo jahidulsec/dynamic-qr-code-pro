@@ -79,7 +79,12 @@ export function AppSidebar({ user, organizations, activeSlug, qrCount, departmen
       <SidebarContent>
         <NavMain items={navItems} />
         <SidebarSeparator className="mx-0 group-data-[collapsible=icon]:hidden" />
-        <NavDepartments departments={departments} baseHref={`/${activeSlug}`} total={qrCount} />
+        <NavDepartments
+          departments={departments}
+          baseHref={`/${activeSlug}`}
+          filterHrefs={[`/${activeSlug}/reports`]}
+          total={qrCount}
+        />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />

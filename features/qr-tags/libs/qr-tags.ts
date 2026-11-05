@@ -6,15 +6,16 @@ import { getQrTags as findQrTags } from "@/features/qr-tags/services/qr-tag";
 import { cacheTags } from "@/lib/cache/cache-tags";
 import { apiResponse } from "@/utils/response";
 
-// every tag with its live QR count; small enough per organization that it isn't paginated
-export const getQrTags = async (organizationSlug: string) => {
+// every tag with its live QR count; small enough per organization that it isn't paginated.
+// `cache: false` reads fresh, skipping `use cache` (the sidebar does this)
+export const getQrTags = async (organizationSlug: string, { cache = true }: { cache?: boolean } = {}) => {
   try {
     const { organization } = await requireOrganization(organizationSlug);
 
     const tags = await findQrTags(
       { where: { organizationId: organization.id }, select: qrTagListSelect, orderBy: { name: "asc" } },
       // counts change when codes are trashed or restored
-      { tags: cacheTags.qrCodes },
+      { tags: cacheTags.qrCodes, cache },
     );
     const data = tags.map(toQrTagListItem);
 

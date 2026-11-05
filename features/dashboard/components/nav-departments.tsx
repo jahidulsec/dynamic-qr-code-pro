@@ -22,26 +22,30 @@ const PARAM = "department"
 
 type NavDepartmentsProps = {
   departments: Department[]
-  /** the dashboard, where the filter applies */
+  /** the dashboard, where the filter applies from any other page */
   baseHref: string
+  /** other pages that read the same `department` param and keep it in place */
+  filterHrefs?: string[]
   /** every QR code, tagged or not */
   total: number
 }
 
-export function NavDepartments({ departments, baseHref, total }: NavDepartmentsProps) {
+export function NavDepartments({ departments, baseHref, filterHrefs = [], total }: NavDepartmentsProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const onDashboard = pathname === baseHref
-  const selected = onDashboard ? searchParams.get(PARAM) : null
+  // on a page that filters by department the links stay on it; elsewhere they go to the dashboard
+  const filterHref = pathname === baseHref || filterHrefs.includes(pathname) ? pathname : null
+  const selected = filterHref ? searchParams.get(PARAM) : null
 
-  // keeps the dashboard's other filters, but starts again from the first page
+  // keeps the page's other filters, but starts again from the first page
   const hrefFor = (name: string | null) => {
-    const params = new URLSearchParams(onDashboard ? searchParams.toString() : "")
+    const target = filterHref ?? baseHref
+    const params = new URLSearchParams(filterHref ? searchParams.toString() : "")
     params.delete("page")
     if (name) params.set(PARAM, name)
     else params.delete(PARAM)
     const query = params.toString()
-    return query ? `${baseHref}?${query}` : baseHref
+    return query ? `${target}?${query}` : target
   }
 
   return (

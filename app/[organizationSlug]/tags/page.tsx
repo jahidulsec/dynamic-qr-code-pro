@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { IconPlus } from "@tabler/icons-react";
 
+import { Section, SectionContainer, SectionDescription } from "@/components/shared/section/section";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/features/dashboard/server";
 import { isOrganizationAdmin } from "@/features/qr/server";
@@ -17,22 +18,22 @@ export default async function TagsPage({ params }: PageProps<"/[organizationSlug
   return (
     <>
       <PageHeader organizationSlug={organizationSlug} title="Department Tags" />
-      <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+      <SectionContainer>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">
+          <SectionDescription>
             Tags group QR codes on the dashboard. Renaming one updates every code that uses it.
-          </p>
+          </SectionDescription>
           <QrTagFormDialog organizationSlug={organizationSlug} trigger={<Button size="sm" />}>
             <IconPlus data-icon="inline-start" />
             New tag
           </QrTagFormDialog>
         </div>
-        <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
+        <Section className="overflow-hidden">
           <Suspense>
             <TagsSection organizationSlug={organizationSlug} />
           </Suspense>
-        </div>
-      </div>
+        </Section>
+      </SectionContainer>
     </>
   );
 }

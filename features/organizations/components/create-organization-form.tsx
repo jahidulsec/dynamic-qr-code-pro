@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
+import { FormButton } from "@/components/shared/button/button";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { createOrganizationAction } from "@/features/organizations/actions/create-organization";
@@ -99,9 +99,9 @@ export function CreateOrganizationForm({ canGoBack = false, className, ...props 
         />
 
         <Field>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Creating organization…" : "Create organization"}
-          </Button>
+          <FormButton type="submit" isPending={isSubmitting}>
+            Create organization
+          </FormButton>
           {canGoBack && (
             <FieldDescription className="text-center">
               <Link href="/organizations">Back to organizations</Link>
