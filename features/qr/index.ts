@@ -31,12 +31,11 @@ export {
   DEFAULT_QR_STYLE,
   parseQrStyle,
   qrFormSchema,
-  qrQuerySchema,
+  qrSearchParamsSchema,
   qrSlugSchema,
   QR_STATUS_FILTERS,
   type QrFormInput,
   type QrFormValues,
-  type QrQuerySchemaType,
   type QrStatusFilter,
   type QrStyle,
 } from "./schemas/qr-schema";

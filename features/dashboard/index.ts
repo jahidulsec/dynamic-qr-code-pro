@@ -2,4 +2,3 @@
 export { AppSidebar } from "./components/app-sidebar";
 export type { Department } from "./components/nav-departments";
 export type { NavMainItem } from "./components/nav-main";
-export { PageHeader } from "./components/page-header";

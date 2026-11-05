@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import PagePagination from "@/components/shared/pagination/pagination";
-import { PageHeader } from "@/features/dashboard";
-import { getOrganizationBySlug } from "@/features/organizations/server";
+import { TableSkeleton } from "@/components/shared/skeleton/table";
+import { PageHeader } from "@/features/dashboard/server";
 import {
   getQrCodes,
   getQrStats,
-  qrQuerySchema,
+  qrSearchParamsSchema,
   QrStats,
   QrTable,
   QrToolbar,
@@ -16,52 +15,40 @@ import {
 import { getQrTags } from "@/features/qr-tags";
 import type { SearchParams } from "@/types/params";
 import { getQrBaseUrl } from "@/utils/short-link";
-import { TableSkeleton } from "@/components/shared/skeleton/table";
 
 export const metadata: Metadata = {
   title: "Dashboard",
 };
-
-const stringParam = (value: string | string[] | undefined) =>
-  typeof value === "string" ? value : undefined;
 
 export default async function OrganizationDashboardPage({
   params,
   searchParams,
 }: PageProps<"/[organizationSlug]">) {
   const { organizationSlug } = await params;
-  const query: SearchParams = await searchParams;
-
-  // the layout already guards access; this reuses its cached lookup
-  const organization = await getOrganizationBySlug(organizationSlug);
-  if (!organization) notFound();
-
-  const filters = qrQuerySchema.parse({
-    page: stringParam(query.page),
-    size: stringParam(query.size),
-    search: stringParam(query.q),
-    tag: stringParam(query.department),
-    status: stringParam(query.status),
-  });
-
-  const slug = organization.slug;
 
   return (
     <>
-      <PageHeader organizationName={organization.name} title="Dashboard" />
+      <PageHeader organizationSlug={organizationSlug} title="Dashboard" />
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <Suspense>
-          <StatsSection organizationSlug={slug} />
+          <StatsSection organizationSlug={organizationSlug} />
         </Suspense>
         <Suspense fallback={<TableSkeleton />}>
-          <TableSection organizationSlug={slug} filters={filters} />
+          <TableSection
+            organizationSlug={organizationSlug}
+            searchParams={searchParams}
+          />
         </Suspense>
       </div>
     </>
   );
 }
 
-async function StatsSection({ organizationSlug }: { organizationSlug: string }) {
+async function StatsSection({
+  organizationSlug,
+}: {
+  organizationSlug: string;
+}) {
   const stats = await getQrStats(organizationSlug);
   if (!stats.data) return null;
 
@@ -70,11 +57,13 @@ async function StatsSection({ organizationSlug }: { organizationSlug: string }) 
 
 async function TableSection({
   organizationSlug,
-  filters,
+  searchParams,
 }: {
   organizationSlug: string;
-  filters: ReturnType<typeof qrQuerySchema.parse>;
+  searchParams: Promise<SearchParams>;
 }) {
+  const filters = qrSearchParamsSchema.parse(await searchParams);
+
   const [list, tags] = await Promise.all([
     getQrCodes(organizationSlug, filters),
     getQrTags(organizationSlug),

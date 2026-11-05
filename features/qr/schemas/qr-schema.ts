@@ -76,4 +76,12 @@ export const qrQuerySchema = z.object({
 // every field is optional: missing or invalid values fall back to the defaults above
 export type QrQuerySchemaType = Partial<z.input<typeof qrQuerySchema>>;
 
+// a single-valued URL param; repeated (array) or missing values become undefined
+const urlParam = z.string().optional().catch(undefined);
+
+// the dashboard URL (?q=&department=&status=&page=&size=) mapped onto the list filters
+export const qrSearchParamsSchema = z
+  .object({ page: urlParam, size: urlParam, q: urlParam, department: urlParam, status: urlParam })
+  .transform(({ q, department, ...rest }) => qrQuerySchema.parse({ ...rest, search: q, tag: department }));
+
 export const qrIdSchema = z.coerce.number().int().positive();

@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { IconTrash } from "@tabler/icons-react";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PageHeader } from "@/features/dashboard";
-import { getOrganizationBySlug, getSession } from "@/features/organizations/server";
+import { PageHeader } from "@/features/dashboard/server";
 import { getTrashedQrCodes, TrashRowActions } from "@/features/qr";
-import { isAdminRole } from "@/features/qr/server";
+import { isOrganizationAdmin } from "@/features/qr/server";
 import { formatDate, shortLinkLabel } from "@/utils/format";
 import { getQrBaseUrl } from "@/utils/short-link";
 
@@ -17,18 +15,16 @@ export const metadata: Metadata = {
 export default async function TrashPage({ params }: PageProps<"/[organizationSlug]/trash">) {
   const { organizationSlug } = await params;
 
-  const [organization, session] = await Promise.all([getOrganizationBySlug(organizationSlug), getSession()]);
-  if (!organization || !session) notFound();
-
-  const trashed = await getTrashedQrCodes(organization.slug);
+  const [trashed, canDelete] = await Promise.all([
+    getTrashedQrCodes(organizationSlug),
+    isOrganizationAdmin(organizationSlug),
+  ]);
   const items = trashed.data ?? [];
-  const role = organization.members.find((member) => member.userId === session.user.id)?.role ?? "";
-  const canDelete = isAdminRole(role);
   const baseUrl = getQrBaseUrl();
 
   return (
     <>
-      <PageHeader organizationName={organization.name} title="Trash Bin" />
+      <PageHeader organizationSlug={organizationSlug} title="Trash Bin" />
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <p className="text-sm text-muted-foreground">
           Trashed QR codes stop redirecting but keep their scan history. Restore one to switch it back on.
@@ -63,7 +59,7 @@ export default async function TrashPage({ params }: PageProps<"/[organizationSlu
                     </TableCell>
                     <TableCell className="pr-4">
                       <TrashRowActions
-                        organizationSlug={organization.slug}
+                        organizationSlug={organizationSlug}
                         qr={{ id: qr.id, name: qr.name }}
                         canDelete={canDelete}
                       />

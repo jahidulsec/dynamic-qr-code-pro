@@ -21,3 +21,15 @@ export async function requireOrganization(organizationSlug: string) {
 }
 
 export const isAdminRole = (role: string) => role.split(",").some((r) => ADMIN_ROLES.includes(r.trim()));
+
+// whether the signed-in member may manage the organization; false when they can't be resolved
+export async function isOrganizationAdmin(organizationSlug: string) {
+  try {
+    const { role } = await requireOrganization(organizationSlug);
+    return isAdminRole(role);
+  } catch (error) {
+    // only the resolver's own errors mean "not an admin"; anything else (DB, Next internals) propagates
+    if (error instanceof APIError) return false;
+    throw error;
+  }
+}
