@@ -19,6 +19,7 @@ model User {
   accounts      Account[]
   members       Member[]
   invitations   Invitation[]
+  qrCodes       QrCode[]
 
   @@map("user")
 }
@@ -80,6 +81,8 @@ model Organization {
   metadata    String?      @db.Text
   members     Member[]
   invitations Invitation[]
+  qrCodes     QrCode[]
+  qrTags      QrTag[]
 
   @@map("organization")
 }
@@ -113,4 +116,72 @@ model Invitation {
   @@index([organizationId])
   @@index([email])
   @@map("invitation")
+}
+
+enum QrType {
+  WEBSITE
+}
+
+enum QrStatus {
+  ACTIVE
+  PAUSED
+}
+
+model QrCode {
+  // global auto-increment, shown as "# 542"
+  id             Int          @id @default(autoincrement())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById    String
+  createdBy      User         @relation(fields: [createdById], references: [id])
+  tagId          String?
+  tag            QrTag?       @relation(fields: [tagId], references: [id], onDelete: SetNull)
+  name           String       @db.VarChar(255)
+  // printed into the code, so it never changes once created
+  slug           String       @unique @db.VarChar(64)
+  type           QrType       @default(WEBSITE)
+  // the dynamic part: can be edited at any time
+  destination    String       @db.Text
+  status         QrStatus     @default(ACTIVE)
+  style          Json?
+  expiresAt      DateTime?
+  // kept alongside QrScan so the list doesn't have to count rows
+  scanCount      Int          @default(0)
+  // set when moved to the trash bin
+  deletedAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  scans          QrScan[]
+
+  @@index([organizationId, deletedAt, createdAt])
+  @@index([tagId])
+  @@index([createdById])
+  @@map("qr_code")
+}
+
+model QrTag {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String       @db.VarChar(32)
+  createdAt      DateTime     @default(now())
+  qrCodes        QrCode[]
+
+  @@unique([organizationId, name])
+  @@map("qr_tag")
+}
+
+model QrScan {
+  id          BigInt   @id @default(autoincrement())
+  qrCodeId    Int
+  qrCode      QrCode   @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
+  scannedAt   DateTime @default(now())
+  // sha256 of ip + user agent + day + secret: counts unique visitors without storing the IP
+  visitorHash String   @db.Char(64)
+  device      String   @db.VarChar(16)
+  country     String?  @db.VarChar(2)
+  region      String?  @db.VarChar(64)
+
+  @@index([qrCodeId, scannedAt])
+  @@map("qr_scan")
 }

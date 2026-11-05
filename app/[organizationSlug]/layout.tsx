@@ -9,6 +9,7 @@ import {
   getSession,
   listOrganizations,
 } from "@/features/organizations/services/get-organization";
+import { getQrStats, getQrTags } from "@/features/qr/libs/qr";
 
 export const metadata: Metadata = {
   robots: { index: false },
@@ -31,12 +32,16 @@ async function OrganizationShell({ children, params }: LayoutProps<"/[organizati
   const [organization, organizations] = await Promise.all([getOrganizationBySlug(organizationSlug), listOrganizations()]);
   if (!organization) notFound();
 
+  const [stats, departments] = await Promise.all([getQrStats(organization.slug), getQrTags(organization.slug)]);
+
   return (
     <SidebarProvider>
       <AppSidebar
         user={{ name: session.user.name, email: session.user.email, image: session.user.image }}
         organizations={organizations.map(({ name, slug, logo }) => ({ name, slug, logo }))}
         activeSlug={organization.slug}
+        qrCount={stats.data?.total ?? 0}
+        departments={departments.data ?? []}
       />
       <SidebarInset>{children}</SidebarInset>
     </SidebarProvider>

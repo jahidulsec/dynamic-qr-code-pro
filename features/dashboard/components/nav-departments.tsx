@@ -20,18 +20,28 @@ export type Department = {
 
 const PARAM = "department"
 
-export function NavDepartments({ departments }: { departments: Department[] }) {
+type NavDepartmentsProps = {
+  departments: Department[]
+  /** the dashboard, where the filter applies */
+  baseHref: string
+  /** every QR code, tagged or not */
+  total: number
+}
+
+export function NavDepartments({ departments, baseHref, total }: NavDepartmentsProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const selected = searchParams.get(PARAM)
-  const total = departments.reduce((sum, department) => sum + department.count, 0)
+  const onDashboard = pathname === baseHref
+  const selected = onDashboard ? searchParams.get(PARAM) : null
 
+  // keeps the dashboard's other filters, but starts again from the first page
   const hrefFor = (name: string | null) => {
-    const params = new URLSearchParams(searchParams.toString())
+    const params = new URLSearchParams(onDashboard ? searchParams.toString() : "")
+    params.delete("page")
     if (name) params.set(PARAM, name)
     else params.delete(PARAM)
     const query = params.toString()
-    return query ? `${pathname}?${query}` : pathname
+    return query ? `${baseHref}?${query}` : baseHref
   }
 
   return (

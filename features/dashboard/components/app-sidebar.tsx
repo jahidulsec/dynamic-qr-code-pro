@@ -30,11 +30,11 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar"
 
-// TODO: replace placeholder counts and departments with real data once QR codes are modelled
-function getNavItems(slug: string): NavMainItem[] {
+// TODO: replace the remaining placeholder badges once subscriptions and teams are built
+function getNavItems(slug: string, qrCount: number): NavMainItem[] {
   const base = `/${slug}`
   return [
-    { title: "Dashboard", url: base, exact: true, icon: <IconLayoutDashboard />, badge: { label: "20" } },
+    { title: "Dashboard", url: base, exact: true, icon: <IconLayoutDashboard />, badge: { label: String(qrCount) } },
     { title: "Graph Reports", url: `${base}/reports`, icon: <IconChartBar />, badge: { label: "Live", tone: "success" } },
     { title: "Click to Check", url: `${base}/check`, icon: <IconScan /> },
     { title: "Batch Generator", url: `${base}/batch`, icon: <IconStack2 /> },
@@ -45,22 +45,16 @@ function getNavItems(slug: string): NavMainItem[] {
   ]
 }
 
-const departments: Department[] = [
-  { name: "RNL", count: 3 },
-  { name: "JBL", count: 1 },
-  { name: "RPL", count: 14 },
-  { name: "HR", count: 1 },
-  { name: "IBRPL", count: 1 },
-]
-
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
   user: React.ComponentProps<typeof NavUser>["user"]
   organizations: React.ComponentProps<typeof TeamSwitcher>["organizations"]
   activeSlug: string
+  qrCount: number
+  departments: Department[]
 }
 
-export function AppSidebar({ user, organizations, activeSlug, ...props }: AppSidebarProps) {
-  const navItems = React.useMemo(() => getNavItems(activeSlug), [activeSlug])
+export function AppSidebar({ user, organizations, activeSlug, qrCount, departments, ...props }: AppSidebarProps) {
+  const navItems = React.useMemo(() => getNavItems(activeSlug, qrCount), [activeSlug, qrCount])
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -71,7 +65,7 @@ export function AppSidebar({ user, organizations, activeSlug, ...props }: AppSid
             <SidebarMenuButton
               tooltip="Generate Dynamic QR"
               className="justify-center bg-primary font-medium text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
-              render={<Link href={`/${activeSlug}/qr/new`} />}
+              render={<Link href={`/${activeSlug}?new=1`} scroll={false} />}
             >
               <IconPlus />
               <span>Generate Dynamic QR</span>
@@ -83,7 +77,7 @@ export function AppSidebar({ user, organizations, activeSlug, ...props }: AppSid
       <SidebarContent>
         <NavMain items={navItems} />
         <SidebarSeparator className="mx-0 group-data-[collapsible=icon]:hidden" />
-        <NavDepartments departments={departments} />
+        <NavDepartments departments={departments} baseHref={`/${activeSlug}`} total={qrCount} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />
