@@ -94,12 +94,7 @@ export function QrCheckDialog({
               <span aria-hidden className="absolute right-0 bottom-0 size-5 rounded-br-md border-r-2 border-b-2 border-foreground" />
               {/* QR codes print on paper, so the tile keeps its own background in dark mode */}
               <div className="rounded-lg p-2 ring-1 ring-foreground/5" style={{ background: qrStyle.background }}>
-                {/* the simulator shows the bare code: no frame banner */}
-                <QrCodeImage
-                  value={qrValue}
-                  style={{ ...qrStyle, frameText: "" }}
-                  className="mx-auto aspect-auto h-auto w-full"
-                />
+                <QrCodeImage value={qrValue} style={qrStyle} className="mx-auto aspect-auto h-auto w-full" />
               </div>
             </div>
 

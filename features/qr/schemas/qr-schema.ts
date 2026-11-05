@@ -12,8 +12,6 @@ export const qrStyleSchema = z.object({
   background: hexColor,
   dotStyle: z.enum(QR_DOT_STYLES),
   finderStyle: z.enum(QR_FINDER_STYLES),
-  // empty means no frame
-  frameText: z.string().trim().max(24, "Frame text must be at most 24 characters"),
 });
 
 export type QrStyle = z.infer<typeof qrStyleSchema>;
@@ -23,10 +21,10 @@ export const DEFAULT_QR_STYLE: QrStyle = {
   background: "#ffffff",
   dotStyle: "square",
   finderStyle: "square",
-  frameText: "SCAN ME",
 };
 
-// stored JSON may predate a field or be malformed; fall back field by field
+// stored JSON may predate a field or be malformed; fall back field by field.
+// unknown keys (e.g. a legacy frameText) are stripped, since frames are never stored
 export const parseQrStyle = (value: unknown): QrStyle => {
   const result = qrStyleSchema.partial().safeParse(value);
   return { ...DEFAULT_QR_STYLE, ...(result.success ? result.data : {}) };

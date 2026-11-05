@@ -23,6 +23,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createQrAction, updateQrAction } from "@/features/qr/actions/save-qr";
+import { DEFAULT_QR_FRAME, type QrFrame } from "@/features/qr/components/qr-code-image";
+import { QrFrameFields } from "@/features/qr/components/qr-frame-fields";
 import { QrPreview } from "@/features/qr/components/qr-preview";
 import {
   DEFAULT_QR_STYLE,
@@ -90,6 +92,9 @@ export function QrFormDialog({
   const slugEdited = useRef(isEdit);
   const [initialSlug] = useState(randomSlug);
   const [tab, setTab] = useState("target");
+  // local only: frames and logos decorate the preview and downloads, never the saved code
+  const [frame, setFrame] = useState<QrFrame>(DEFAULT_QR_FRAME);
+  const deferredFrame = useDeferredValue(frame);
 
   const {
     control,
@@ -362,21 +367,7 @@ export function QrFormDialog({
                       )}
                     />
                   </div>
-                  <Controller
-                    name="style.frameText"
-                    control={control}
-                    render={({ field, fieldState }) => (
-                      <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel htmlFor="frame-text">Frame text</FieldLabel>
-                        <Input {...field} id="frame-text" placeholder="SCAN ME" aria-invalid={fieldState.invalid} />
-                        {fieldState.invalid ? (
-                          <FieldError errors={[fieldState.error]} />
-                        ) : (
-                          <FieldDescription>Leave empty for no frame.</FieldDescription>
-                        )}
-                      </Field>
-                    )}
-                  />
+                  <QrFrameFields frame={frame} onChange={setFrame} />
                   <FieldDescription>
                     Keep a dark code on a light background with strong contrast, or some phones won&apos;t scan it.
                   </FieldDescription>
@@ -424,6 +415,7 @@ export function QrFormDialog({
             <QrPreview
               value={shortLink(baseUrl, slug || initialSlug)}
               style={style}
+              frame={deferredFrame}
               label={shortLinkLabel(baseUrl, slug || initialSlug)}
               fileName={slug || name || "qr-code"}
             />
