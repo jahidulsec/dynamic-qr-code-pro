@@ -7,6 +7,7 @@ import { IconMailForward, IconX } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cancelInvitationAction, resendInvitationAction } from "@/features/organizations/actions/manage-members";
 import { RoleBadge } from "@/features/organizations/components/role-badge";
 import type { InvitationRow } from "@/features/organizations/libs/settings-types";
@@ -62,27 +63,39 @@ function InvitationRowActions({ organizationSlug, invitation }: { organizationSl
 
   return (
     <div className="flex items-center justify-end gap-1">
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        disabled={isPending}
-        aria-label={`Resend to ${invitation.email}`}
-        title={invitation.expired ? "Resend and renew" : "Resend"}
-        onClick={() => run(resendInvitationAction)}
-      >
-        <IconMailForward />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        disabled={isPending}
-        className="text-destructive hover:text-destructive"
-        aria-label={`Cancel invitation for ${invitation.email}`}
-        title="Cancel invitation"
-        onClick={() => run(cancelInvitationAction)}
-      >
-        <IconX />
-      </Button>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              disabled={isPending}
+              aria-label={`Resend to ${invitation.email}`}
+              onClick={() => run(resendInvitationAction)}
+            />
+          }
+        >
+          <IconMailForward />
+        </TooltipTrigger>
+        <TooltipContent>{invitation.expired ? "Resend and renew" : "Resend invitation"}</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              disabled={isPending}
+              className="text-destructive hover:text-destructive"
+              aria-label={`Cancel invitation for ${invitation.email}`}
+              onClick={() => run(cancelInvitationAction)}
+            />
+          }
+        >
+          <IconX />
+        </TooltipTrigger>
+        <TooltipContent>Cancel invitation</TooltipContent>
+      </Tooltip>
     </div>
   );
 }

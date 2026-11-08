@@ -29,6 +29,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ORGANIZATION_ROLES, ROLE_DETAILS, parseRoles } from "@/features/organizations/libs/roles";
 import { removeMemberAction, updateMemberRoleAction } from "@/features/organizations/actions/manage-members";
 import type { MemberRow } from "@/features/organizations/libs/settings-types";
@@ -69,13 +70,20 @@ export function MemberRowActions({ organizationSlug, member, viewerIsOwner }: Me
   return (
     <div className="flex justify-end">
       <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button variant="ghost" size="icon-sm" disabled={isPending} aria-label={`Manage ${member.name}`} />
-          }
-        >
-          <IconDots />
-        </DropdownMenuTrigger>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <DropdownMenuTrigger
+                render={
+                  <Button variant="ghost" size="icon-sm" disabled={isPending} aria-label={`Manage ${member.name}`} />
+                }
+              />
+            }
+          >
+            <IconDots />
+          </TooltipTrigger>
+          <TooltipContent>Manage member</TooltipContent>
+        </Tooltip>
         <DropdownMenuContent align="end" className="min-w-48">
           <DropdownMenuGroup>
             <DropdownMenuLabel className="truncate">{member.name}</DropdownMenuLabel>
