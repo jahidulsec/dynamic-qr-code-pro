@@ -36,6 +36,3 @@ export const toInvitationRows = (
       };
     });
 };
-
-// placeholder until the settings server actions are wired up
-export const PENDING_ACTION_MESSAGE = "This action isn't connected yet";

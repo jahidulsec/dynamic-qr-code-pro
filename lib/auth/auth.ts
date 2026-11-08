@@ -4,9 +4,12 @@ import { APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { organization } from "better-auth/plugins";
 import prisma from "@/config/db";
-import { sendEmail, verificationLinkEmail, welcomeEmail } from "@/features/email/server";
+import { invitationEmail, sendEmail, verificationLinkEmail, welcomeEmail } from "@/features/email/server";
 import { createOrganizationSchema } from "@/features/organizations";
 import { env } from "@/lib/env";
+
+// keep in sync with the expiry stated in the invite dialog
+const INVITATION_EXPIRES_IN_HOURS = 48;
 
 export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
@@ -39,6 +42,21 @@ export const auth = betterAuth({
   // must be the last plugin so cookies set in server actions are applied
   plugins: [
     organization({
+      invitationExpiresIn: INVITATION_EXPIRES_IN_HOURS * 60 * 60,
+      // re-inviting an email replaces its pending invitation instead of failing
+      cancelPendingInvitationsOnReInvite: true,
+      async sendInvitationEmail({ id, email, role, organization, inviter }) {
+        await sendEmail({
+          to: email,
+          ...invitationEmail({
+            url: new URL(`/accept-invitation/${id}`, env.BETTER_AUTH_URL).toString(),
+            organizationName: organization.name,
+            inviterName: inviter.user.name,
+            role,
+            expiresInHours: INVITATION_EXPIRES_IN_HOURS,
+          }),
+        });
+      },
       // the client can call these endpoints directly, so the server action's validation isn't enough
       organizationHooks: {
         beforeCreateOrganization: async ({ organization }) => ({ data: parseOrganization(organization) }),

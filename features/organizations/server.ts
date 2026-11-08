@@ -1,6 +1,7 @@
 import "server-only";
 
 // Public, server-only API of the organizations feature. Import from "@/features/organizations/server" only.
+export { AcceptInvitation, AcceptInvitationSkeleton } from "./components/accept-invitation";
 export { OrganizationList, OrganizationListSkeleton } from "./components/organization-list";
 export { getOrganizationBySlug, getSession, listOrganizations } from "./services/get-organization";
 export { getMembership } from "./services/get-membership";

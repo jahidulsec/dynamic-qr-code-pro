@@ -55,6 +55,7 @@ export default async function MembersSettingsPage({
           </div>
           {canManage && (
             <InviteMemberDialog
+              organizationSlug={organization.slug}
               organizationName={organization.name}
               viewerIsOwner={viewerIsOwner}
               trigger={<Button size="sm" />}
@@ -65,6 +66,7 @@ export default async function MembersSettingsPage({
           )}
         </SectionCardHeader>
         <MemberTable
+          organizationSlug={organization.slug}
           members={members}
           currentUserId={session.user.id}
           canManage={canManage}
@@ -82,7 +84,7 @@ export default async function MembersSettingsPage({
             </div>
           </SectionCardHeader>
           {invitations.length ? (
-            <InvitationTable invitations={invitations} canManage={canManage} />
+            <InvitationTable organizationSlug={organization.slug} invitations={invitations} canManage={canManage} />
           ) : (
             <p className="px-5 py-8 text-center text-sm text-muted-foreground">
               No pending invitations. Invite a teammate to share this workspace.

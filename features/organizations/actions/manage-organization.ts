@@ -5,29 +5,20 @@ import { redirect } from "next/navigation";
 import { refresh, updateTag } from "next/cache";
 import { APIError } from "better-auth/api";
 
-import { isManagerRole, isOwnerRole } from "@/features/organizations/libs/roles";
+import { isOwnerRole } from "@/features/organizations/libs/roles";
 import {
   createOrganizationSchema,
   type CreateOrganizationValues,
 } from "@/features/organizations/schemas/create-organization-schema";
-import { getMembership } from "@/features/organizations/services/get-membership";
+import { requireManager, requireMembership } from "@/features/organizations/services/get-membership";
 import { auth } from "@/lib/auth/auth";
 import { cacheTags, organizationTag } from "@/lib/cache/cache-tags";
 import { apiResponse } from "@/utils/response";
 
-// the signed-in user's membership, or a user-facing error
-async function requireMembership(organizationSlug: string) {
-  const membership = await getMembership(organizationSlug);
-  if (!membership) throw new APIError("NOT_FOUND", { message: "Organization not found" });
-  return membership;
-}
-
 export const updateOrganizationAction = async (organizationSlug: string, values: CreateOrganizationValues) => {
   try {
     const { name, slug } = createOrganizationSchema.parse(values);
-    const { organization, member } = await requireMembership(organizationSlug);
-    if (!isManagerRole(member.role))
-      throw new APIError("FORBIDDEN", { message: "Only owners and admins can edit the organization" });
+    const { organization } = await requireManager(organizationSlug, "Only owners and admins can edit the organization");
 
     // better-auth re-checks the role and rejects a slug another organization already uses
     const updated = await auth.api.updateOrganization({

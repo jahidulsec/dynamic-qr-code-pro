@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { IconDots, IconShieldCog, IconUserMinus } from "@tabler/icons-react";
 
@@ -30,26 +30,49 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ORGANIZATION_ROLES, ROLE_DETAILS, parseRoles } from "@/features/organizations/libs/roles";
-import { PENDING_ACTION_MESSAGE, type MemberRow } from "@/features/organizations/libs/settings-types";
+import { removeMemberAction, updateMemberRoleAction } from "@/features/organizations/actions/manage-members";
+import type { MemberRow } from "@/features/organizations/libs/settings-types";
 
 type MemberRowActionsProps = {
+  organizationSlug: string;
   member: MemberRow;
   /** owners can assign the owner role and act on other owners */
   viewerIsOwner: boolean;
 };
 
-export function MemberRowActions({ member, viewerIsOwner }: MemberRowActionsProps) {
+export function MemberRowActions({ organizationSlug, member, viewerIsOwner }: MemberRowActionsProps) {
   const [removeOpen, setRemoveOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const currentRole = parseRoles(member.role)[0] ?? "member";
 
-  // TODO: updateMemberRoleAction / removeMemberAction
-  const pending = () => toast.info(PENDING_ACTION_MESSAGE);
+  const changeRole = (role: string) => {
+    if (role === currentRole) return;
+    startTransition(async () => {
+      const result = await updateMemberRoleAction(organizationSlug, member.id, role);
+      if (result.success) toast.success(result.message);
+      else toast.error(result.message);
+    });
+  };
+
+  // the dialog stays open while the request runs so a failure keeps its context
+  const removeMember = () =>
+    startTransition(async () => {
+      const result = await removeMemberAction(organizationSlug, member.id);
+      if (!result.success) {
+        toast.error(result.message);
+        return;
+      }
+      setRemoveOpen(false);
+      toast.success(result.message);
+    });
 
   return (
     <div className="flex justify-end">
       <DropdownMenu>
         <DropdownMenuTrigger
-          render={<Button variant="ghost" size="icon-sm" aria-label={`Manage ${member.name}`} />}
+          render={
+            <Button variant="ghost" size="icon-sm" disabled={isPending} aria-label={`Manage ${member.name}`} />
+          }
         >
           <IconDots />
         </DropdownMenuTrigger>
@@ -66,7 +89,7 @@ export function MemberRowActions({ member, viewerIsOwner }: MemberRowActionsProp
             <DropdownMenuSubContent className="w-64">
               <DropdownMenuRadioGroup
                 value={currentRole}
-                onValueChange={(role) => role !== currentRole && pending()}
+                onValueChange={changeRole}
               >
                 {ORGANIZATION_ROLES.map((role) => (
                   <DropdownMenuRadioItem
@@ -102,8 +125,8 @@ export function MemberRowActions({ member, viewerIsOwner }: MemberRowActionsProp
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={pending}>
-              Remove member
+            <AlertDialogAction variant="destructive" disabled={isPending} onClick={removeMember}>
+              {isPending ? "Removing…" : "Remove member"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

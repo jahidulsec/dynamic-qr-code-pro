@@ -19,8 +19,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { leaveOrganizationAction } from "@/features/organizations/actions/manage-members";
 import { deleteOrganizationAction } from "@/features/organizations/actions/manage-organization";
-import { PENDING_ACTION_MESSAGE } from "@/features/organizations/libs/settings-types";
 
 type OrganizationDangerZoneProps = {
   organization: { name: string; slug: string };
@@ -44,9 +44,14 @@ function DangerRow({ title, description, action }: { title: string; description:
 export function OrganizationDangerZone({ organization, canDelete, canLeave }: OrganizationDangerZoneProps) {
   const [confirmation, setConfirmation] = useState("");
   const [isDeleting, startDeleting] = useTransition();
+  const [isLeaving, startLeaving] = useTransition();
 
-  // TODO: leaveOrganizationAction, then redirect to /organizations
-  const pending = () => toast.info(PENDING_ACTION_MESSAGE);
+  // success redirects to /organizations
+  const leaveOrganization = () =>
+    startLeaving(async () => {
+      const result = await leaveOrganizationAction(organization.slug);
+      if (!result.success) toast.error(result.message);
+    });
 
   // the dialog stays open while the request runs; success redirects to /organizations
   const deleteOrganization = () =>
@@ -83,8 +88,8 @@ export function OrganizationDangerZone({ organization, canDelete, canLeave }: Or
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction variant="destructive" onClick={pending}>
-                    Leave organization
+                  <AlertDialogAction variant="destructive" disabled={isLeaving} onClick={leaveOrganization}>
+                    {isLeaving ? "Leaving…" : "Leave organization"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

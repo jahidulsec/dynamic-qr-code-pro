@@ -1,7 +1,17 @@
 import { z } from "zod";
 
 // slugs live at the URL root, so they can't shadow a top-level route
-const reservedSlugs = ["api", "organizations", "sign-in", "sign-up", "verify-email", "forgot-password"];
+const reservedSlugs = [
+  "api",
+  "organizations",
+  "sign-in",
+  "sign-up",
+  "verify-email",
+  "forgot-password",
+  "accept-invitation",
+  "no-organization",
+  "session-expired",
+];
 
 export const createOrganizationSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(50, "Name must be at most 50 characters"),

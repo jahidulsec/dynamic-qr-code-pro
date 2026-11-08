@@ -1,18 +1,23 @@
 "use client";
 
+import { useTransition } from "react";
 import { toast } from "sonner";
 import { IconMailForward, IconX } from "@tabler/icons-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { cancelInvitationAction, resendInvitationAction } from "@/features/organizations/actions/manage-members";
 import { RoleBadge } from "@/features/organizations/components/role-badge";
-import { PENDING_ACTION_MESSAGE, type InvitationRow } from "@/features/organizations/libs/settings-types";
+import type { InvitationRow } from "@/features/organizations/libs/settings-types";
 
-export function InvitationTable({ invitations, canManage }: { invitations: InvitationRow[]; canManage: boolean }) {
-  // TODO: resendInvitationAction / cancelInvitationAction
-  const pending = () => toast.info(PENDING_ACTION_MESSAGE);
+type InvitationTableProps = {
+  organizationSlug: string;
+  invitations: InvitationRow[];
+  canManage: boolean;
+};
 
+export function InvitationTable({ organizationSlug, invitations, canManage }: InvitationTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -35,25 +40,49 @@ export function InvitationTable({ invitations, canManage }: { invitations: Invit
             </TableCell>
             {canManage && (
               <TableCell className="pr-4">
-                <div className="flex items-center justify-end gap-1">
-                  <Button variant="ghost" size="icon-sm" aria-label={`Resend to ${invitation.email}`} onClick={pending}>
-                    <IconMailForward />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="text-destructive hover:text-destructive"
-                    aria-label={`Cancel invitation for ${invitation.email}`}
-                    onClick={pending}
-                  >
-                    <IconX />
-                  </Button>
-                </div>
+                <InvitationRowActions organizationSlug={organizationSlug} invitation={invitation} />
               </TableCell>
             )}
           </TableRow>
         ))}
       </TableBody>
     </Table>
+  );
+}
+
+function InvitationRowActions({ organizationSlug, invitation }: { organizationSlug: string; invitation: InvitationRow }) {
+  const [isPending, startTransition] = useTransition();
+
+  const run = (action: typeof resendInvitationAction) =>
+    startTransition(async () => {
+      const result = await action(organizationSlug, invitation.id);
+      if (result.success) toast.success(result.message);
+      else toast.error(result.message);
+    });
+
+  return (
+    <div className="flex items-center justify-end gap-1">
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        disabled={isPending}
+        aria-label={`Resend to ${invitation.email}`}
+        title={invitation.expired ? "Resend and renew" : "Resend"}
+        onClick={() => run(resendInvitationAction)}
+      >
+        <IconMailForward />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        disabled={isPending}
+        className="text-destructive hover:text-destructive"
+        aria-label={`Cancel invitation for ${invitation.email}`}
+        title="Cancel invitation"
+        onClick={() => run(cancelInvitationAction)}
+      >
+        <IconX />
+      </Button>
+    </div>
   );
 }

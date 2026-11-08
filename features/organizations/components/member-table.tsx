@@ -17,6 +17,7 @@ import { initialsOf } from "@/features/profile";
 const ROLE_FILTERS = ORGANIZATION_ROLES.map((role) => ({ value: role, label: ROLE_DETAILS[role].label }));
 
 type MemberTableProps = {
+  organizationSlug: string;
   members: MemberRow[];
   currentUserId: string;
   /** owners and admins see row actions */
@@ -26,7 +27,14 @@ type MemberTableProps = {
   initialRole?: string | null;
 };
 
-export function MemberTable({ members, currentUserId, canManage, viewerIsOwner, initialRole }: MemberTableProps) {
+export function MemberTable({
+  organizationSlug,
+  members,
+  currentUserId,
+  canManage,
+  viewerIsOwner,
+  initialRole,
+}: MemberTableProps) {
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<string | null>(initialRole ?? null);
 
@@ -105,7 +113,13 @@ export function MemberTable({ members, currentUserId, canManage, viewerIsOwner, 
                 <TableCell className="font-mono text-xs text-muted-foreground">{member.joinedAt}</TableCell>
                 {canManage && (
                   <TableCell className="pr-4">
-                    {canActOn(member) && <MemberRowActions member={member} viewerIsOwner={viewerIsOwner} />}
+                    {canActOn(member) && (
+                      <MemberRowActions
+                        organizationSlug={organizationSlug}
+                        member={member}
+                        viewerIsOwner={viewerIsOwner}
+                      />
+                    )}
                   </TableCell>
                 )}
               </TableRow>

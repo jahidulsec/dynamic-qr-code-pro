@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { headers } from "next/headers";
+import { APIError } from "better-auth/api";
 
 import { auth } from "@/lib/auth/auth";
 
@@ -14,3 +15,15 @@ export const getOrganizationBySlug = cache(async (slug: string) =>
     .getFullOrganization({ query: { organizationSlug: slug }, headers: await headers() })
     .catch(() => null),
 );
+
+// the signed-in user's pending, unexpired invitations; empty when the lookup is rejected (e.g. unverified email)
+export const listPendingInvitations = cache(async () => {
+  const invitations = await auth.api
+    .listUserInvitations({ headers: await headers() })
+    .catch((error: unknown) => {
+      if (error instanceof APIError) return [];
+      throw error;
+    });
+  const now = Date.now();
+  return invitations.filter((invitation) => new Date(invitation.expiresAt).getTime() > now);
+});

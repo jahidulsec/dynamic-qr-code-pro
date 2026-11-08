@@ -4,7 +4,6 @@ import { useState, type ReactElement, type ReactNode } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import { FormButton } from "@/components/shared/button/button";
 import { Select } from "@/components/shared/select/select";
@@ -21,18 +20,15 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { inviteMemberAction } from "@/features/organizations/actions/manage-members";
 import { ORGANIZATION_ROLES, ROLE_DETAILS } from "@/features/organizations/libs/roles";
-import { PENDING_ACTION_MESSAGE } from "@/features/organizations/libs/settings-types";
-
-// TODO: move to schemas/invite-member-schema.ts once the action exists
-const inviteMemberSchema = z.object({
-  email: z.email("Enter a valid email address").trim().toLowerCase(),
-  role: z.enum(ORGANIZATION_ROLES),
-});
-
-type InviteMemberValues = z.infer<typeof inviteMemberSchema>;
+import {
+  inviteMemberSchema,
+  type InviteMemberValues,
+} from "@/features/organizations/schemas/invite-member-schema";
 
 type InviteMemberDialogProps = {
+  organizationSlug: string;
   organizationName: string;
   /** only owners can invite another owner */
   viewerIsOwner: boolean;
@@ -40,7 +36,13 @@ type InviteMemberDialogProps = {
   children: ReactNode;
 };
 
-export function InviteMemberDialog({ organizationName, viewerIsOwner, trigger, children }: InviteMemberDialogProps) {
+export function InviteMemberDialog({
+  organizationSlug,
+  organizationName,
+  viewerIsOwner,
+  trigger,
+  children,
+}: InviteMemberDialogProps) {
   const [open, setOpen] = useState(false);
   const roleOptions = ORGANIZATION_ROLES.map((role) => ({
     value: role,
@@ -65,9 +67,14 @@ export function InviteMemberDialog({ organizationName, viewerIsOwner, trigger, c
     if (next) reset({ email: "", role: "member" });
   };
 
-  const onSubmit = handleSubmit(async () => {
-    // TODO: inviteMemberAction
-    toast.info(PENDING_ACTION_MESSAGE);
+  const onSubmit = handleSubmit(async (values) => {
+    const result = await inviteMemberAction(organizationSlug, values);
+    if (!result.success) {
+      toast.error(result.message);
+      return;
+    }
+    setOpen(false);
+    toast.success(result.message);
   });
 
   return (
