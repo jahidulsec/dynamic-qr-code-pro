@@ -1,7 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
+import * as React from "react";
 import {
   IconChartBar,
   IconCreditCard,
@@ -13,12 +12,19 @@ import {
   IconTags,
   IconTrash,
   IconUsers,
-} from "@tabler/icons-react"
+} from "@tabler/icons-react";
 
-import { NavDepartments, type Department } from "@/features/dashboard/components/nav-departments"
-import { NavMain, type NavMainItem } from "@/features/dashboard/components/nav-main"
-import { NavUser } from "@/features/dashboard/components/nav-user"
-import { TeamSwitcher } from "@/features/dashboard/components/team-switcher"
+import {
+  NavDepartments,
+  type Department,
+} from "@/features/dashboard/components/nav-departments";
+import {
+  NavMain,
+  type NavMainItem,
+} from "@/features/dashboard/components/nav-main";
+import { NavUser } from "@/features/dashboard/components/nav-user";
+import { TeamSwitcher } from "@/features/dashboard/components/team-switcher";
+import { QrFormDialog } from "@/features/qr";
 import {
   Sidebar,
   SidebarContent,
@@ -29,34 +35,83 @@ import {
   SidebarMenuItem,
   SidebarRail,
   SidebarSeparator,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
 // TODO: replace the remaining placeholder badges once subscriptions and teams are built
 function getNavItems(slug: string, qrCount: number): NavMainItem[] {
-  const base = `/${slug}`
+  const base = `/${slug}`;
   return [
-    { title: "Dashboard", url: base, exact: true, icon: <IconLayoutDashboard />, badge: { label: String(qrCount) } },
-    { title: "Graph Reports", url: `${base}/reports`, icon: <IconChartBar />, badge: { label: "Live", tone: "success" } },
+    {
+      title: "Dashboard",
+      url: base,
+      exact: true,
+      icon: <IconLayoutDashboard />,
+      badge: { label: String(qrCount) },
+    },
+    {
+      title: "Graph Reports",
+      url: `${base}/reports`,
+      icon: <IconChartBar />,
+      badge: { label: "Live", tone: "success" },
+    },
     { title: "Click to Check", url: `${base}/check`, icon: <IconScan /> },
     { title: "Batch Generator", url: `${base}/batch`, icon: <IconStack2 /> },
-    { title: "Yearly Subscription", url: `${base}/subscription`, icon: <IconCreditCard />, badge: { label: "250 QRs", tone: "outline" } },
-    { title: "Billing History", url: `${base}/billing`, icon: <IconFileInvoice />, badge: { label: "PDF", tone: "info" } },
-    { title: "Team & Permissions", url: `${base}/team`, icon: <IconUsers />, badge: { label: "5 Seats", tone: "outline" } },
+    {
+      title: "Yearly Subscription",
+      url: `${base}/subscription`,
+      icon: <IconCreditCard />,
+      badge: { label: "250 QRs", tone: "outline" },
+    },
+    {
+      title: "Billing History",
+      url: `${base}/billing`,
+      icon: <IconFileInvoice />,
+      badge: { label: "PDF", tone: "info" },
+    },
+    {
+      title: "Team & Permissions",
+      url: `${base}/team`,
+      icon: <IconUsers />,
+      badge: { label: "5 Seats", tone: "outline" },
+    },
     { title: "Department Tags", url: `${base}/tags`, icon: <IconTags /> },
     { title: "Trash Bin", url: `${base}/trash`, icon: <IconTrash /> },
-  ]
+  ];
 }
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
-  user: React.ComponentProps<typeof NavUser>["user"]
-  organizations: React.ComponentProps<typeof TeamSwitcher>["organizations"]
-  activeSlug: string
-  qrCount: number
-  departments: Department[]
-}
+  user: React.ComponentProps<typeof NavUser>["user"];
+  organizations: React.ComponentProps<typeof TeamSwitcher>["organizations"];
+  activeSlug: string;
+  /** short-link base, resolved on the server */
+  baseUrl: string;
+  qrCount: number;
+  departments: Department[];
+};
 
-export function AppSidebar({ user, organizations, activeSlug, qrCount, departments, ...props }: AppSidebarProps) {
-  const navItems = React.useMemo(() => getNavItems(activeSlug, qrCount), [activeSlug, qrCount])
+export function AppSidebar({
+  user,
+  organizations,
+  activeSlug,
+  baseUrl,
+  qrCount,
+  departments,
+  ...props
+}: AppSidebarProps) {
+  const navItems = React.useMemo(
+    () => getNavItems(activeSlug, qrCount),
+    [activeSlug, qrCount],
+  );
+  const tags = React.useMemo(
+    () => departments.map((department) => department.name),
+    [departments],
+  );
+
+  const [createOpen, setCreateOpen] = React.useState(false);
+
+  const openCreate = () => {
+    setCreateOpen(true);
+  };
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -66,10 +121,10 @@ export function AppSidebar({ user, organizations, activeSlug, qrCount, departmen
           <SidebarMenuItem>
             <SidebarMenuButton
               tooltip="Generate Dynamic QR"
-              className="justify-center bg-primary font-medium text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
-              render={<Link href={`/${activeSlug}?new=1`} scroll={false} />}
+              className="justify-center bg-foreground font-medium text-background hover:bg-foreground/70 hover:text-background active:bg-foreground/70 active:text-background dark:bg-foreground/70"
+              onClick={openCreate}
             >
-              <IconPlus />
+              <IconPlus className="text-secondary" />
               <span>Generate Dynamic QR</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -90,6 +145,14 @@ export function AppSidebar({ user, organizations, activeSlug, qrCount, departmen
         <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />
+
+      <QrFormDialog
+        organizationSlug={activeSlug}
+        baseUrl={baseUrl}
+        tags={tags}
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+      />
     </Sidebar>
-  )
+  );
 }

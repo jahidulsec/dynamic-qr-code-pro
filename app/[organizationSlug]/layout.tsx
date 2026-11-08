@@ -11,6 +11,7 @@ import {
 } from "@/features/organizations/server";
 import { getQrCount } from "@/features/qr";
 import { getQrTags } from "@/features/qr-tags";
+import { getQrBaseUrl } from "@/utils/short-link";
 
 export const metadata: Metadata = {
   robots: { index: false },
@@ -45,6 +46,7 @@ async function OrganizationShell({ children, params }: LayoutProps<"/[organizati
         user={{ name: session.user.name, email: session.user.email, image: session.user.image }}
         organizations={organizations.map(({ name, slug, logo }) => ({ name, slug, logo }))}
         activeSlug={organization.slug}
+        baseUrl={getQrBaseUrl()}
         qrCount={qrCount.data ?? 0}
         departments={departments.data ?? []}
       />
