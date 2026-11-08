@@ -23,7 +23,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { signOut } from "@/lib/auth/auth-client"
-import { IconSelector, IconSparkles, IconRosetteDiscountCheck, IconCreditCard, IconBell, IconLogout } from "@tabler/icons-react"
+import { IconSelector, IconLogout } from "@tabler/icons-react"
 
 export function NavUser({
   user,
@@ -86,32 +86,6 @@ export function NavUser({
                   </div>
                 </div>
               </DropdownMenuLabel>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <IconSparkles
-                />
-                Upgrade to Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <IconRosetteDiscountCheck
-                />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconCreditCard
-                />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconBell
-                />
-                Notifications
-              </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onSignOut}>

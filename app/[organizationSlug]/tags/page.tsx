@@ -2,14 +2,15 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { IconPlus } from "@tabler/icons-react";
 
-import { Section, SectionContainer, SectionDescription } from "@/components/shared/section/section";
+import { Section, SectionContainer, SectionIntro } from "@/components/shared/section/section";
 import { Button } from "@/components/ui/button";
+import { PAGE_TITLES } from "@/features/dashboard";
 import { PageHeader } from "@/features/dashboard/server";
 import { isOrganizationAdmin } from "@/features/qr/server";
 import { getQrTags, QrTagFormDialog, QrTagTable } from "@/features/qr-tags";
 
 export const metadata: Metadata = {
-  title: "Department Tags",
+  title: PAGE_TITLES.tags,
 };
 
 export default async function TagsPage({ params }: PageProps<"/[organizationSlug]/tags">) {
@@ -17,17 +18,18 @@ export default async function TagsPage({ params }: PageProps<"/[organizationSlug
 
   return (
     <>
-      <PageHeader organizationSlug={organizationSlug} title="Department Tags" />
+      <PageHeader organizationSlug={organizationSlug} title={PAGE_TITLES.tags} />
       <SectionContainer>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <SectionDescription>
-            Tags group QR codes on the dashboard. Renaming one updates every code that uses it.
-          </SectionDescription>
-          <QrTagFormDialog organizationSlug={organizationSlug} trigger={<Button size="sm" />}>
-            <IconPlus data-icon="inline-start" />
-            New tag
-          </QrTagFormDialog>
-        </div>
+        <SectionIntro
+          title={PAGE_TITLES.tags}
+          description="Tags group QR codes on the dashboard. Renaming one updates every code that uses it."
+          actions={
+            <QrTagFormDialog organizationSlug={organizationSlug} trigger={<Button />}>
+              <IconPlus data-icon="inline-start" />
+              New tag
+            </QrTagFormDialog>
+          }
+        />
         <Section className="overflow-hidden">
           <Suspense>
             <TagsSection organizationSlug={organizationSlug} />

@@ -3,15 +3,11 @@
 import * as React from "react";
 import {
   IconChartBar,
-  IconCreditCard,
-  IconFileInvoice,
   IconLayoutDashboard,
   IconPlus,
   IconScan,
-  IconStack2,
   IconTags,
   IconTrash,
-  IconUsers,
 } from "@tabler/icons-react";
 
 import {
@@ -20,10 +16,11 @@ import {
 } from "@/features/dashboard/components/nav-departments";
 import {
   NavMain,
-  type NavMainItem,
+  type NavMainGroup,
 } from "@/features/dashboard/components/nav-main";
 import { NavUser } from "@/features/dashboard/components/nav-user";
 import { TeamSwitcher } from "@/features/dashboard/components/team-switcher";
+import { PAGE_TITLES } from "@/features/dashboard/constants";
 import { QrFormDialog } from "@/features/qr";
 import {
   Sidebar,
@@ -37,45 +34,33 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 
-// TODO: replace the remaining placeholder badges once subscriptions and teams are built
-function getNavItems(slug: string, qrCount: number): NavMainItem[] {
+function getNavGroups(slug: string): NavMainGroup[] {
   const base = `/${slug}`;
   return [
     {
-      title: "Dashboard",
-      url: base,
-      exact: true,
-      icon: <IconLayoutDashboard />,
-      badge: { label: String(qrCount) },
+      label: "QR Codes",
+      items: [
+        {
+          title: PAGE_TITLES.dashboard,
+          url: base,
+          exact: true,
+          icon: <IconLayoutDashboard />,
+        },
+        { title: PAGE_TITLES.check, url: `${base}/check`, icon: <IconScan /> },
+        { title: PAGE_TITLES.tags, url: `${base}/tags`, icon: <IconTags /> },
+        { title: PAGE_TITLES.trash, url: `${base}/trash`, icon: <IconTrash /> },
+      ],
     },
     {
-      title: "Graph Reports",
-      url: `${base}/reports`,
-      icon: <IconChartBar />,
-      badge: { label: "Live", tone: "success" },
+      label: "Insights",
+      items: [
+        {
+          title: PAGE_TITLES.reports,
+          url: `${base}/reports`,
+          icon: <IconChartBar />,
+        },
+      ],
     },
-    { title: "Click to Check", url: `${base}/check`, icon: <IconScan /> },
-    { title: "Batch Generator", url: `${base}/batch`, icon: <IconStack2 /> },
-    {
-      title: "Yearly Subscription",
-      url: `${base}/subscription`,
-      icon: <IconCreditCard />,
-      badge: { label: "250 QRs", tone: "outline" },
-    },
-    {
-      title: "Billing History",
-      url: `${base}/billing`,
-      icon: <IconFileInvoice />,
-      badge: { label: "PDF", tone: "info" },
-    },
-    {
-      title: "Team & Permissions",
-      url: `${base}/team`,
-      icon: <IconUsers />,
-      badge: { label: "5 Seats", tone: "outline" },
-    },
-    { title: "Department Tags", url: `${base}/tags`, icon: <IconTags /> },
-    { title: "Trash Bin", url: `${base}/trash`, icon: <IconTrash /> },
   ];
 }
 
@@ -98,9 +83,9 @@ export function AppSidebar({
   departments,
   ...props
 }: AppSidebarProps) {
-  const navItems = React.useMemo(
-    () => getNavItems(activeSlug, qrCount),
-    [activeSlug, qrCount],
+  const navGroups = React.useMemo(
+    () => getNavGroups(activeSlug),
+    [activeSlug],
   );
   const tags = React.useMemo(
     () => departments.map((department) => department.name),
@@ -132,7 +117,7 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarSeparator className="mx-0" />
       <SidebarContent>
-        <NavMain items={navItems} />
+        <NavMain groups={navGroups} />
         <SidebarSeparator className="mx-0 group-data-[collapsible=icon]:hidden" />
         <NavDepartments
           departments={departments}

@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import PagePagination from "@/components/shared/pagination/pagination";
-import { Section, SectionContainer } from "@/components/shared/section/section";
+import { Section, SectionContainer, SectionIntro } from "@/components/shared/section/section";
 import { TableSkeleton } from "@/components/shared/skeleton/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PAGE_TITLES } from "@/features/dashboard";
 import { PageHeader } from "@/features/dashboard/server";
 import {
   getQrCodes,
@@ -13,12 +15,13 @@ import {
   QrTable,
   QrToolbar,
 } from "@/features/qr";
+import { QrCreateAction } from "@/features/qr/server";
 import { getQrTags } from "@/features/qr-tags";
 import type { SearchParams } from "@/types/params";
 import { getQrBaseUrl } from "@/utils/short-link";
 
 export const metadata: Metadata = {
-  title: "Dashboard",
+  title: PAGE_TITLES.dashboard,
 };
 
 export default async function OrganizationDashboardPage({
@@ -29,8 +32,17 @@ export default async function OrganizationDashboardPage({
 
   return (
     <>
-      <PageHeader organizationSlug={organizationSlug} title="Dashboard" />
+      <PageHeader organizationSlug={organizationSlug} title={PAGE_TITLES.dashboard} />
       <SectionContainer>
+        <SectionIntro
+          title={PAGE_TITLES.dashboard}
+          description="Every dynamic QR code in this organization. Change where a code points without reprinting it."
+          actions={
+            <Suspense fallback={<Skeleton className="h-9 w-32" />}>
+              <QrCreateAction organizationSlug={organizationSlug} />
+            </Suspense>
+          }
+        />
         <Suspense>
           <StatsSection organizationSlug={organizationSlug} />
         </Suspense>
@@ -79,11 +91,7 @@ async function TableSection({
   );
   return (
     <Section className="overflow-hidden">
-      <QrToolbar
-        organizationSlug={organizationSlug}
-        baseUrl={baseUrl}
-        tags={tagNames}
-      />
+      <QrToolbar organizationSlug={organizationSlug} />
       <QrTable
         items={list.data ?? []}
         organizationSlug={organizationSlug}

@@ -80,7 +80,7 @@ export function QrCheckWorkspace({
   };
 
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-2">
+    <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem]">
       <Section className="gap-3 p-5">
         <SectionLabel>Search QR code to check</SectionLabel>
         <SearchInput

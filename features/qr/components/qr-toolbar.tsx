@@ -4,7 +4,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 
 import { SearchInput } from "@/components/shared/input/search";
-import { QrCreateButton } from "@/features/qr/components/qr-create-button";
 import { QrExportCsvButton } from "@/features/qr/components/qr-export-csv-button";
 import { QR_STATUS_FILTERS, type QrStatusFilter } from "@/features/qr/schemas/qr-schema";
 import { QrTagCombobox } from "@/features/qr-tags";
@@ -12,11 +11,9 @@ import { cn } from "@/lib/utils";
 
 type QrToolbarProps = {
   organizationSlug: string;
-  baseUrl: string;
-  tags: string[];
 };
 
-export function QrToolbar({ organizationSlug, baseUrl, tags }: QrToolbarProps) {
+export function QrToolbar({ organizationSlug }: QrToolbarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -78,10 +75,7 @@ export function QrToolbar({ organizationSlug, baseUrl, tags }: QrToolbarProps) {
         </div>
       </div>
 
-      <div className="flex gap-2">
-        <QrExportCsvButton organizationSlug={organizationSlug} />
-        <QrCreateButton organizationSlug={organizationSlug} baseUrl={baseUrl} tags={tags} />
-      </div>
+      <QrExportCsvButton organizationSlug={organizationSlug} />
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { IconTrash } from "@tabler/icons-react";
 
-import { Section, SectionContainer, SectionDescription, SectionEmpty } from "@/components/shared/section/section";
+import { Section, SectionContainer, SectionEmpty, SectionIntro, SectionMeta } from "@/components/shared/section/section";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PAGE_TITLES } from "@/features/dashboard";
 import { PageHeader } from "@/features/dashboard/server";
 import { getTrashedQrCodes, qrTagNames, TrashRowActions } from "@/features/qr";
 import { isOrganizationAdmin } from "@/features/qr/server";
@@ -10,7 +11,7 @@ import { formatDate, formatTags, shortLinkLabel } from "@/utils/format";
 import { getQrBaseUrl } from "@/utils/short-link";
 
 export const metadata: Metadata = {
-  title: "Trash Bin",
+  title: PAGE_TITLES.trash,
 };
 
 export default async function TrashPage({ params }: PageProps<"/[organizationSlug]/trash">) {
@@ -25,11 +26,19 @@ export default async function TrashPage({ params }: PageProps<"/[organizationSlu
 
   return (
     <>
-      <PageHeader organizationSlug={organizationSlug} title="Trash Bin" />
+      <PageHeader organizationSlug={organizationSlug} title={PAGE_TITLES.trash} />
       <SectionContainer>
-        <SectionDescription>
-          Trashed QR codes stop redirecting but keep their scan history. Restore one to switch it back on.
-        </SectionDescription>
+        <SectionIntro
+          title={PAGE_TITLES.trash}
+          description="Trashed QR codes stop redirecting but keep their scan history. Restore one to switch it back on."
+          actions={
+            items.length > 0 && (
+              <SectionMeta>
+                {items.length} {items.length === 1 ? "code" : "codes"}
+              </SectionMeta>
+            )
+          }
+        />
         <Section className="overflow-hidden">
           {items.length ? (
             <Table>

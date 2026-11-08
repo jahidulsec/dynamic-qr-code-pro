@@ -1,8 +1,9 @@
 "use client"
 
+import * as React from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
-import { IconTag } from "@tabler/icons-react"
+import { IconChevronDown, IconChevronUp, IconTag } from "@tabler/icons-react"
 
 import {
   SidebarGroup,
@@ -19,6 +20,8 @@ export type Department = {
 }
 
 const PARAM = "department"
+/** departments shown before "Show more" */
+const VISIBLE_LIMIT = 8
 
 type NavDepartmentsProps = {
   departments: Department[]
@@ -36,6 +39,11 @@ export function NavDepartments({ departments, baseHref, filterHrefs = [], total 
   // on a page that filters by department the links stay on it; elsewhere they go to the dashboard
   const filterHref = pathname === baseHref || filterHrefs.includes(pathname) ? pathname : null
   const selected = filterHref ? searchParams.get(PARAM) : null
+  const [expanded, setExpanded] = React.useState(false)
+  // never hide the department that is currently selected
+  const selectedIndex = departments.findIndex((department) => department.name === selected)
+  const collapsed = !expanded && departments.length > VISIBLE_LIMIT && selectedIndex < VISIBLE_LIMIT
+  const visible = collapsed ? departments.slice(0, VISIBLE_LIMIT) : departments
 
   // keeps the page's other filters, but starts again from the first page
   const hrefFor = (name: string | null) => {
@@ -50,7 +58,7 @@ export function NavDepartments({ departments, baseHref, filterHrefs = [], total 
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel className="uppercase tracking-wider">Department Tags</SidebarGroupLabel>
+      <SidebarGroupLabel className="uppercase tracking-wider">Filter by Department</SidebarGroupLabel>
       {selected && (
         <Link
           href={hrefFor(null)}
@@ -73,7 +81,7 @@ export function NavDepartments({ departments, baseHref, filterHrefs = [], total 
             {total}
           </SidebarMenuBadge>
         </SidebarMenuItem>
-        {departments.map((department) => (
+        {visible.map((department) => (
           <SidebarMenuItem key={department.name}>
             <SidebarMenuButton
               isActive={selected === department.name}
@@ -87,6 +95,17 @@ export function NavDepartments({ departments, baseHref, filterHrefs = [], total 
             </SidebarMenuBadge>
           </SidebarMenuItem>
         ))}
+        {departments.length > VISIBLE_LIMIT && (expanded || collapsed) && (
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              className="text-sidebar-foreground/70"
+              onClick={() => setExpanded((value) => !value)}
+            >
+              {expanded ? <IconChevronUp /> : <IconChevronDown />}
+              <span>{expanded ? "Show less" : `Show ${departments.length - VISIBLE_LIMIT} more`}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        )}
       </SidebarMenu>
     </SidebarGroup>
   )

@@ -4,16 +4,13 @@ import { IconChartLine } from "@tabler/icons-react";
 
 import {
   Section,
-  SectionActions,
-  SectionBadge,
   SectionContainer,
   SectionDescription,
-  SectionEyebrow,
-  SectionHeader,
-  SectionHero,
+  SectionIntro,
   SectionTitle,
 } from "@/components/shared/section/section";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PAGE_TITLES } from "@/features/dashboard";
 import { PageHeader } from "@/features/dashboard/server";
 import { getOrganizationBySlug } from "@/features/organizations/server";
 import {
@@ -29,7 +26,7 @@ import {
 import type { SearchParams } from "@/types/params";
 
 export const metadata: Metadata = {
-  title: "Graph Reports",
+  title: PAGE_TITLES.reports,
 };
 
 export default async function ReportsPage({ params, searchParams }: PageProps<"/[organizationSlug]/reports">) {
@@ -37,14 +34,35 @@ export default async function ReportsPage({ params, searchParams }: PageProps<"/
 
   return (
     <>
-      <PageHeader organizationSlug={organizationSlug} title="Graph Reports" />
+      <PageHeader organizationSlug={organizationSlug} title={PAGE_TITLES.reports} />
       <SectionContainer>
+        <SectionIntro
+          title={PAGE_TITLES.reports}
+          description="Scan volume over daily, weekly, monthly or yearly periods, filtered by department."
+          actions={
+            <Suspense fallback={<Skeleton className="h-9 w-96 max-w-full" />}>
+              <ReportsActions organizationSlug={organizationSlug} searchParams={searchParams} />
+            </Suspense>
+          }
+        />
         <Suspense fallback={<ReportsSkeleton />}>
           <ReportsSection organizationSlug={organizationSlug} searchParams={searchParams} />
         </Suspense>
       </SectionContainer>
     </>
   );
+}
+
+async function ReportsActions({
+  organizationSlug,
+  searchParams,
+}: {
+  organizationSlug: string;
+  searchParams: Promise<SearchParams>;
+}) {
+  const query = reportSearchParamsSchema.parse(await searchParams);
+
+  return <ReportsToolbar organizationSlug={organizationSlug} period={query.period} department={query.department ?? null} />;
 }
 
 async function ReportsSection({
@@ -69,38 +87,11 @@ async function ReportsSection({
     return search ? `${basePath}?${search}` : basePath;
   };
 
-  const header = (
-    <SectionHero>
-      <SectionHeader>
-        <SectionEyebrow>
-          <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Graph analytics &amp; reporting engine
-          </span>
-          <SectionBadge>Live Dynamic Telemetry</SectionBadge>
-        </SectionEyebrow>
-        <SectionTitle as="h1">Scan Performance Graph Reports</SectionTitle>
-        <SectionDescription>
-          Filter scan volume by daily, weekly, monthly or yearly horizons and by department campaign tags.
-        </SectionDescription>
-      </SectionHeader>
-      <SectionActions>
-        <ReportsToolbar
-          organizationSlug={organizationSlug}
-          period={query.period}
-          department={query.department ?? null}
-        />
-      </SectionActions>
-    </SectionHero>
-  );
-
   if (!result.data) {
     return (
-      <>
-        {header}
-        <Section className="p-5">
-          <SectionDescription>{result.message}</SectionDescription>
-        </Section>
-      </>
+      <Section className="p-5">
+        <SectionDescription>{result.message}</SectionDescription>
+      </Section>
     );
   }
 
@@ -108,8 +99,6 @@ async function ReportsSection({
 
   return (
     <>
-      {header}
-
       <ReportsStats report={report} organizationName={organization?.name} />
 
       <Section className="p-5">
@@ -126,7 +115,7 @@ async function ReportsSection({
         <ScanTrendChart data={report.series} />
       </Section>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <TagDistribution
           rows={report.distribution}
           selected={report.department}
@@ -141,14 +130,13 @@ async function ReportsSection({
 function ReportsSkeleton() {
   return (
     <>
-      <Skeleton className="h-32 rounded-xl" />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }, (_, index) => (
           <Skeleton key={index} className="h-28 rounded-xl" />
         ))}
       </div>
       <Skeleton className="h-96 rounded-xl" />
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <Skeleton className="h-80 rounded-xl" />
         <Skeleton className="h-80 rounded-xl" />
       </div>

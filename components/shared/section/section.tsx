@@ -17,34 +17,9 @@ const Section = ({ className, ...props }: React.ComponentProps<"section">) => (
   />
 );
 
-/** Intro card at the top of a page: text on the left, actions on the right. */
-const SectionHero = ({ className, ...props }: React.ComponentProps<"section">) => (
-  <Section
-    data-slot="section-hero"
-    {...props}
-    className={cn("gap-4 p-5 lg:flex-row lg:items-center lg:justify-between", className)}
-  />
-);
-
-/** Text block: eyebrow, title and description. */
+/** Text block: title and description. */
 const SectionHeader = ({ className, ...props }: React.ComponentProps<"div">) => (
   <div data-slot="section-header" {...props} className={cn("flex min-w-0 flex-col gap-2", className)} />
-);
-
-/** Row above a hero title for badges and small labels. */
-const SectionEyebrow = ({ className, ...props }: React.ComponentProps<"div">) => (
-  <div data-slot="section-eyebrow" {...props} className={cn("flex flex-wrap items-center gap-2", className)} />
-);
-
-const SectionBadge = ({ className, ...props }: React.ComponentProps<"span">) => (
-  <span
-    data-slot="section-badge"
-    {...props}
-    className={cn(
-      "inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 [&_svg]:size-3.5",
-      className,
-    )}
-  />
 );
 
 const SectionTitle = ({
@@ -73,6 +48,33 @@ const SectionActions = ({ className, ...props }: React.ComponentProps<"div">) =>
     {...props}
     className={cn("flex shrink-0 flex-wrap items-center gap-2 self-start lg:self-auto", className)}
   />
+);
+
+/** Page heading at the top of a SectionContainer: h1 and description on the left, actions on the right. */
+const SectionIntro = ({
+  title,
+  description,
+  actions,
+  className,
+  ...props
+}: Omit<React.ComponentProps<"div">, "title"> & {
+  title: React.ReactNode;
+  description?: React.ReactNode;
+  actions?: React.ReactNode;
+}) => (
+  <div
+    data-slot="section-intro"
+    {...props}
+    className={cn("flex flex-col gap-4 pt-2 pb-1 lg:flex-row lg:items-end lg:justify-between", className)}
+  >
+    <SectionHeader className="gap-1">
+      <SectionTitle as="h1" className="text-2xl tracking-tight text-balance">
+        {title}
+      </SectionTitle>
+      {description && <SectionDescription className="max-w-prose text-balance">{description}</SectionDescription>}
+    </SectionHeader>
+    {actions && <SectionActions>{actions}</SectionActions>}
+  </div>
 );
 
 /** Bordered header bar inside a card; put a SectionLabel on the left and meta on the right. */
@@ -141,15 +143,13 @@ const SectionHeadingWithBackbutton = ({
 export {
   Section,
   SectionActions,
-  SectionBadge,
   SectionCardHeader,
   SectionContainer,
   SectionDescription,
   SectionEmpty,
-  SectionEyebrow,
   SectionHeader,
   SectionHeadingWithBackbutton,
-  SectionHero,
+  SectionIntro,
   SectionLabel,
   SectionMeta,
   SectionTitle,
