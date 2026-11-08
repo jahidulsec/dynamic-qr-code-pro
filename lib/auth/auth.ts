@@ -4,7 +4,14 @@ import { APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { organization } from "better-auth/plugins";
 import prisma from "@/config/db";
-import { invitationEmail, sendEmail, verificationLinkEmail, welcomeEmail } from "@/features/email/server";
+import {
+  invitationEmail,
+  passwordChangedEmail,
+  resetPasswordLinkEmail,
+  sendEmail,
+  verificationLinkEmail,
+  welcomeEmail,
+} from "@/features/email/server";
 import { createOrganizationSchema } from "@/features/organizations";
 import { env } from "@/lib/env";
 
@@ -18,6 +25,22 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
+    // keep in sync with the expiry stated in resetPasswordLinkEmail
+    resetPasswordTokenExpiresIn: 60 * 60,
+    // whoever knew the old password loses access
+    revokeSessionsOnPasswordReset: true,
+    async sendResetPassword({ user, url }) {
+      await sendEmail({ to: user.email, ...resetPasswordLinkEmail(url) });
+    },
+    async onPasswordReset({ user }) {
+      // opening the emailed link proves ownership, so unverified users can sign in straight away
+      if (!user.emailVerified) await prisma.user.update({ where: { id: user.id }, data: { emailVerified: true } });
+
+      // a failed notice must not fail the reset, which has already been applied
+      await sendEmail({ to: user.email, ...passwordChangedEmail(user.name) }).catch((error) =>
+        console.error("Failed to send password changed email", error),
+      );
+    },
   },
   emailVerification: {
     sendOnSignUp: true,

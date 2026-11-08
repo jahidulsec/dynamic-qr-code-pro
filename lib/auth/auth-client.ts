@@ -11,6 +11,8 @@ export const {
   signOut,
   useSession,
   sendVerificationEmail,
+  requestPasswordReset,
+  resetPassword,
   organization,
   useActiveOrganization,
   useListOrganizations,
