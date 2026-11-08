@@ -21,10 +21,11 @@ import { deleteQrAction, restoreQrAction } from "@/features/qr/actions/manage-qr
 type TrashRowActionsProps = {
   organizationSlug: string;
   qr: { id: number; name: string };
+  canRestore: boolean;
   canDelete: boolean;
 };
 
-export function TrashRowActions({ organizationSlug, qr, canDelete }: TrashRowActionsProps) {
+export function TrashRowActions({ organizationSlug, qr, canRestore, canDelete }: TrashRowActionsProps) {
   const [isPending, startTransition] = useTransition();
 
   const run = (action: () => Promise<{ success: boolean; message: string }>) =>
@@ -36,10 +37,12 @@ export function TrashRowActions({ organizationSlug, qr, canDelete }: TrashRowAct
 
   return (
     <div className="flex justify-end gap-2">
-      <Button variant="outline" size="sm" disabled={isPending} onClick={() => run(() => restoreQrAction(organizationSlug, qr.id))}>
-        <IconRestore data-icon="inline-start" />
-        Restore
-      </Button>
+      {canRestore && (
+        <Button variant="outline" size="sm" disabled={isPending} onClick={() => run(() => restoreQrAction(organizationSlug, qr.id))}>
+          <IconRestore data-icon="inline-start" />
+          Restore
+        </Button>
+      )}
       {canDelete && (
         <AlertDialog>
           <AlertDialogTrigger render={<Button variant="destructive" size="sm" disabled={isPending} />}>

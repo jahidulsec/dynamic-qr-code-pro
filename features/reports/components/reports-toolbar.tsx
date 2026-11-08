@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { IconDownload } from "@tabler/icons-react";
 
 import { Button } from "@/components/ui/button";
+import { useAccess } from "@/features/organizations";
 import { QrTagCombobox } from "@/features/qr-tags";
 import { exportScanReport } from "@/features/reports/libs/reports";
 import { REPORT_PERIODS, type ReportPeriod } from "@/features/reports/schemas/reports-schema";
@@ -24,6 +25,7 @@ export function ReportsToolbar({ organizationSlug, period, department }: Reports
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [isExporting, startExport] = useTransition();
+  const canExport = useAccess().can({ qr: ["export"] });
 
   const navigate = (changes: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -72,10 +74,12 @@ export function ReportsToolbar({ organizationSlug, period, department }: Reports
         ))}
       </div>
 
-      <Button variant="outline" onClick={exportCsv} disabled={isExporting} className="w-fit">
-        <IconDownload data-icon="inline-start" />
-        Export CSV
-      </Button>
+      {canExport && (
+        <Button variant="outline" onClick={exportCsv} disabled={isExporting} className="w-fit">
+          <IconDownload data-icon="inline-start" />
+          Export CSV
+        </Button>
+      )}
     </div>
   );
 }

@@ -8,48 +8,42 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useAccess } from "@/features/organizations/components/access-provider";
 import { MemberRowActions } from "@/features/organizations/components/member-row-actions";
 import { RoleBadge } from "@/features/organizations/components/role-badge";
-import { ORGANIZATION_ROLES, ROLE_DETAILS, isOwnerRole, parseRoles } from "@/features/organizations/libs/roles";
+import { cannotManageReason, parseRoles, toRoleDefinitions } from "@/features/organizations/libs/roles";
 import type { MemberRow } from "@/features/organizations/libs/settings-types";
 import { initialsOf } from "@/features/profile";
-
-const ROLE_FILTERS = ORGANIZATION_ROLES.map((role) => ({ value: role, label: ROLE_DETAILS[role].label }));
 
 type MemberTableProps = {
   organizationSlug: string;
   members: MemberRow[];
   currentUserId: string;
-  /** owners and admins see row actions */
-  canManage: boolean;
-  viewerIsOwner: boolean;
   /** pre-selected role filter, e.g. from a Roles page link */
   initialRole?: string | null;
 };
 
-export function MemberTable({
-  organizationSlug,
-  members,
-  currentUserId,
-  canManage,
-  viewerIsOwner,
-  initialRole,
-}: MemberTableProps) {
+export function MemberTable({ organizationSlug, members, currentUserId, initialRole }: MemberTableProps) {
+  const access = useAccess();
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<string | null>(initialRole ?? null);
+
+  const roleFilters = useMemo(() => access.roles.map((r) => ({ value: r.key, label: r.label })), [access.roles]);
+  const definitions = useMemo(() => toRoleDefinitions(access.roles), [access.roles]);
+  const canManage = access.can({ member: ["update"] }) || access.can({ member: ["delete"] });
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return members.filter(
       (member) =>
-        (!role || parseRoles(member.role).includes(role as never)) &&
+        (!role || parseRoles(member.role).includes(role)) &&
         (!needle || member.name.toLowerCase().includes(needle) || member.email.toLowerCase().includes(needle)),
     );
   }, [members, query, role]);
 
-  // admins can't act on owners, and nobody manages themselves here
+  // nobody manages themselves here, nor anyone holding access the viewer lacks; the server re-checks
   const canActOn = (member: MemberRow) =>
-    canManage && member.userId !== currentUserId && (viewerIsOwner || !isOwnerRole(member.role));
+    canManage && member.userId !== currentUserId && !cannotManageReason(access, member.role, definitions);
 
   return (
     <>
@@ -66,7 +60,7 @@ export function MemberTable({
           />
         </div>
         <Select
-          data={ROLE_FILTERS}
+          data={roleFilters}
           value={role}
           onValueChange={setRole}
           placeholder="All roles"
@@ -114,11 +108,7 @@ export function MemberTable({
                 {canManage && (
                   <TableCell className="pr-4">
                     {canActOn(member) && (
-                      <MemberRowActions
-                        organizationSlug={organizationSlug}
-                        member={member}
-                        viewerIsOwner={viewerIsOwner}
-                      />
+                      <MemberRowActions organizationSlug={organizationSlug} member={member} />
                     )}
                   </TableCell>
                 )}

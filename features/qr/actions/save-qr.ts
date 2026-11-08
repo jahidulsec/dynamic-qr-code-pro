@@ -7,7 +7,8 @@ import { QR_QUOTA } from "@/features/qr/constants";
 import { liveQrWhere } from "@/features/qr/libs/qr-query";
 import { qrFormSchema, type QrFormInput, type QrFormValues } from "@/features/qr/schemas/qr-schema";
 import { countQrCodes, createQrCode, getQrCode, updateQrCode } from "@/features/qr/services/qr";
-import { requireOrganization } from "@/features/qr/services/require-organization";
+import { requirePermission, type Access } from "@/features/organizations/server";
+import { missingQrTagNames } from "@/features/qr-tags/server";
 import { cacheTags } from "@/lib/cache/cache-tags";
 import { apiResponse } from "@/utils/response";
 
@@ -22,6 +23,16 @@ const tagWhere = (organizationId: string, name: string) => ({ organizationId_nam
 const tagConnect = (organizationId: string, tags: string[]) =>
   tags.map((name) => ({ where: tagWhere(organizationId, name), create: { organizationId, name } }));
 
+// saving a code with a tag that doesn't exist yet creates it, which needs its own permission
+async function assertCanUseTags(access: Access, tags: string[]) {
+  if (access.can({ tag: ["create"] })) return;
+  const missing = await missingQrTagNames(access.organization.id, tags);
+  if (missing.length)
+    throw new APIError("FORBIDDEN", {
+      message: `You can't create new tags (${missing.join(", ")}). Pick existing ones instead.`,
+    });
+}
+
 const sharedData = (values: QrFormValues) => ({
   name: values.name,
   destination: values.destination,
@@ -33,7 +44,9 @@ const sharedData = (values: QrFormValues) => ({
 export const createQrAction = async (organizationSlug: string, input: QrFormInput) => {
   try {
     const values = qrFormSchema.parse(input);
-    const { session, organization } = await requireOrganization(organizationSlug);
+    const access = await requirePermission(organizationSlug, { qr: ["create"] }, "You can't create QR codes");
+    const { session, organization } = access;
+    await assertCanUseTags(access, values.tags);
 
     // quota checks read fresh: a cached count could let a code slip past the limit
     if ((await countQrCodes({ where: liveQrWhere(organization.id) }, { cache: false })) >= QR_QUOTA)
@@ -70,7 +83,9 @@ export const createQrAction = async (organizationSlug: string, input: QrFormInpu
 export const updateQrAction = async (organizationSlug: string, id: number, input: QrFormInput) => {
   try {
     const values = qrFormSchema.parse(input);
-    const { organization } = await requireOrganization(organizationSlug);
+    const access = await requirePermission(organizationSlug, { qr: ["update"] }, "You can't edit QR codes");
+    const { organization } = access;
+    await assertCanUseTags(access, values.tags);
 
     // read fresh: the current tags decide which ones to unlink
     const current = await getQrCode(

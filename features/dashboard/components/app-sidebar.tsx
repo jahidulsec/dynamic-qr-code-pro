@@ -22,6 +22,7 @@ import {
 import { NavUser } from "@/features/dashboard/components/nav-user";
 import { TeamSwitcher } from "@/features/dashboard/components/team-switcher";
 import { PAGE_TITLES } from "@/features/dashboard/constants";
+import { useAccess } from "@/features/organizations";
 import { QrFormDialog } from "@/features/qr";
 import {
   Sidebar,
@@ -35,7 +36,7 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 
-function getNavGroups(slug: string): NavMainGroup[] {
+function getNavGroups(slug: string, canReadReports: boolean): NavMainGroup[] {
   const base = `/${slug}`;
   return [
     {
@@ -52,16 +53,20 @@ function getNavGroups(slug: string): NavMainGroup[] {
         { title: PAGE_TITLES.trash, url: `${base}/trash`, icon: <IconTrash /> },
       ],
     },
-    {
-      label: "Insights",
-      items: [
-        {
-          title: PAGE_TITLES.reports,
-          url: `${base}/reports`,
-          icon: <IconChartBar />,
-        },
-      ],
-    },
+    ...(canReadReports
+      ? [
+          {
+            label: "Insights",
+            items: [
+              {
+                title: PAGE_TITLES.reports,
+                url: `${base}/reports`,
+                icon: <IconChartBar />,
+              },
+            ],
+          },
+        ]
+      : []),
     {
       label: "Workspace",
       items: [
@@ -90,9 +95,12 @@ export function AppSidebar({
   departments,
   ...props
 }: AppSidebarProps) {
+  const { can } = useAccess();
+  const canCreate = can({ qr: ["create"] });
+  const canReadReports = can({ report: ["read"] });
   const navGroups = React.useMemo(
-    () => getNavGroups(activeSlug),
-    [activeSlug],
+    () => getNavGroups(activeSlug, canReadReports),
+    [activeSlug, canReadReports],
   );
   const tags = React.useMemo(
     () => departments.map((department) => department.name),
@@ -109,18 +117,20 @@ export function AppSidebar({
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader className="gap-3">
         <TeamSwitcher organizations={organizations} activeSlug={activeSlug} />
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              tooltip="Generate Dynamic QR"
-              className="justify-center bg-foreground font-medium text-background hover:bg-foreground/70 hover:text-background active:bg-foreground/70 active:text-background dark:bg-foreground/70"
-              onClick={openCreate}
-            >
-              <IconPlus className="text-secondary" />
-              <span>Generate Dynamic QR</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        {canCreate && (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip="Generate Dynamic QR"
+                className="justify-center bg-foreground font-medium text-background hover:bg-foreground/70 hover:text-background active:bg-foreground/70 active:text-background dark:bg-foreground/70"
+                onClick={openCreate}
+              >
+                <IconPlus className="text-secondary" />
+                <span>Generate Dynamic QR</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
       </SidebarHeader>
       <SidebarSeparator className="mx-0" />
       <SidebarContent>
@@ -138,13 +148,15 @@ export function AppSidebar({
       </SidebarFooter>
       <SidebarRail />
 
-      <QrFormDialog
-        organizationSlug={activeSlug}
-        baseUrl={baseUrl}
-        tags={tags}
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-      />
+      {canCreate && (
+        <QrFormDialog
+          organizationSlug={activeSlug}
+          baseUrl={baseUrl}
+          tags={tags}
+          open={createOpen}
+          onOpenChange={setCreateOpen}
+        />
+      )}
     </Sidebar>
   );
 }

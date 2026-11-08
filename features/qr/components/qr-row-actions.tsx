@@ -20,6 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAccess } from "@/features/organizations";
 import { setQrStatusAction, trashQrAction } from "@/features/qr/actions/manage-qr";
 import { QrAnalyticsButton } from "@/features/qr/components/qr-analytics-button";
 import { QrCheckDialog } from "@/features/qr/components/qr-check-dialog";
@@ -54,6 +55,10 @@ export function QrRowActions({
   tags,
   editValues,
 }: QrRowActionsProps) {
+  const { can } = useAccess();
+  const canEdit = can({ qr: ["update"] });
+  const canToggle = can({ qr: ["status"] });
+  const canTrash = can({ qr: ["trash"] });
   const [isPending, startTransition] = useTransition();
   const [editOpen, setEditOpen] = useState(false);
   // a fresh key per opening resets the form to the latest saved values while keeping the close animation
@@ -91,46 +96,53 @@ export function QrRowActions({
         <IconScan data-icon="inline-start" />
         Check
       </Button>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        aria-label={`Edit ${qr.name}`}
-        onClick={openEdit}
-      >
-        <IconPencil />
-      </Button>
-      <QrAnalyticsButton
-        organizationSlug={organizationSlug}
-        qr={{ id: qr.id, name: qr.name, tags: qr.tags }}
-        variant="ghost"
-        size="icon-sm"
-        aria-label={`Analytics for ${qr.name}`}
-      >
-        <IconChartBar />
-      </QrAnalyticsButton>
-      <QrExportButton value={qrValue} style={qrStyle} fileName={qr.slug} label={qr.name} />
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={<Button variant="ghost" size="icon-sm" aria-label={`More actions for ${qr.name}`} disabled={isPending} />}
+      {canEdit && (
+        <Button variant="ghost" size="icon-sm" aria-label={`Edit ${qr.name}`} onClick={openEdit}>
+          <IconPencil />
+        </Button>
+      )}
+      {can({ report: ["read"] }) && (
+        <QrAnalyticsButton
+          organizationSlug={organizationSlug}
+          qr={{ id: qr.id, name: qr.name, tags: qr.tags }}
+          variant="ghost"
+          size="icon-sm"
+          aria-label={`Analytics for ${qr.name}`}
         >
-          <IconDotsVertical />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-44">
-          <DropdownMenuItem
-            onClick={() =>
-              run(() => setQrStatusAction(organizationSlug, qr.id, qr.status === "ACTIVE" ? "PAUSED" : "ACTIVE"))
-            }
+          <IconChartBar />
+        </QrAnalyticsButton>
+      )}
+      {can({ qr: ["export"] }) && (
+        <QrExportButton value={qrValue} style={qrStyle} fileName={qr.slug} label={qr.name} />
+      )}
+      {(canToggle || canTrash) && (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={<Button variant="ghost" size="icon-sm" aria-label={`More actions for ${qr.name}`} disabled={isPending} />}
           >
-            {qr.status === "ACTIVE" ? <IconPlayerPause /> : <IconPlayerPlay />}
-            {qr.status === "ACTIVE" ? "Pause" : "Resume"}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" onClick={() => run(() => trashQrAction(organizationSlug, qr.id))}>
-            <IconTrash />
-            Move to trash
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <IconDotsVertical />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            {canToggle && (
+              <DropdownMenuItem
+                onClick={() =>
+                  run(() => setQrStatusAction(organizationSlug, qr.id, qr.status === "ACTIVE" ? "PAUSED" : "ACTIVE"))
+                }
+              >
+                {qr.status === "ACTIVE" ? <IconPlayerPause /> : <IconPlayerPlay />}
+                {qr.status === "ACTIVE" ? "Pause" : "Resume"}
+              </DropdownMenuItem>
+            )}
+            {canToggle && canTrash && <DropdownMenuSeparator />}
+            {canTrash && (
+              <DropdownMenuItem variant="destructive" onClick={() => run(() => trashQrAction(organizationSlug, qr.id))}>
+                <IconTrash />
+                Move to trash
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
 
       {checkKey > 0 && (
         <QrCheckDialog
@@ -150,10 +162,14 @@ export function QrRowActions({
           qrStyle={qrStyle}
           open={checkOpen}
           onOpenChange={setCheckOpen}
-          onEditUrl={() => {
-            setCheckOpen(false);
-            openEdit();
-          }}
+          onEditUrl={
+            canEdit
+              ? () => {
+                  setCheckOpen(false);
+                  openEdit();
+                }
+              : undefined
+          }
         />
       )}
 

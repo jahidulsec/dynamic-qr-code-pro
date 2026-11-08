@@ -6,11 +6,9 @@ import { Section, SectionCardHeader, SectionLabel, SectionMeta } from "@/compone
 import { Button } from "@/components/ui/button";
 import { PAGE_TITLES } from "@/features/dashboard";
 import {
-  getMembership,
+  getAccess,
   InvitationTable,
   InviteMemberDialog,
-  isManagerRole,
-  isOwnerRole,
   MemberTable,
   toInvitationRows,
   type MemberRow,
@@ -26,12 +24,11 @@ export default async function MembersSettingsPage({
   searchParams,
 }: PageProps<"/[organizationSlug]/settings/members">) {
   const [{ organizationSlug }, { role }] = await Promise.all([params, searchParams]);
-  const membership = await getMembership(organizationSlug);
-  if (!membership) notFound();
+  const access = await getAccess(organizationSlug);
+  if (!access) notFound();
 
-  const { organization, member, session } = membership;
-  const canManage = isManagerRole(member.role);
-  const viewerIsOwner = isOwnerRole(member.role);
+  const { organization, session } = access;
+  const canInvite = access.can({ invitation: ["create"] });
 
   const members: MemberRow[] = organization.members.map((m) => ({
     id: m.id,
@@ -53,11 +50,10 @@ export default async function MembersSettingsPage({
             <SectionLabel>Members</SectionLabel>
             <SectionMeta>{members.length}</SectionMeta>
           </div>
-          {canManage && (
+          {canInvite && (
             <InviteMemberDialog
               organizationSlug={organization.slug}
               organizationName={organization.name}
-              viewerIsOwner={viewerIsOwner}
               trigger={<Button size="sm" />}
             >
               <IconUserPlus data-icon="inline-start" />
@@ -69,13 +65,11 @@ export default async function MembersSettingsPage({
           organizationSlug={organization.slug}
           members={members}
           currentUserId={session.user.id}
-          canManage={canManage}
-          viewerIsOwner={viewerIsOwner}
           initialRole={typeof role === "string" ? role : null}
         />
       </Section>
 
-      {(canManage || invitations.length > 0) && (
+      {(canInvite || invitations.length > 0) && (
         <Section className="overflow-hidden">
           <SectionCardHeader>
             <div className="flex items-center gap-3">
@@ -84,7 +78,7 @@ export default async function MembersSettingsPage({
             </div>
           </SectionCardHeader>
           {invitations.length ? (
-            <InvitationTable organizationSlug={organization.slug} invitations={invitations} canManage={canManage} />
+            <InvitationTable organizationSlug={organization.slug} invitations={invitations} />
           ) : (
             <p className="px-5 py-8 text-center text-sm text-muted-foreground">
               No pending invitations. Invite a teammate to share this workspace.

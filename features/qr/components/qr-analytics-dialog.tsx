@@ -6,6 +6,7 @@ import { IconDeviceMobile, IconDownload, IconWorld } from "@tabler/icons-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useAccess } from "@/features/organizations";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { exportQrScans, type getQrAnalytics } from "@/features/qr/libs/qr";
@@ -24,6 +25,7 @@ type QrAnalyticsDialogProps = {
 };
 
 export function QrAnalyticsDialog({ organizationSlug, qr, analytics, open, onOpenChange }: QrAnalyticsDialogProps) {
+  const canExport = useAccess().can({ qr: ["export"] });
   const [isExporting, startExport] = useTransition();
   const exportCsv = () =>
     startExport(async () => {
@@ -53,10 +55,12 @@ export function QrAnalyticsDialog({ organizationSlug, qr, analytics, open, onOpe
         </Suspense>
 
         <div className="flex items-center justify-between gap-2 border-t p-4 px-6">
-          <Button variant="ghost" size="sm" onClick={exportCsv} disabled={isExporting}>
-            <IconDownload data-icon="inline-start" />
-            Export scans CSV
-          </Button>
+          {canExport && (
+            <Button variant="ghost" size="sm" onClick={exportCsv} disabled={isExporting}>
+              <IconDownload data-icon="inline-start" />
+              Export scans CSV
+            </Button>
+          )}
           <Button onClick={() => onOpenChange(false)}>Close</Button>
         </div>
       </DialogContent>

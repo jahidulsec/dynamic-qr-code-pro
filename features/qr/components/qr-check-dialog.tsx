@@ -28,7 +28,8 @@ type QrCheckDialogProps = {
   qrStyle: QrStyle;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEditUrl: () => void;
+  /** omitted when the viewer can't edit the code */
+  onEditUrl?: () => void;
 };
 
 export function QrCheckDialog({
@@ -111,13 +112,15 @@ export function QrCheckDialog({
               <Field
                 label="Target Embedded URL"
                 action={
-                  <button
-                    type="button"
-                    className="text-xs font-medium text-primary hover:underline"
-                    onClick={onEditUrl}
-                  >
-                    Edit URL
-                  </button>
+                  onEditUrl && (
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-primary hover:underline"
+                      onClick={onEditUrl}
+                    >
+                      Edit URL
+                    </button>
+                  )
                 }
               >
                 <span className="truncate" title={qr.destination}>

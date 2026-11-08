@@ -37,7 +37,7 @@ import {
   type QrFormValues,
 } from "@/features/qr/schemas/qr-schema";
 import { randomSlug, shortLink, shortLinkLabel } from "@/utils/format";
-import { slugify } from "@/features/organizations";
+import { slugify, useAccess } from "@/features/organizations";
 import { cn } from "@/lib/utils";
 
 const DESTINATION_TYPES = [
@@ -101,6 +101,7 @@ export function QrFormDialog({
   const isEdit = !!qr;
   // the alias follows the name until the user edits it directly
   const slugEdited = useRef(isEdit);
+  const canCreateTags = useAccess().can({ tag: ["create"] });
   const [initialSlug] = useState(randomSlug);
   const [tab, setTab] = useState("target");
   // local only: frames and logos decorate the preview and downloads, never the saved code
@@ -304,15 +305,17 @@ export function QrFormDialog({
                             value={field.value}
                             onValueChange={field.onChange}
                             onBlur={field.onBlur}
-                            creatable={toTagName}
+                            creatable={canCreateTags ? toTagName : false}
                             placeholder="e.g. RPL"
-                            emptyText="Type to add a tag."
+                            emptyText={canCreateTags ? "Type to add a tag." : "No matching tag."}
                             aria-invalid={fieldState.invalid}
                           />
                           {fieldState.invalid ? (
                             <FieldError errors={tagErrors(fieldState.error)} />
                           ) : (
-                            <FieldDescription>Pick any number, or type a new tag.</FieldDescription>
+                            <FieldDescription>
+                              {canCreateTags ? "Pick any number, or type a new tag." : "Pick any number of existing tags."}
+                            </FieldDescription>
                           )}
                         </Field>
                       )}

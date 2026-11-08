@@ -3,6 +3,7 @@
 import { useState, type ComponentProps } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useAccess } from "@/features/organizations";
 import { QrAnalyticsDialog, type QrAnalyticsResult } from "@/features/qr/components/qr-analytics-dialog";
 import { getQrAnalytics } from "@/features/qr/libs/qr";
 
@@ -12,6 +13,7 @@ type QrAnalyticsButtonProps = Omit<ComponentProps<typeof Button>, "onClick"> & {
 };
 
 export function QrAnalyticsButton({ organizationSlug, qr, ...props }: QrAnalyticsButtonProps) {
+  const canRead = useAccess().can({ report: ["read"] });
   const [open, setOpen] = useState(false);
   // a fresh request per opening, so the numbers are never stale
   const [analytics, setAnalytics] = useState<Promise<QrAnalyticsResult> | null>(null);
@@ -20,6 +22,9 @@ export function QrAnalyticsButton({ organizationSlug, qr, ...props }: QrAnalytic
     setAnalytics(getQrAnalytics(organizationSlug, qr.id));
     setOpen(true);
   };
+
+  // without report access the label (e.g. a scan count) still shows, just not as a button
+  if (!canRead) return <span className="font-mono tabular-nums">{props.children}</span>;
 
   return (
     <>

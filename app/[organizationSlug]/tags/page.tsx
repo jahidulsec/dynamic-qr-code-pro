@@ -6,7 +6,7 @@ import { Section, SectionContainer, SectionIntro } from "@/components/shared/sec
 import { Button } from "@/components/ui/button";
 import { PAGE_TITLES } from "@/features/dashboard";
 import { PageHeader } from "@/features/dashboard/server";
-import { isOrganizationAdmin } from "@/features/qr/server";
+import { getAccess } from "@/features/organizations/server";
 import { getQrTags, QrTagFormDialog, QrTagTable } from "@/features/qr-tags";
 
 export const metadata: Metadata = {
@@ -24,10 +24,9 @@ export default async function TagsPage({ params }: PageProps<"/[organizationSlug
           title={PAGE_TITLES.tags}
           description="Tags group QR codes on the dashboard. Renaming one updates every code that uses it."
           actions={
-            <QrTagFormDialog organizationSlug={organizationSlug} trigger={<Button />}>
-              <IconPlus data-icon="inline-start" />
-              New tag
-            </QrTagFormDialog>
+            <Suspense>
+              <NewTagAction organizationSlug={organizationSlug} />
+            </Suspense>
           }
         />
         <Section className="overflow-hidden">
@@ -40,8 +39,21 @@ export default async function TagsPage({ params }: PageProps<"/[organizationSlug
   );
 }
 
+async function NewTagAction({ organizationSlug }: { organizationSlug: string }) {
+  const access = await getAccess(organizationSlug);
+  if (!access?.can({ tag: ["create"] })) return null;
+
+  return (
+    <QrTagFormDialog organizationSlug={organizationSlug} trigger={<Button />}>
+      <IconPlus data-icon="inline-start" />
+      New tag
+    </QrTagFormDialog>
+  );
+}
+
 async function TagsSection({ organizationSlug }: { organizationSlug: string }) {
-  const [tags, canManage] = await Promise.all([getQrTags(organizationSlug), isOrganizationAdmin(organizationSlug)]);
+  const [tags, access] = await Promise.all([getQrTags(organizationSlug), getAccess(organizationSlug)]);
+  const canManage = !!access && (access.can({ tag: ["update"] }) || access.can({ tag: ["delete"] }));
 
   return (
     <QrTagTable

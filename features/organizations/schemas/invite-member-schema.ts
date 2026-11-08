@@ -1,8 +1,10 @@
 import { z } from "zod";
 
-import { ORGANIZATION_ROLES } from "@/features/organizations/libs/roles";
-
-export const memberRoleSchema = z.enum(ORGANIZATION_ROLES, "Choose a valid role");
+// a system or custom role key; the server checks it exists in the organization
+export const memberRoleSchema = z
+  .string("Choose a valid role")
+  .trim()
+  .regex(/^[a-z0-9-]{1,64}$/, "Choose a valid role");
 
 export const inviteMemberSchema = z.object({
   email: z.email("Enter a valid email address").trim().toLowerCase(),

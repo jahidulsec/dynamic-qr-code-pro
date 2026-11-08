@@ -5,12 +5,12 @@ import { redirect } from "next/navigation";
 import { refresh, updateTag } from "next/cache";
 import { APIError } from "better-auth/api";
 
-import { isOwnerRole } from "@/features/organizations/libs/roles";
+import { recordAudit } from "@/features/organizations/libs/audit";
 import {
   createOrganizationSchema,
   type CreateOrganizationValues,
 } from "@/features/organizations/schemas/create-organization-schema";
-import { requireManager, requireMembership } from "@/features/organizations/services/get-membership";
+import { requirePermission } from "@/features/organizations/services/get-membership";
 import { auth } from "@/lib/auth/auth";
 import { cacheTags, organizationTag } from "@/lib/cache/cache-tags";
 import { apiResponse } from "@/utils/response";
@@ -18,7 +18,8 @@ import { apiResponse } from "@/utils/response";
 export const updateOrganizationAction = async (organizationSlug: string, values: CreateOrganizationValues) => {
   try {
     const { name, slug } = createOrganizationSchema.parse(values);
-    const { organization } = await requireManager(organizationSlug, "Only owners and admins can edit the organization");
+    const access = await requirePermission(organizationSlug, { organization: ["update"] }, "You can't edit the organization");
+    const { organization } = access;
 
     // better-auth re-checks the role and rejects a slug another organization already uses
     const updated = await auth.api.updateOrganization({
@@ -27,6 +28,10 @@ export const updateOrganizationAction = async (organizationSlug: string, values:
     });
 
     [cacheTags.organizations, organizationTag(organization.id)].forEach((tag) => updateTag(tag));
+    await recordAudit(access, "organization.update", name, {
+      from: `${organization.name} (${organization.slug})`,
+      to: `${name} (${updated?.slug ?? slug})`,
+    });
 
     // the old URL no longer resolves; apiResponse.error rethrows the redirect
     const nextSlug = updated?.slug ?? slug;
@@ -41,9 +46,11 @@ export const updateOrganizationAction = async (organizationSlug: string, values:
 
 export const deleteOrganizationAction = async (organizationSlug: string, confirmation: string) => {
   try {
-    const { organization, member } = await requireMembership(organizationSlug);
-    if (!isOwnerRole(member.role))
-      throw new APIError("FORBIDDEN", { message: "Only owners can delete the organization" });
+    const { organization } = await requirePermission(
+      organizationSlug,
+      { organization: ["delete"] },
+      "You can't delete the organization",
+    );
     if (confirmation !== organization.slug)
       throw new APIError("BAD_REQUEST", { message: "Type the organization URL to confirm" });
 
@@ -66,6 +73,9 @@ export const deleteOrganizationAction = async (organizationSlug: string, confirm
       cacheTags.qrTagCount,
       cacheTags.qrScans,
       cacheTags.qrScanCount,
+      cacheTags.organizationRoles,
+      cacheTags.auditLogs,
+      cacheTags.auditLogCount,
       organizationTag(organization.id),
     ].forEach((tag) => updateTag(tag));
 

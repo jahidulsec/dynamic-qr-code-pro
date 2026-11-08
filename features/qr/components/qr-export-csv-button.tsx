@@ -6,11 +6,13 @@ import { toast } from "sonner";
 import { IconDownload } from "@tabler/icons-react";
 
 import { Button } from "@/components/ui/button";
+import { useAccess } from "@/features/organizations";
 import { exportQrCodes } from "@/features/qr/libs/qr";
 import type { QrStatusFilter } from "@/features/qr/schemas/qr-schema";
 import { downloadCsv } from "@/utils/csv";
 
 export function QrExportCsvButton({ organizationSlug }: { organizationSlug: string }) {
+  const { can } = useAccess();
   const searchParams = useSearchParams();
   const [isExporting, startExport] = useTransition();
 
@@ -25,6 +27,8 @@ export function QrExportCsvButton({ organizationSlug }: { organizationSlug: stri
       if (result.success) downloadCsv(result.data.fileName, result.data.csv);
       else toast.error(result.message);
     });
+
+  if (!can({ qr: ["export"] })) return null;
 
   return (
     <Button variant="outline" onClick={exportCsv} disabled={isExporting}>

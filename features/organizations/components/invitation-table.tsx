@@ -9,16 +9,19 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cancelInvitationAction, resendInvitationAction } from "@/features/organizations/actions/manage-members";
+import { useAccess } from "@/features/organizations/components/access-provider";
 import { RoleBadge } from "@/features/organizations/components/role-badge";
 import type { InvitationRow } from "@/features/organizations/libs/settings-types";
 
 type InvitationTableProps = {
   organizationSlug: string;
   invitations: InvitationRow[];
-  canManage: boolean;
 };
 
-export function InvitationTable({ organizationSlug, invitations, canManage }: InvitationTableProps) {
+export function InvitationTable({ organizationSlug, invitations }: InvitationTableProps) {
+  const access = useAccess();
+  const canManage = access.can({ invitation: ["create"] }) || access.can({ invitation: ["cancel"] });
+
   return (
     <Table>
       <TableHeader>
@@ -52,6 +55,7 @@ export function InvitationTable({ organizationSlug, invitations, canManage }: In
 }
 
 function InvitationRowActions({ organizationSlug, invitation }: { organizationSlug: string; invitation: InvitationRow }) {
+  const access = useAccess();
   const [isPending, startTransition] = useTransition();
 
   const run = (action: typeof resendInvitationAction) =>
@@ -63,39 +67,43 @@ function InvitationRowActions({ organizationSlug, invitation }: { organizationSl
 
   return (
     <div className="flex items-center justify-end gap-1">
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              disabled={isPending}
-              aria-label={`Resend to ${invitation.email}`}
-              onClick={() => run(resendInvitationAction)}
-            />
-          }
-        >
-          <IconMailForward />
-        </TooltipTrigger>
-        <TooltipContent>{invitation.expired ? "Resend and renew" : "Resend invitation"}</TooltipContent>
-      </Tooltip>
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              disabled={isPending}
-              className="text-destructive hover:text-destructive"
-              aria-label={`Cancel invitation for ${invitation.email}`}
-              onClick={() => run(cancelInvitationAction)}
-            />
-          }
-        >
-          <IconX />
-        </TooltipTrigger>
-        <TooltipContent>Cancel invitation</TooltipContent>
-      </Tooltip>
+      {access.can({ invitation: ["create"] }) && (
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                disabled={isPending}
+                aria-label={`Resend to ${invitation.email}`}
+                onClick={() => run(resendInvitationAction)}
+              />
+            }
+          >
+            <IconMailForward />
+          </TooltipTrigger>
+          <TooltipContent>{invitation.expired ? "Resend and renew" : "Resend invitation"}</TooltipContent>
+        </Tooltip>
+      )}
+      {access.can({ invitation: ["cancel"] }) && (
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                disabled={isPending}
+                className="text-destructive hover:text-destructive"
+                aria-label={`Cancel invitation for ${invitation.email}`}
+                onClick={() => run(cancelInvitationAction)}
+              />
+            }
+          >
+            <IconX />
+          </TooltipTrigger>
+          <TooltipContent>Cancel invitation</TooltipContent>
+        </Tooltip>
+      )}
     </div>
   );
 }

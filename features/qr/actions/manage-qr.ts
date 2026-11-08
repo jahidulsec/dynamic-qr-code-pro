@@ -7,7 +7,7 @@ import { z } from "zod";
 import { QR_QUOTA } from "@/features/qr/constants";
 import { liveQrWhere } from "@/features/qr/libs/qr-query";
 import { countQrCodes, deleteQrCode, updateQrCode, updateQrCodes } from "@/features/qr/services/qr";
-import { isAdminRole, requireOrganization } from "@/features/qr/services/require-organization";
+import { requirePermission } from "@/features/organizations/server";
 import { cacheTags } from "@/lib/cache/cache-tags";
 import { apiResponse } from "@/utils/response";
 
@@ -28,7 +28,7 @@ export const setQrStatusAction = async (organizationSlug: string, id: number, st
   try {
     const qrId = idSchema.parse(id);
     const nextStatus = z.enum(["ACTIVE", "PAUSED"]).parse(status);
-    const { organization } = await requireOrganization(organizationSlug);
+    const { organization } = await requirePermission(organizationSlug, { qr: ["status"] }, "You can't pause or resume QR codes");
 
     await updateQrCode({
       where: { id: qrId, ...liveQrWhere(organization.id) },
@@ -47,7 +47,7 @@ export const setQrStatusAction = async (organizationSlug: string, id: number, st
 export const trashQrAction = async (organizationSlug: string, id: number) => {
   try {
     const qrId = idSchema.parse(id);
-    const { organization } = await requireOrganization(organizationSlug);
+    const { organization } = await requirePermission(organizationSlug, { qr: ["trash"] }, "You can't move QR codes to the trash");
 
     await updateQrCode(
       { where: { id: qrId, ...liveQrWhere(organization.id) }, data: { deletedAt: new Date() }, select: { id: true } },
@@ -65,7 +65,7 @@ export const trashQrAction = async (organizationSlug: string, id: number) => {
 export const trashQrCodesAction = async (organizationSlug: string, ids: number[]) => {
   try {
     const qrIds = z.array(idSchema).min(1).max(QR_QUOTA).parse(ids);
-    const { organization } = await requireOrganization(organizationSlug);
+    const { organization } = await requirePermission(organizationSlug, { qr: ["trash"] }, "You can't move QR codes to the trash");
 
     const { count } = await updateQrCodes(
       { where: { id: { in: qrIds }, ...liveQrWhere(organization.id) }, data: { deletedAt: new Date() } },
@@ -83,10 +83,10 @@ export const trashQrCodesAction = async (organizationSlug: string, ids: number[]
   }
 };
 
-export const restoreQrAction =async (organizationSlug: string, id: number) => {
+export const restoreQrAction = async (organizationSlug: string, id: number) => {
   try {
     const qrId = idSchema.parse(id);
-    const { organization } = await requireOrganization(organizationSlug);
+    const { organization } = await requirePermission(organizationSlug, { qr: ["restore"] }, "You can't restore QR codes");
 
     // quota checks read fresh: a cached count could let a code slip past the limit
     if ((await countQrCodes({ where: liveQrWhere(organization.id) }, { cache: false })) >= QR_QUOTA)
@@ -112,9 +112,7 @@ export const restoreQrAction =async (organizationSlug: string, id: number) => {
 export const deleteQrAction = async (organizationSlug: string, id: number) => {
   try {
     const qrId = idSchema.parse(id);
-    const { organization, role } = await requireOrganization(organizationSlug);
-    if (!isAdminRole(role))
-      throw new APIError("FORBIDDEN", { message: "Only owners and admins can permanently delete QR codes" });
+    const { organization } = await requirePermission(organizationSlug, { qr: ["delete"] }, "You can't permanently delete QR codes");
 
     await deleteQrCode(
       { where: { id: qrId, organizationId: organization.id, deletedAt: { not: null } }, select: { id: true } },

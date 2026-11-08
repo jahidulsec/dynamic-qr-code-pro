@@ -2,15 +2,16 @@
 
 import { APIError } from "better-auth/api";
 
-import { requireOrganization } from "@/features/qr/server";
+import { requirePermission } from "@/features/organizations/server";
+import type { Permissions } from "@/lib/auth/permissions";
 import { buildScanReport, findReportTag } from "@/features/reports/libs/reports-analytics";
 import { reportQuerySchema, type ReportQueryInput } from "@/features/reports/schemas/reports-schema";
 import { toCsv } from "@/utils/csv";
 import { apiResponse } from "@/utils/response";
 
-const loadReport = async (organizationSlug: string, query: ReportQueryInput) => {
+const loadReport = async (organizationSlug: string, query: ReportQueryInput, permissions: Permissions) => {
   const { period, department } = reportQuerySchema.parse(query);
-  const { organization } = await requireOrganization(organizationSlug);
+  const { organization } = await requirePermission(organizationSlug, permissions, "You can't view reports");
 
   const tag = department ? await findReportTag(organization.id, department) : null;
   if (department && !tag) throw new APIError("NOT_FOUND", { message: `Department "${department}" not found` });
@@ -21,7 +22,7 @@ const loadReport = async (organizationSlug: string, query: ReportQueryInput) => 
 
 export const getScanReport = async (organizationSlug: string, query: ReportQueryInput) => {
   try {
-    const { report } = await loadReport(organizationSlug, query);
+    const { report } = await loadReport(organizationSlug, query, { report: ["read"] });
     return apiResponse.single({ data: report });
   } catch (error) {
     return apiResponse.error({ error });
@@ -30,7 +31,7 @@ export const getScanReport = async (organizationSlug: string, query: ReportQuery
 
 export const exportScanReport = async (organizationSlug: string, query: ReportQueryInput) => {
   try {
-    const { organization, report } = await loadReport(organizationSlug, query);
+    const { organization, report } = await loadReport(organizationSlug, query, { report: ["read"], qr: ["export"] });
     const department = report.department ?? "All departments";
     const percent = (value: number) => value.toFixed(1);
 

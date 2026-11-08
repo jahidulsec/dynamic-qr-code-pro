@@ -20,6 +20,7 @@ model User {
   members       Member[]
   invitations   Invitation[]
   qrCodes       QrCode[]
+  auditLogs     AuditLog[]
 
   @@map("user")
 }
@@ -83,6 +84,8 @@ model Organization {
   invitations Invitation[]
   qrCodes     QrCode[]
   qrTags      QrTag[]
+  roles       OrganizationRole[]
+  auditLogs   AuditLog[]
 
   @@map("organization")
 }
@@ -116,6 +119,45 @@ model Invitation {
   @@index([organizationId])
   @@index([email])
   @@map("invitation")
+}
+
+// a custom role, managed through better-auth's dynamic access control; system roles live in code
+model OrganizationRole {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  // the key stored in member.role; never renamed, so assignments can't dangle
+  role           String       @db.VarChar(64)
+  // JSON grants, e.g. {"qr":["create","update"]}
+  permission     String       @db.Text
+  label          String       @db.VarChar(64)
+  description    String?      @db.VarChar(255)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime?    @updatedAt
+
+  @@unique([organizationId, role])
+  @@index([organizationId])
+  @@map("organization_role")
+}
+
+// who changed access in an organization: roles, member assignments and invitations
+model AuditLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  // kept when the actor's account is deleted; actorName is the name at the time
+  actorId        String?
+  actor          User?        @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorName      String       @db.VarChar(255)
+  // e.g. "role.create", "member.role.update"
+  action         String       @db.VarChar(64)
+  targetLabel    String       @db.VarChar(255)
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([actorId])
+  @@map("audit_log")
 }
 
 enum QrType {

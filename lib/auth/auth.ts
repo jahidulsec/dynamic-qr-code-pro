@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { APIError } from "better-auth/api";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { organization } from "better-auth/plugins";
 import prisma from "@/config/db";
@@ -13,10 +13,31 @@ import {
   welcomeEmail,
 } from "@/features/email/server";
 import { createOrganizationSchema } from "@/features/organizations";
+import { ac, isSystemRole, roles, SYSTEM_ROLE_DETAILS } from "@/lib/auth/permissions";
 import { env } from "@/lib/env";
 
 // keep in sync with the expiry stated in the invite dialog
 const INVITATION_EXPIRES_IN_HOURS = 48;
+
+// keep in sync with the limit stated on the Roles page
+export const MAX_CUSTOM_ROLES = 20;
+
+/**
+ * Endpoints that change who can do what. Over HTTP they'd skip the checks and audit entries in our
+ * server actions (e.g. better-auth lets an admin change their own role), so only `auth.api` calls
+ * made by those actions on the server may reach them.
+ */
+const SERVER_ACTION_ONLY_PATHS = new Set([
+  "/organization/update",
+  "/organization/delete",
+  "/organization/invite-member",
+  "/organization/cancel-invitation",
+  "/organization/update-member-role",
+  "/organization/remove-member",
+  "/organization/create-role",
+  "/organization/update-role",
+  "/organization/delete-role",
+]);
 
 export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
@@ -58,6 +79,13 @@ export const auth = betterAuth({
       );
     },
   },
+  hooks: {
+    // `request` is only set for HTTP calls; server-side `auth.api` calls have none
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.request && SERVER_ACTION_ONLY_PATHS.has(ctx.path))
+        throw new APIError("FORBIDDEN", { message: "Use the organization settings to make this change" });
+    }),
+  },
   advanced: {
     // secure by default whenever the app is served over HTTPS
     useSecureCookies: env.COOKIE_SECURE ?? env.BETTER_AUTH_URL.startsWith("https://"),
@@ -65,6 +93,18 @@ export const auth = betterAuth({
   // must be the last plugin so cookies set in server actions are applied
   plugins: [
     organization({
+      // the permission catalogue and system roles; custom roles are stored per organization
+      ac,
+      roles,
+      dynamicAccessControl: { enabled: true, maximumRolesPerOrganization: MAX_CUSTOM_ROLES },
+      schema: {
+        organizationRole: {
+          additionalFields: {
+            label: { type: "string", required: true },
+            description: { type: "string", required: false },
+          },
+        },
+      },
       invitationExpiresIn: INVITATION_EXPIRES_IN_HOURS * 60 * 60,
       // re-inviting an email replaces its pending invitation instead of failing
       cancelPendingInvitationsOnReInvite: true,
@@ -75,7 +115,7 @@ export const auth = betterAuth({
             url: new URL(`/accept-invitation/${id}`, env.BETTER_AUTH_URL).toString(),
             organizationName: organization.name,
             inviterName: inviter.user.name,
-            role,
+            role: await invitationRoleLabel(organization.id, role),
             expiresInHours: INVITATION_EXPIRES_IN_HOURS,
           }),
         });
@@ -89,6 +129,19 @@ export const auth = betterAuth({
     nextCookies(),
   ],
 });
+
+// the invitation stores role keys; the email names them the way the settings pages do
+async function invitationRoleLabel(organizationId: string, role: string) {
+  const keys = role.split(",").map((key) => key.trim()).filter(Boolean);
+  const custom = await prisma.organizationRole.findMany({
+    where: { organizationId, role: { in: keys.filter((key) => !isSystemRole(key)) } },
+    select: { role: true, label: true },
+  });
+  const labels = keys.map((key) =>
+    isSystemRole(key) ? SYSTEM_ROLE_DETAILS[key].label : (custom.find((r) => r.role === key)?.label ?? key),
+  );
+  return labels.join(", ").toLowerCase();
+}
 
 function parseOrganization(organization: { name?: string; slug?: string; logo?: string | null }, partial = false) {
   // there's no logo upload yet; allow only our own upload host once there is

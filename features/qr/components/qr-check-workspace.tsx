@@ -8,6 +8,7 @@ import { SearchInput } from "@/components/shared/input/search";
 import { Section, SectionEmpty, SectionLabel, SectionMeta } from "@/components/shared/section/section";
 import { Badge } from "@/components/ui/badge";
 import { QrCodeImage } from "@/features/qr/components/qr-code-image";
+import { useAccess } from "@/features/organizations";
 import { QrFormDialog } from "@/features/qr/components/qr-form-dialog";
 import { QR_CHECK_STATUS, QrTestScanButton, type QrCheckState } from "@/features/qr/components/qr-test-scan-button";
 import type { QrCheckItem } from "@/features/qr/libs/qr-check";
@@ -63,6 +64,7 @@ export function QrCheckWorkspace({
     startTransition(() => router.replace(`${pathname}?${params}`, { scroll: false }));
   };
 
+  const canEdit = useAccess().can({ qr: ["update"] });
   const [editOpen, setEditOpen] = useState(false);
   // a fresh key per opening resets the form to the latest saved values
   const [editKey, setEditKey] = useState(0);
@@ -218,16 +220,18 @@ export function QrCheckWorkspace({
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-muted-foreground">Destination embedded URL</span>
-                <button
-                  type="button"
-                  className="text-xs font-medium text-primary hover:underline"
-                  onClick={() => {
-                    setEditKey((key) => key + 1);
-                    setEditOpen(true);
-                  }}
-                >
-                  Edit URL
-                </button>
+                {canEdit && (
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-primary hover:underline"
+                    onClick={() => {
+                      setEditKey((key) => key + 1);
+                      setEditOpen(true);
+                    }}
+                  >
+                    Edit URL
+                  </button>
+                )}
               </div>
               <div className="flex h-9 items-center rounded-md border bg-muted/30 px-3 font-mono text-sm">
                 <span className="truncate" title={selected.destination}>

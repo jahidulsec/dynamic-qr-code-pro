@@ -21,7 +21,8 @@ import {
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { inviteMemberAction } from "@/features/organizations/actions/manage-members";
-import { ORGANIZATION_ROLES, ROLE_DETAILS } from "@/features/organizations/libs/roles";
+import { useAccess } from "@/features/organizations/components/access-provider";
+import { cannotAssignReason } from "@/features/organizations/libs/roles";
 import {
   inviteMemberSchema,
   type InviteMemberValues,
@@ -30,8 +31,6 @@ import {
 type InviteMemberDialogProps = {
   organizationSlug: string;
   organizationName: string;
-  /** only owners can invite another owner */
-  viewerIsOwner: boolean;
   trigger: ReactElement;
   children: ReactNode;
 };
@@ -39,15 +38,16 @@ type InviteMemberDialogProps = {
 export function InviteMemberDialog({
   organizationSlug,
   organizationName,
-  viewerIsOwner,
   trigger,
   children,
 }: InviteMemberDialogProps) {
   const [open, setOpen] = useState(false);
-  const roleOptions = ORGANIZATION_ROLES.map((role) => ({
-    value: role,
-    label: ROLE_DETAILS[role].label,
-    disabled: role === "owner" && !viewerIsOwner,
+  const access = useAccess();
+  // roles carrying access the viewer lacks can't be handed out; the server checks the same rule
+  const roleOptions = access.roles.map((role) => ({
+    value: role.key,
+    label: role.label,
+    disabled: !!cannotAssignReason(access, role),
   }));
 
   const {
@@ -121,7 +121,7 @@ export function InviteMemberDialog({
                     onValueChange={(value) => value && field.onChange(value)}
                     clearable={false}
                   />
-                  <FieldDescription>{ROLE_DETAILS[role].description}</FieldDescription>
+                  <FieldDescription>{access.roles.find((r) => r.key === role)?.description}</FieldDescription>
                 </Field>
               )}
             />

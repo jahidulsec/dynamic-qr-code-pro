@@ -3,7 +3,7 @@
 import { refresh } from "next/cache";
 import { APIError } from "better-auth/api";
 
-import { isAdminRole, requireOrganization } from "@/features/qr/server";
+import { requirePermission } from "@/features/organizations/server";
 import { qrTagFormSchema, qrTagIdSchema, type QrTagFormInput } from "@/features/qr-tags/schemas/qr-tags-schema";
 import { createQrTag, updateQrTag } from "@/features/qr-tags/services/qr-tag";
 import { cacheTags } from "@/lib/cache/cache-tags";
@@ -17,11 +17,11 @@ const conflict = (name: string) => new APIError("CONFLICT", { message: `A tag na
 // QR lists and their tag-filtered counts show the tag's name
 const renameRevalidateTags = [cacheTags.qrCodes, cacheTags.qrCodeCount];
 
-// any member can add a tag, just as they can by typing a new one into the QR form
+// the same permission lets a member type a new tag into the QR form
 export const createQrTagAction = async (organizationSlug: string, input: QrTagFormInput) => {
   try {
     const { name } = qrTagFormSchema.parse(input);
-    const { organization } = await requireOrganization(organizationSlug);
+    const { organization } = await requirePermission(organizationSlug, { tag: ["create"] }, "You can't create tags");
 
     const tag = await createQrTag({
       data: { name, organization: { connect: { id: organization.id } } },
@@ -38,13 +38,12 @@ export const createQrTagAction = async (organizationSlug: string, input: QrTagFo
   }
 };
 
-// renaming relabels every code that uses the tag, so it's limited to owners and admins
+// renaming relabels every code that uses the tag
 export const renameQrTagAction = async (organizationSlug: string, id: string, input: QrTagFormInput) => {
   try {
     const tagId = qrTagIdSchema.parse(id);
     const { name } = qrTagFormSchema.parse(input);
-    const { organization, role } = await requireOrganization(organizationSlug);
-    if (!isAdminRole(role)) throw new APIError("FORBIDDEN", { message: "Only owners and admins can rename tags" });
+    const { organization } = await requirePermission(organizationSlug, { tag: ["update"] }, "You can't rename tags");
 
     // the where is scoped to the organization; P2025 means no tag matched
     const tag = await updateQrTag(

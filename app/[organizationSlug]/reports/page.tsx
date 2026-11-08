@@ -12,7 +12,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { PAGE_TITLES } from "@/features/dashboard";
 import { PageHeader } from "@/features/dashboard/server";
-import { getOrganizationBySlug } from "@/features/organizations/server";
+import { getOrganizationBySlug, hasPermission } from "@/features/organizations/server";
 import {
   getScanReport,
   reportSearchParamsSchema,
@@ -60,7 +60,12 @@ async function ReportsActions({
   organizationSlug: string;
   searchParams: Promise<SearchParams>;
 }) {
-  const query = reportSearchParamsSchema.parse(await searchParams);
+  const [query, canRead] = await Promise.all([
+    searchParams.then((params) => reportSearchParamsSchema.parse(params)),
+    hasPermission(organizationSlug, { report: ["read"] }),
+  ]);
+  // without report access the section below explains why; there is nothing to filter
+  if (!canRead) return null;
 
   return <ReportsToolbar organizationSlug={organizationSlug} period={query.period} department={query.department ?? null} />;
 }

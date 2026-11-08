@@ -9,4 +9,5 @@ export const PAGE_TITLES = {
   general: "General",
   members: "Members",
   roles: "Roles",
+  auditLog: "Audit log",
 } as const;

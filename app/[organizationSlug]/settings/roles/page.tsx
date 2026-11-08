@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { IconPlus } from "@tabler/icons-react";
 
 import { Section, SectionCardHeader, SectionLabel, SectionMeta } from "@/components/shared/section/section";
+import { Button } from "@/components/ui/button";
 import { PAGE_TITLES } from "@/features/dashboard";
 import {
-  getMembership,
-  ORGANIZATION_ROLES,
+  getAccess,
   parseRoles,
+  RoleFormDialog,
   RolePermissionMatrix,
   RoleSummary,
-  type OrganizationRole,
 } from "@/features/organizations/server";
+import { MAX_CUSTOM_ROLES } from "@/lib/auth/auth";
 
 export const metadata: Metadata = {
   title: `${PAGE_TITLES.roles} · ${PAGE_TITLES.settings}`,
@@ -18,30 +20,42 @@ export const metadata: Metadata = {
 
 export default async function RolesSettingsPage({ params }: PageProps<"/[organizationSlug]/settings/roles">) {
   const { organizationSlug } = await params;
-  const membership = await getMembership(organizationSlug);
-  if (!membership) notFound();
+  const access = await getAccess(organizationSlug);
+  if (!access || !access.can({ ac: ["read"] })) notFound();
 
-  const counts = Object.fromEntries(ORGANIZATION_ROLES.map((role) => [role, 0])) as Record<OrganizationRole, number>;
-  for (const member of membership.organization.members) for (const role of parseRoles(member.role)) counts[role]++;
+  const { roles, organization } = access;
+  const counts: Record<string, number> = {};
+  for (const member of organization.members) for (const role of parseRoles(member.role)) counts[role] = (counts[role] ?? 0) + 1;
+
+  const systemCount = roles.filter((role) => role.system).length;
+  const customCount = roles.length - systemCount;
+  const canCreate = access.can({ ac: ["create"] }) && customCount < MAX_CUSTOM_ROLES;
 
   return (
     <>
       <Section className="overflow-hidden">
         <SectionCardHeader>
-          <SectionLabel>Roles</SectionLabel>
-          <SectionMeta>{ORGANIZATION_ROLES.length} built-in</SectionMeta>
+          <div className="flex items-center gap-3">
+            <SectionLabel>Roles</SectionLabel>
+            <SectionMeta>
+              {systemCount} built-in · {customCount} of {MAX_CUSTOM_ROLES} custom
+            </SectionMeta>
+          </div>
+          {canCreate && (
+            <RoleFormDialog organizationSlug={organization.slug} trigger={<Button size="sm" />}>
+              <IconPlus data-icon="inline-start" />
+              New role
+            </RoleFormDialog>
+          )}
         </SectionCardHeader>
-        <RoleSummary
-          counts={counts}
-          membersHref={(role) => `/${organizationSlug}/settings/members?${new URLSearchParams({ role })}`}
-        />
+        <RoleSummary organizationSlug={organization.slug} roles={roles} counts={counts} />
       </Section>
       <Section className="overflow-hidden">
         <SectionCardHeader>
           <SectionLabel>Permissions</SectionLabel>
-          <SectionMeta>Read-only</SectionMeta>
+          <SectionMeta>What each role can do</SectionMeta>
         </SectionCardHeader>
-        <RolePermissionMatrix />
+        <RolePermissionMatrix roles={roles} />
       </Section>
     </>
   );

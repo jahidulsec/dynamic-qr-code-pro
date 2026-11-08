@@ -7,7 +7,7 @@ import { buildQrWhere, liveQrWhere, qrListSelect, qrTagNames, qrTopSelect, type 
 import { qrIdSchema, qrQuerySchema, type QrQuerySchemaType } from "@/features/qr/schemas/qr-schema";
 import { countQrCodes, getQrCode as findQrCode, getQrCodes as findQrCodes } from "@/features/qr/services/qr";
 import { countQrScans, getQrScans } from "@/features/qr/services/qr-scan";
-import { requireOrganization } from "@/features/qr/services/require-organization";
+import { requireMembership, requirePermission } from "@/features/organizations/server";
 import { cacheTags } from "@/lib/cache/cache-tags";
 import { toCsv } from "@/utils/csv";
 import { shortLink } from "@/utils/format";
@@ -25,7 +25,7 @@ const findLiveQrCode = (organizationId: string, id: number) =>
 export const getQrCodes = async (organizationSlug: string, query: QrQuerySchemaType) => {
   try {
     const { page, size, search, tag, status } = qrQuerySchema.parse(query);
-    const { organization } = await requireOrganization(organizationSlug);
+    const { organization } = await requireMembership(organizationSlug);
     const where = buildQrWhere(organization.id, { search, tag, status });
 
     const [data, count] = await Promise.all([
@@ -42,7 +42,7 @@ export const getQrCodes = async (organizationSlug: string, query: QrQuerySchemaT
 export const getQrCode = async (organizationSlug: string, id: number) => {
   try {
     const qrId = qrIdSchema.parse(id);
-    const { organization } = await requireOrganization(organizationSlug);
+    const { organization } = await requireMembership(organizationSlug);
 
     const data = await findLiveQrCode(organization.id, qrId);
     if (!data) throw notFound();
@@ -57,7 +57,7 @@ export const getQrCode = async (organizationSlug: string, id: number) => {
 export const getQrListItem = async (organizationSlug: string, id: number) => {
   try {
     const qrId = qrIdSchema.parse(id);
-    const { organization } = await requireOrganization(organizationSlug);
+    const { organization } = await requireMembership(organizationSlug);
 
     const data = await findQrCode({ where: { id: qrId, ...liveQrWhere(organization.id) }, select: qrListSelect });
     if (!data) throw notFound();
@@ -71,7 +71,7 @@ export const getQrListItem = async (organizationSlug: string, id: number) => {
 // just the live total, read fresh (no `use cache`) for the sidebar
 export const getQrCount = async (organizationSlug: string) => {
   try {
-    const { organization } = await requireOrganization(organizationSlug);
+    const { organization } = await requireMembership(organizationSlug);
     const data = await countQrCodes({ where: liveQrWhere(organization.id) }, { cache: false });
     return apiResponse.single({ data });
   } catch (error) {
@@ -81,7 +81,7 @@ export const getQrCount = async (organizationSlug: string) => {
 
 export const getQrStats = async (organizationSlug: string) => {
   try {
-    const { organization } = await requireOrganization(organizationSlug);
+    const { organization } = await requireMembership(organizationSlug);
     const live = liveQrWhere(organization.id);
 
     const startOfToday = new Date();
@@ -106,7 +106,7 @@ export const getQrStats = async (organizationSlug: string) => {
 export const getQrAnalytics = async (organizationSlug: string, id: number) => {
   try {
     const qrId = qrIdSchema.parse(id);
-    const { organization } = await requireOrganization(organizationSlug);
+    const { organization } = await requirePermission(organizationSlug, { report: ["read"] }, "You can't view scan analytics");
 
     const qr = await findLiveQrCode(organization.id, qrId);
     if (!qr) throw notFound();
@@ -123,7 +123,7 @@ export const getQrAnalytics = async (organizationSlug: string, id: number) => {
 
 export const getTrashedQrCodes = async (organizationSlug: string) => {
   try {
-    const { organization } = await requireOrganization(organizationSlug);
+    const { organization } = await requireMembership(organizationSlug);
     const data = await findQrCodes({
       where: { organizationId: organization.id, deletedAt: { not: null } },
       select: qrListSelect,
@@ -140,7 +140,7 @@ export const getTrashedQrCodes = async (organizationSlug: string) => {
 export const exportQrCodes = async (organizationSlug: string, query: QrQuerySchemaType) => {
   try {
     const { search, tag, status } = qrQuerySchema.parse(query);
-    const { organization } = await requireOrganization(organizationSlug);
+    const { organization } = await requirePermission(organizationSlug, { qr: ["export"] }, "You can't export QR codes");
 
     // a one-off download: don't keep the whole list in the cache
     const rows = await findQrCodes(
@@ -174,7 +174,11 @@ export const exportQrCodes = async (organizationSlug: string, query: QrQuerySche
 export const exportQrScans = async (organizationSlug: string, id: number) => {
   try {
     const qrId = qrIdSchema.parse(id);
-    const { organization } = await requireOrganization(organizationSlug);
+    const { organization } = await requirePermission(
+      organizationSlug,
+      { qr: ["export"], report: ["read"] },
+      "You can't export scan data",
+    );
 
     const qr = await findLiveQrCode(organization.id, qrId);
     if (!qr) throw notFound();

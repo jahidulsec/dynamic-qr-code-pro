@@ -3,7 +3,7 @@
 import { refresh } from "next/cache";
 import { APIError } from "better-auth/api";
 
-import { isAdminRole, requireOrganization } from "@/features/qr/server";
+import { requirePermission } from "@/features/organizations/server";
 import { qrTagIdSchema } from "@/features/qr-tags/schemas/qr-tags-schema";
 import { deleteQrTag } from "@/features/qr-tags/services/qr-tag";
 import { cacheTags } from "@/lib/cache/cache-tags";
@@ -15,8 +15,7 @@ const revalidateTags = [cacheTags.qrCodes, cacheTags.qrCodeCount];
 export const deleteQrTagAction = async (organizationSlug: string, id: string) => {
   try {
     const tagId = qrTagIdSchema.parse(id);
-    const { organization, role } = await requireOrganization(organizationSlug);
-    if (!isAdminRole(role)) throw new APIError("FORBIDDEN", { message: "Only owners and admins can delete tags" });
+    const { organization } = await requirePermission(organizationSlug, { tag: ["delete"] }, "You can't delete tags");
 
     const tag = await deleteQrTag(
       { where: { id: tagId, organizationId: organization.id }, select: { name: true } },

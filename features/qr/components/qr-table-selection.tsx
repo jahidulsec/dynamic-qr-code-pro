@@ -6,6 +6,7 @@ import { IconTrash, IconX } from "@tabler/icons-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAccess } from "@/features/organizations";
 import { trashQrCodesAction } from "@/features/qr/actions/manage-qr";
 
 type SelectionContextValue = {
@@ -54,8 +55,12 @@ export function QrTableSelection({ ids, children }: QrTableSelectionProps) {
   return <SelectionContext value={value}>{children}</SelectionContext>;
 }
 
+// selecting rows only serves bulk trashing, so it's hidden from members who can't trash
+const useCanSelect = () => useAccess().can({ qr: ["trash"] });
+
 export function QrSelectAllCheckbox() {
   const { selected, allSelected, toggleAll } = useSelection();
+  if (!useCanSelect()) return null;
 
   return (
     <Checkbox
@@ -69,6 +74,7 @@ export function QrSelectAllCheckbox() {
 
 export function QrRowCheckbox({ id, name }: { id: number; name: string }) {
   const { isSelected, toggle } = useSelection();
+  if (!useCanSelect()) return null;
 
   return (
     <Checkbox

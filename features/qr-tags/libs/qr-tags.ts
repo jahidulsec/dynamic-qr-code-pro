@@ -1,6 +1,6 @@
 "use server";
 
-import { requireOrganization } from "@/features/qr/server";
+import { requireMembership } from "@/features/organizations/server";
 import { qrTagListSelect, toQrTagListItem } from "@/features/qr-tags/libs/qr-tags-query";
 import { getQrTags as findQrTags } from "@/features/qr-tags/services/qr-tag";
 import { cacheTags } from "@/lib/cache/cache-tags";
@@ -10,7 +10,7 @@ import { apiResponse } from "@/utils/response";
 // `cache: false` reads fresh, skipping `use cache` (the sidebar does this)
 export const getQrTags = async (organizationSlug: string, { cache = true }: { cache?: boolean } = {}) => {
   try {
-    const { organization } = await requireOrganization(organizationSlug);
+    const { organization } = await requireMembership(organizationSlug);
 
     const tags = await findQrTags(
       { where: { organizationId: organization.id }, select: qrTagListSelect, orderBy: { name: "asc" } },
@@ -38,7 +38,7 @@ export const getQrTagOptions = async (
   { search, values }: { search?: string; values?: string[] } = {},
 ) => {
   try {
-    const { organization } = await requireOrganization(organizationSlug);
+    const { organization } = await requireMembership(organizationSlug);
     const organizationId = organization.id;
     const select = { name: true } as const;
     // names are saved in capitals

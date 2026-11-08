@@ -4,8 +4,7 @@ import { notFound } from "next/navigation";
 import { Section } from "@/components/shared/section/section";
 import { PAGE_TITLES } from "@/features/dashboard";
 import {
-  getMembership,
-  isManagerRole,
+  getAccess,
   isOwnerRole,
   OrganizationDangerZone,
   OrganizationGeneralForm,
@@ -17,10 +16,10 @@ export const metadata: Metadata = {
 
 export default async function GeneralSettingsPage({ params }: PageProps<"/[organizationSlug]/settings/general">) {
   const { organizationSlug } = await params;
-  const membership = await getMembership(organizationSlug);
-  if (!membership) notFound();
+  const access = await getAccess(organizationSlug);
+  if (!access) notFound();
 
-  const { organization, member } = membership;
+  const { organization, member } = access;
   const ownerCount = organization.members.filter((m) => isOwnerRole(m.role)).length;
   const viewerIsOwner = isOwnerRole(member.role);
 
@@ -29,13 +28,13 @@ export default async function GeneralSettingsPage({ params }: PageProps<"/[organ
       <Section className="overflow-hidden">
         <OrganizationGeneralForm
           organization={{ name: organization.name, slug: organization.slug, logo: organization.logo ?? null }}
-          canEdit={isManagerRole(member.role)}
+          canEdit={access.can({ organization: ["update"] })}
         />
       </Section>
       <Section className="overflow-hidden ring-destructive/30">
         <OrganizationDangerZone
           organization={{ name: organization.name, slug: organization.slug }}
-          canDelete={viewerIsOwner}
+          canDelete={access.can({ organization: ["delete"] })}
           canLeave={!viewerIsOwner || ownerCount > 1}
         />
       </Section>

@@ -4,11 +4,8 @@ import { notFound, redirect } from "next/navigation";
 
 import { AppSidebar } from "@/features/dashboard";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import {
-  getOrganizationBySlug,
-  getSession,
-  listOrganizations,
-} from "@/features/organizations/server";
+import { AccessProvider } from "@/features/organizations";
+import { getAccess, getSession, listOrganizations } from "@/features/organizations/server";
 import { getQrCount } from "@/features/qr";
 import { getQrTags } from "@/features/qr-tags";
 import { getQrBaseUrl } from "@/utils/short-link";
@@ -31,8 +28,9 @@ async function OrganizationShell({ children, params }: LayoutProps<"/[organizati
   const session = await getSession();
   if (!session) redirect("/sign-in");
 
-  const [organization, organizations] = await Promise.all([getOrganizationBySlug(organizationSlug), listOrganizations()]);
-  if (!organization) notFound();
+  const [access, organizations] = await Promise.all([getAccess(organizationSlug), listOrganizations()]);
+  if (!access) notFound();
+  const { organization } = access;
 
   // the sidebar reads fresh so its counts never lag behind the page
   const [qrCount, departments] = await Promise.all([
@@ -41,22 +39,25 @@ async function OrganizationShell({ children, params }: LayoutProps<"/[organizati
   ]);
 
   return (
-    <SidebarProvider>
-      <AppSidebar
-        user={{
-          name: session.user.name,
-          email: session.user.email,
-          image: session.user.image,
-          emailVerified: session.user.emailVerified,
-          createdAt: session.user.createdAt,
-        }}
-        organizations={organizations.map(({ name, slug, logo }) => ({ name, slug, logo }))}
-        activeSlug={organization.slug}
-        baseUrl={getQrBaseUrl()}
-        qrCount={qrCount.data ?? 0}
-        departments={departments.data ?? []}
-      />
-      <SidebarInset className="min-w-0">{children}</SidebarInset>
-    </SidebarProvider>
+    // only shapes the UI; every action re-checks permissions on the server
+    <AccessProvider value={{ role: access.member.role, permissions: access.permissions, roles: access.roles }}>
+      <SidebarProvider>
+        <AppSidebar
+          user={{
+            name: session.user.name,
+            email: session.user.email,
+            image: session.user.image,
+            emailVerified: session.user.emailVerified,
+            createdAt: session.user.createdAt,
+          }}
+          organizations={organizations.map(({ name, slug, logo }) => ({ name, slug, logo }))}
+          activeSlug={organization.slug}
+          baseUrl={getQrBaseUrl()}
+          qrCount={qrCount.data ?? 0}
+          departments={departments.data ?? []}
+        />
+        <SidebarInset className="min-w-0">{children}</SidebarInset>
+      </SidebarProvider>
+    </AccessProvider>
   );
 }

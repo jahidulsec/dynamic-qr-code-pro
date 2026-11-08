@@ -30,18 +30,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ORGANIZATION_ROLES, ROLE_DETAILS, parseRoles } from "@/features/organizations/libs/roles";
+import { useAccess } from "@/features/organizations/components/access-provider";
+import { cannotAssignReason, parseRoles } from "@/features/organizations/libs/roles";
 import { removeMemberAction, updateMemberRoleAction } from "@/features/organizations/actions/manage-members";
 import type { MemberRow } from "@/features/organizations/libs/settings-types";
 
 type MemberRowActionsProps = {
   organizationSlug: string;
   member: MemberRow;
-  /** owners can assign the owner role and act on other owners */
-  viewerIsOwner: boolean;
 };
 
-export function MemberRowActions({ organizationSlug, member, viewerIsOwner }: MemberRowActionsProps) {
+export function MemberRowActions({ organizationSlug, member }: MemberRowActionsProps) {
+  const access = useAccess();
+  const canChangeRole = access.can({ member: ["update"] });
+  const canRemove = access.can({ member: ["delete"] });
   const [removeOpen, setRemoveOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const currentRole = parseRoles(member.role)[0] ?? "member";
@@ -88,38 +90,40 @@ export function MemberRowActions({ organizationSlug, member, viewerIsOwner }: Me
           <DropdownMenuGroup>
             <DropdownMenuLabel className="truncate">{member.name}</DropdownMenuLabel>
           </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <IconShieldCog />
-              Change role
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="w-64">
-              <DropdownMenuRadioGroup
-                value={currentRole}
-                onValueChange={changeRole}
-              >
-                {ORGANIZATION_ROLES.map((role) => (
-                  <DropdownMenuRadioItem
-                    key={role}
-                    value={role}
-                    disabled={role === "owner" && !viewerIsOwner}
-                    className="items-start"
-                  >
-                    <span className="flex flex-col gap-0.5">
-                      <span>{ROLE_DETAILS[role].label}</span>
-                      <span className="text-xs text-muted-foreground">{ROLE_DETAILS[role].description}</span>
-                    </span>
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" onClick={() => setRemoveOpen(true)}>
-            <IconUserMinus />
-            Remove from organization
-          </DropdownMenuItem>
+          {canChangeRole && <DropdownMenuSeparator />}
+          {canChangeRole && (
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <IconShieldCog />
+                Change role
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="w-64">
+                <DropdownMenuRadioGroup
+                  value={currentRole}
+                  onValueChange={changeRole}
+                >
+                  {access.roles.map((role) => {
+                    const reason = cannotAssignReason(access, role);
+                    return (
+                      <DropdownMenuRadioItem key={role.key} value={role.key} disabled={!!reason} className="items-start">
+                        <span className="flex flex-col gap-0.5">
+                          <span>{role.label}</span>
+                          <span className="text-xs text-muted-foreground">{reason ?? role.description}</span>
+                        </span>
+                      </DropdownMenuRadioItem>
+                    );
+                  })}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          )}
+          {canRemove && <DropdownMenuSeparator />}
+          {canRemove && (
+            <DropdownMenuItem variant="destructive" onClick={() => setRemoveOpen(true)}>
+              <IconUserMinus />
+              Remove from organization
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 

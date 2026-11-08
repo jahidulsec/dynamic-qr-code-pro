@@ -2,23 +2,27 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconBuilding, IconShieldLock, IconUsers } from "@tabler/icons-react";
+import { IconBuilding, IconHistory, IconShieldLock, IconUsers } from "@tabler/icons-react";
 
+import { useAccess } from "@/features/organizations/components/access-provider";
+import type { Permissions } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 
-const TABS = [
+const TABS: { segment: string; label: string; icon: React.ReactNode; requires?: Permissions }[] = [
   { segment: "general", label: "General", icon: <IconBuilding /> },
   { segment: "members", label: "Members", icon: <IconUsers /> },
-  { segment: "roles", label: "Roles", icon: <IconShieldLock /> },
-] as const;
+  { segment: "roles", label: "Roles", icon: <IconShieldLock />, requires: { ac: ["read"] } },
+  { segment: "audit-log", label: "Audit log", icon: <IconHistory />, requires: { audit: ["read"] } },
+];
 
 export function SettingsNav({ organizationSlug, memberCount }: { organizationSlug: string; memberCount: number }) {
   const pathname = usePathname();
+  const { can } = useAccess();
 
   return (
     <nav aria-label="Settings" className="-mx-4 overflow-x-auto border-b px-4">
       <ul className="flex gap-1">
-        {TABS.map((tab) => {
+        {TABS.filter((tab) => !tab.requires || can(tab.requires)).map((tab) => {
           const href = `/${organizationSlug}/settings/${tab.segment}`;
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
