@@ -6,7 +6,7 @@ import { z } from "zod";
 
 import { QR_QUOTA } from "@/features/qr/constants";
 import { liveQrWhere } from "@/features/qr/libs/qr-query";
-import { countQrCodes, deleteQrCode, updateQrCode } from "@/features/qr/services/qr";
+import { countQrCodes, deleteQrCode, updateQrCode, updateQrCodes } from "@/features/qr/services/qr";
 import { isAdminRole, requireOrganization } from "@/features/qr/services/require-organization";
 import { cacheTags } from "@/lib/cache/cache-tags";
 import { apiResponse } from "@/utils/response";
@@ -61,7 +61,29 @@ export const trashQrAction = async (organizationSlug: string, id: number) => {
   }
 };
 
-export const restoreQrAction = async (organizationSlug: string, id: number) => {
+// bulk variant: codes already trashed or outside this organization are skipped, not failed
+export const trashQrCodesAction = async (organizationSlug: string, ids: number[]) => {
+  try {
+    const qrIds = z.array(idSchema).min(1).max(QR_QUOTA).parse(ids);
+    const { organization } = await requireOrganization(organizationSlug);
+
+    const { count } = await updateQrCodes(
+      { where: { id: { in: qrIds }, ...liveQrWhere(organization.id) }, data: { deletedAt: new Date() } },
+      revalidateTags,
+    );
+    if (!count) throw notFound();
+
+    refresh();
+    return apiResponse.single({
+      message: `Moved ${count} QR code${count === 1 ? "" : "s"} to trash`,
+      data: { count },
+    });
+  } catch (error) {
+    return apiResponse.error({ error });
+  }
+};
+
+export const restoreQrAction =async (organizationSlug: string, id: number) => {
   try {
     const qrId = idSchema.parse(id);
     const { organization } = await requireOrganization(organizationSlug);

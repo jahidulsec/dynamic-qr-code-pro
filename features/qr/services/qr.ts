@@ -62,7 +62,10 @@ export const updateQrCode = <T extends Prisma.QrCodeUpdateArgs>(
   revalidateTags?: RevalidateTags,
 ) => mutate(() => prisma.qrCode.update<T>(args), writeTags(revalidateTags));
 
-export const deleteQrCode = <T extends Prisma.QrCodeDeleteArgs>(
+export const updateQrCodes = (args: Prisma.QrCodeUpdateManyArgs, revalidateTags?: RevalidateTags) =>
+  mutate(() => prisma.qrCode.updateMany(args), writeTags(revalidateTags));
+
+export const deleteQrCode =<T extends Prisma.QrCodeDeleteArgs>(
   args: Prisma.SelectSubset<T, Prisma.QrCodeDeleteArgs>,
   revalidateTags?: RevalidateTags,
 ) => mutate(() => prisma.qrCode.delete<T>(args), writeTags(revalidateTags));
