@@ -6,6 +6,7 @@ import {
   IconLayoutDashboard,
   IconPlus,
   IconScan,
+  IconSettings,
   IconTags,
   IconTrash,
 } from "@tabler/icons-react";
@@ -59,6 +60,12 @@ function getNavGroups(slug: string): NavMainGroup[] {
           url: `${base}/reports`,
           icon: <IconChartBar />,
         },
+      ],
+    },
+    {
+      label: "Workspace",
+      items: [
+        { title: PAGE_TITLES.settings, url: `${base}/settings`, icon: <IconSettings /> },
       ],
     },
   ];

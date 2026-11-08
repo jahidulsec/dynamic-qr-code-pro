@@ -21,7 +21,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { IconSelector, IconPlus } from "@tabler/icons-react"
+import { IconSelector, IconPlus, IconSettings } from "@tabler/icons-react"
 
 import { brandConfig } from "@/config/brand"
 
@@ -100,6 +100,12 @@ export function TeamSwitcher({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
+              <DropdownMenuItem render={<Link href={`/${activeSlug}/settings`} />} className="gap-2 p-2">
+                <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                  <IconSettings className="size-4" />
+                </div>
+                <div className="font-medium text-muted-foreground">Organization settings</div>
+              </DropdownMenuItem>
               <DropdownMenuItem render={<Link href="/organizations/new" />} className="gap-2 p-2">
                 <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                   <IconPlus className="size-4" />

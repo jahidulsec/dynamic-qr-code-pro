@@ -5,4 +5,8 @@ export const PAGE_TITLES = {
   tags: "Department Tags",
   trash: "Trash",
   reports: "Graph Reports",
+  settings: "Settings",
+  general: "General",
+  members: "Members",
+  roles: "Roles",
 } as const;

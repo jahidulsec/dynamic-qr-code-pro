@@ -6,3 +6,4 @@ export { ProfileDialog } from "./components/profile-dialog";
 // Schemas, constants, types
 export type { ProfileTab } from "./components/profile-dialog";
 export type { ProfileUser } from "./libs/profile-user";
+export { initialsOf } from "./libs/profile-user";
