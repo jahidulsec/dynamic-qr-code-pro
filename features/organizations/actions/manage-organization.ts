@@ -1,0 +1,85 @@
+"use server";
+
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { refresh, updateTag } from "next/cache";
+import { APIError } from "better-auth/api";
+
+import { isManagerRole, isOwnerRole } from "@/features/organizations/libs/roles";
+import {
+  createOrganizationSchema,
+  type CreateOrganizationValues,
+} from "@/features/organizations/schemas/create-organization-schema";
+import { getMembership } from "@/features/organizations/services/get-membership";
+import { auth } from "@/lib/auth/auth";
+import { cacheTags, organizationTag } from "@/lib/cache/cache-tags";
+import { apiResponse } from "@/utils/response";
+
+// the signed-in user's membership, or a user-facing error
+async function requireMembership(organizationSlug: string) {
+  const membership = await getMembership(organizationSlug);
+  if (!membership) throw new APIError("NOT_FOUND", { message: "Organization not found" });
+  return membership;
+}
+
+export const updateOrganizationAction = async (organizationSlug: string, values: CreateOrganizationValues) => {
+  try {
+    const { name, slug } = createOrganizationSchema.parse(values);
+    const { organization, member } = await requireMembership(organizationSlug);
+    if (!isManagerRole(member.role))
+      throw new APIError("FORBIDDEN", { message: "Only owners and admins can edit the organization" });
+
+    // better-auth re-checks the role and rejects a slug another organization already uses
+    const updated = await auth.api.updateOrganization({
+      body: { organizationId: organization.id, data: { name, slug } },
+      headers: await headers(),
+    });
+
+    [cacheTags.organizations, organizationTag(organization.id)].forEach((tag) => updateTag(tag));
+
+    // the old URL no longer resolves; apiResponse.error rethrows the redirect
+    const nextSlug = updated?.slug ?? slug;
+    if (nextSlug !== organizationSlug) redirect(`/${nextSlug}/settings/general`);
+
+    refresh();
+    return apiResponse.single({ message: "Organization updated", data: { name, slug: nextSlug } });
+  } catch (error) {
+    return apiResponse.error({ error });
+  }
+};
+
+export const deleteOrganizationAction = async (organizationSlug: string, confirmation: string) => {
+  try {
+    const { organization, member } = await requireMembership(organizationSlug);
+    if (!isOwnerRole(member.role))
+      throw new APIError("FORBIDDEN", { message: "Only owners can delete the organization" });
+    if (confirmation !== organization.slug)
+      throw new APIError("BAD_REQUEST", { message: "Type the organization URL to confirm" });
+
+    // members, invitations, QR codes, tags and scans cascade in the database
+    await auth.api.deleteOrganization({
+      body: { organizationId: organization.id },
+      headers: await headers(),
+    });
+
+    [
+      cacheTags.organizations,
+      cacheTags.organizationCount,
+      cacheTags.members,
+      cacheTags.memberCount,
+      cacheTags.invitations,
+      cacheTags.invitationCount,
+      cacheTags.qrCodes,
+      cacheTags.qrCodeCount,
+      cacheTags.qrTags,
+      cacheTags.qrTagCount,
+      cacheTags.qrScans,
+      cacheTags.qrScanCount,
+      organizationTag(organization.id),
+    ].forEach((tag) => updateTag(tag));
+
+    redirect("/organizations");
+  } catch (error) {
+    return apiResponse.error({ error });
+  }
+};

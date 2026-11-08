@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { PENDING_ACTION_MESSAGE } from "@/features/organizations/libs/settings-types";
+import { updateOrganizationAction } from "@/features/organizations/actions/manage-organization";
 import {
   createOrganizationSchema,
   type CreateOrganizationValues,
@@ -37,9 +37,15 @@ export function OrganizationGeneralForm({ organization, canEdit }: OrganizationG
   const [name, slug] = useWatch({ control, name: ["name", "slug"] });
   const slugChanged = slug !== organization.slug;
 
-  const onSubmit = handleSubmit(async () => {
-    // TODO: updateOrganizationAction, then redirect when the slug changed
-    toast.info(PENDING_ACTION_MESSAGE);
+  const onSubmit = handleSubmit(async (values) => {
+    // redirects to the new URL when the slug changed
+    const result = await updateOrganizationAction(organization.slug, values);
+    if (!result.success) {
+      toast.error(result.message);
+      return;
+    }
+    reset(result.data);
+    toast.success(result.message);
   });
 
   return (

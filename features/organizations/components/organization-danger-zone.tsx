@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { IconDoorExit, IconTrashX } from "@tabler/icons-react";
 
@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { deleteOrganizationAction } from "@/features/organizations/actions/manage-organization";
 import { PENDING_ACTION_MESSAGE } from "@/features/organizations/libs/settings-types";
 
 type OrganizationDangerZoneProps = {
@@ -42,9 +43,17 @@ function DangerRow({ title, description, action }: { title: string; description:
 
 export function OrganizationDangerZone({ organization, canDelete, canLeave }: OrganizationDangerZoneProps) {
   const [confirmation, setConfirmation] = useState("");
+  const [isDeleting, startDeleting] = useTransition();
 
-  // TODO: leaveOrganizationAction / deleteOrganizationAction, then redirect to /organizations
+  // TODO: leaveOrganizationAction, then redirect to /organizations
   const pending = () => toast.info(PENDING_ACTION_MESSAGE);
+
+  // the dialog stays open while the request runs; success redirects to /organizations
+  const deleteOrganization = () =>
+    startDeleting(async () => {
+      const result = await deleteOrganizationAction(organization.slug, confirmation);
+      if (!result.success) toast.error(result.message);
+    });
 
   return (
     <div className="flex flex-col">
@@ -110,6 +119,7 @@ export function OrganizationDangerZone({ organization, canDelete, canLeave }: Or
                       autoComplete="off"
                       spellCheck={false}
                       value={confirmation}
+                      disabled={isDeleting}
                       onChange={(event) => setConfirmation(event.target.value)}
                     />
                   </Field>
@@ -117,10 +127,10 @@ export function OrganizationDangerZone({ organization, canDelete, canLeave }: Or
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
                       variant="destructive"
-                      disabled={confirmation !== organization.slug}
-                      onClick={pending}
+                      disabled={confirmation !== organization.slug || isDeleting}
+                      onClick={deleteOrganization}
                     >
-                      Delete organization
+                      {isDeleting ? "Deleting…" : "Delete organization"}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
