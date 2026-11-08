@@ -103,7 +103,7 @@ function CheckSkeleton() {
         ))}
       </div>
       <div className="flex flex-col gap-4">
-        <Skeleton className="h-[26rem] rounded-xl" />
+        <Skeleton className="h-104 rounded-xl" />
         <Skeleton className="h-28 rounded-xl" />
       </div>
     </div>

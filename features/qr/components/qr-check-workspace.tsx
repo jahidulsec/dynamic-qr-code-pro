@@ -186,6 +186,7 @@ export function QrCheckWorkspace({
 
               <QrTestScanButton
                 size="lg"
+                variant={'secondary'}
                 className="w-full"
                 qrValue={selected.qrValue}
                 state={selected.state}
