@@ -3,7 +3,7 @@ import { IconChartBar, IconQrcode, IconScan, IconTrophy } from "@tabler/icons-re
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { QrAnalyticsButton } from "@/features/qr/components/qr-analytics-button";
 import { QR_QUOTA } from "@/features/qr/constants";
-import type { QrStatsData } from "@/features/qr/libs/qr-query";
+import { qrTagNames, type QrStatsData } from "@/features/qr/libs/qr-query";
 
 type QrStatsProps = {
   stats: QrStatsData;
@@ -43,7 +43,7 @@ export function QrStats({ stats, organizationSlug }: QrStatsProps) {
           <>
             <QrAnalyticsButton
               organizationSlug={organizationSlug}
-              qr={{ id: stats.top.id, name: stats.top.name, tag: stats.top.tag?.name ?? null }}
+              qr={{ id: stats.top.id, name: stats.top.name, tags: qrTagNames(stats.top) }}
               variant="link"
               className="h-auto justify-start p-0 text-left whitespace-normal text-foreground"
             >
@@ -51,7 +51,7 @@ export function QrStats({ stats, organizationSlug }: QrStatsProps) {
             </QrAnalyticsButton>
             <p className="text-xs text-muted-foreground">
               <span className="font-mono">{stats.top.scanCount.toLocaleString()} scans</span>
-              {stats.top.tag && ` · Tag ${stats.top.tag.name}`}
+              {stats.top.tags.length > 0 && ` · ${stats.top.tags.length > 1 ? "Tags" : "Tag"} ${qrTagNames(stats.top).join(", ")}`}
             </p>
           </>
         ) : (

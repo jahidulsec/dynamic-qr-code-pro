@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// matches how the QR form stores tags (`qrFormSchema.tag`), so renamed and on-the-fly tags look alike
+// matches how the QR form stores tags (`qrFormSchema.tags`), so renamed and on-the-fly tags look alike
 export const qrTagNameSchema = z
   .string()
   .trim()

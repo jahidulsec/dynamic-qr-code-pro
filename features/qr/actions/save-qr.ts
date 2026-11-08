@@ -6,7 +6,7 @@ import { APIError } from "better-auth/api";
 import { QR_QUOTA } from "@/features/qr/constants";
 import { liveQrWhere } from "@/features/qr/libs/qr-query";
 import { qrFormSchema, type QrFormInput, type QrFormValues } from "@/features/qr/schemas/qr-schema";
-import { countQrCodes, createQrCode, updateQrCode } from "@/features/qr/services/qr";
+import { countQrCodes, createQrCode, getQrCode, updateQrCode } from "@/features/qr/services/qr";
 import { requireOrganization } from "@/features/qr/services/require-organization";
 import { cacheTags } from "@/lib/cache/cache-tags";
 import { apiResponse } from "@/utils/response";
@@ -17,12 +17,10 @@ const prismaCode = (error: unknown) =>
 // tags are created on the fly through connectOrCreate
 const revalidateTags = [cacheTags.qrTags];
 
-const tagConnect = (organizationId: string, tag: string) => ({
-  connectOrCreate: {
-    where: { organizationId_name: { organizationId, name: tag } },
-    create: { organizationId, name: tag },
-  },
-});
+const tagWhere = (organizationId: string, name: string) => ({ organizationId_name: { organizationId, name } });
+
+const tagConnect = (organizationId: string, tags: string[]) =>
+  tags.map((name) => ({ where: tagWhere(organizationId, name), create: { organizationId, name } }));
 
 const sharedData = (values: QrFormValues) => ({
   name: values.name,
@@ -50,7 +48,7 @@ export const createQrAction = async (organizationSlug: string, input: QrFormInpu
           slug: values.slug,
           organization: { connect: { id: organization.id } },
           createdBy: { connect: { id: session.user.id } },
-          ...(values.tag ? { tag: tagConnect(organization.id, values.tag) } : {}),
+          tags: { connectOrCreate: tagConnect(organization.id, values.tags) },
         },
         select: { id: true, slug: true },
       },
@@ -74,13 +72,25 @@ export const updateQrAction = async (organizationSlug: string, id: number, input
     const values = qrFormSchema.parse(input);
     const { organization } = await requireOrganization(organizationSlug);
 
-    // the where is scoped to the organization; P2025 means no live code matched
+    // read fresh: the current tags decide which ones to unlink
+    const current = await getQrCode(
+      { where: { id, ...liveQrWhere(organization.id) }, select: { tags: { select: { name: true } } } },
+      { cache: false },
+    );
+    if (!current) throw new APIError("NOT_FOUND", { message: "QR code not found" });
+    const removed = current.tags.filter((tag) => !values.tags.includes(tag.name));
+
+    // the where is scoped to the organization; P2025 means the code went away in between
     await updateQrCode(
       {
         where: { id, ...liveQrWhere(organization.id) },
         data: {
           ...sharedData(values),
-          tag: values.tag ? tagConnect(organization.id, values.tag) : { disconnect: true },
+          // the two lists never overlap, so the order Prisma applies them in doesn't matter
+          tags: {
+            connectOrCreate: tagConnect(organization.id, values.tags),
+            disconnect: removed.map((tag) => tagWhere(organization.id, tag.name)),
+          },
         },
         select: { id: true },
       },

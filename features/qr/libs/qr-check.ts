@@ -1,5 +1,5 @@
 import type { QrCheckState } from "@/features/qr/components/qr-test-scan-button";
-import type { QrListItem } from "@/features/qr/libs/qr-query";
+import { qrTagNames, type QrListItem } from "@/features/qr/libs/qr-query";
 import { parseQrStyle, type QrFormInput, type QrStyle } from "@/features/qr/schemas/qr-schema";
 import { shortLink, shortLinkLabel, toDateInput } from "@/utils/format";
 
@@ -8,7 +8,7 @@ export type QrCheckItem = {
   id: number;
   name: string;
   destination: string;
-  tag: string | null;
+  tags: string[];
   scanCount: number;
   state: QrCheckState;
   /** the encoded short link and its printed label */
@@ -27,7 +27,7 @@ export function toQrCheckItem(qr: QrListItem, baseUrl: string, now = new Date())
     id: qr.id,
     name: qr.name,
     destination: qr.destination,
-    tag: qr.tag?.name ?? null,
+    tags: qrTagNames(qr),
     scanCount: qr.scanCount,
     state: expired ? "expired" : qr.status === "PAUSED" ? "paused" : "ready",
     qrValue: shortLink(baseUrl, qr.slug),
@@ -37,7 +37,7 @@ export function toQrCheckItem(qr: QrListItem, baseUrl: string, now = new Date())
       name: qr.name,
       destination: qr.destination,
       slug: qr.slug,
-      tag: qr.tag?.name ?? "",
+      tags: qrTagNames(qr),
       expiresAt: qr.expiresAt ? toDateInput(qr.expiresAt) : "",
       style,
     },

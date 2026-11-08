@@ -134,8 +134,7 @@ model QrCode {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdById    String
   createdBy      User         @relation(fields: [createdById], references: [id])
-  tagId          String?
-  tag            QrTag?       @relation(fields: [tagId], references: [id], onDelete: SetNull)
+  tags           QrTag[]
   name           String       @db.VarChar(255)
   // printed into the code, so it never changes once created
   slug           String       @unique @db.VarChar(64)
@@ -154,7 +153,6 @@ model QrCode {
   scans          QrScan[]
 
   @@index([organizationId, deletedAt, createdAt])
-  @@index([tagId])
   @@index([createdById])
   @@map("qr_code")
 }

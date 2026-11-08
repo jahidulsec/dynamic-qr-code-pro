@@ -12,6 +12,7 @@ import { QrFormDialog } from "@/features/qr/components/qr-form-dialog";
 import { QR_CHECK_STATUS, QrTestScanButton, type QrCheckState } from "@/features/qr/components/qr-test-scan-button";
 import type { QrCheckItem } from "@/features/qr/libs/qr-check";
 import { cn } from "@/lib/utils";
+import { formatTags } from "@/utils/format";
 
 type QrCheckWorkspaceProps = {
   organizationSlug: string;
@@ -122,7 +123,7 @@ export function QrCheckWorkspace({
                       {item.name}
                     </span>
                     {item.state !== "ready" && <StatusBadge state={item.state} />}
-                    <span className="shrink-0 font-mono text-xs text-muted-foreground">Tag: {item.tag ?? "—"}</span>
+                    <span className="shrink-0 font-mono text-xs text-muted-foreground">{item.tags.length > 1 ? "Tags" : "Tag"}: {formatTags(item.tags)}</span>
                     {isSelected && <IconCircleCheckFilled className="size-4 shrink-0" aria-hidden />}
                   </div>
                   <div className="flex items-center justify-between gap-3 font-mono text-xs">
@@ -153,7 +154,11 @@ export function QrCheckWorkspace({
                 </span>
               )}
             </div>
-            {selected?.tag && <SectionMeta>Tag: {selected.tag}</SectionMeta>}
+            {!!selected?.tags.length && (
+              <SectionMeta>
+                {selected.tags.length > 1 ? "Tags" : "Tag"}: {selected.tags.join(", ")}
+              </SectionMeta>
+            )}
           </div>
 
           {selected ? (

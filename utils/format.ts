@@ -28,3 +28,6 @@ export const toDateInput = (date: Date) =>
 
 export const toArray = <V>(value: V | V[] | undefined): V[] =>
   value === undefined ? [] : Array.isArray(value) ? value : [value];
+
+/** a code's tags for display, or a dash when it has none */
+export const formatTags = (tags: string[]) => (tags.length ? tags.join(", ") : "—");

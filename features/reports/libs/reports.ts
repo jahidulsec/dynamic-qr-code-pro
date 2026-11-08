@@ -59,8 +59,8 @@ export const exportScanReport = async (organizationSlug: string, query: ReportQu
         report.distribution.map((row) => [row.name ?? "Untagged", row.qrCount, row.scans, percent(row.percent)]),
       ),
       toCsv(
-        ["ID", "Campaign", "Tag", "Destination", "Scans"],
-        report.top.map((row) => [row.id, row.name, row.tag, row.destination, row.scans]),
+        ["ID", "Campaign", "Tags", "Destination", "Scans"],
+        report.top.map((row) => [row.id, row.name, row.tags.join(", "), row.destination, row.scans]),
       ),
     ].map((section, index) => (index === 0 ? section : section.replace(/^﻿/, "")));
 

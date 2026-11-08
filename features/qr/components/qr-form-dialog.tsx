@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useId, useRef, useState, type ReactNode } from "react";
+import { useDeferredValue, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch, type FieldErrors } from "react-hook-form";
@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { MultiCombobox } from "@/components/shared/combobox/multi-combobox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createQrAction, updateQrAction } from "@/features/qr/actions/save-qr";
@@ -51,12 +52,22 @@ const DESTINATION_TYPES = [
 const toItems = (values: readonly string[]) =>
   values.map((value) => ({ value, label: value.replace(/-/g, " ").replace(/^./, (c) => c.toUpperCase()) }));
 
+// tags are stored uppercase, so offer the typed text the way it will be saved
+const toTagName = (input: string) => input.trim().toUpperCase().slice(0, 32);
+
+// an array field reports one error for the whole list, or one per tag
+const tagErrors = (error: unknown): { message?: string }[] => {
+  if (!error || typeof error !== "object") return [];
+  if ("message" in error && typeof error.message === "string") return [{ message: error.message }];
+  return Object.values(error).flatMap(tagErrors);
+};
+
 const dotItems = toItems(QR_DOT_STYLES);
 const finderItems = toItems(QR_FINDER_STYLES);
 
 // errors on a hidden tab would otherwise go unnoticed, so jump to the first tab that has one
 const firstTabWithError = (errors: FieldErrors<QrFormInput>) => {
-  if (errors.name || errors.destination || errors.slug || errors.tag) return "target";
+  if (errors.name || errors.destination || errors.slug || errors.tags) return "target";
   if (errors.style) return "style";
   return "security";
 };
@@ -87,7 +98,6 @@ export function QrFormDialog({
   closeHref,
 }: QrFormDialogProps) {
   const router = useRouter();
-  const tagListId = useId();
   const isEdit = !!qr;
   // the alias follows the name until the user edits it directly
   const slugEdited = useRef(isEdit);
@@ -108,7 +118,7 @@ export function QrFormDialog({
       name: "",
       destination: "https://",
       slug: initialSlug,
-      tag: "",
+      tags: [],
       expiresAt: "",
       style: DEFAULT_QR_STYLE,
     },
@@ -283,29 +293,26 @@ export function QrFormDialog({
                     />
 
                     <Controller
-                      name="tag"
+                      name="tags"
                       control={control}
                       render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                          <FieldLabel htmlFor={field.name}>Department tag</FieldLabel>
-                          <Input
-                            {...field}
+                          <FieldLabel htmlFor={field.name}>Department tags</FieldLabel>
+                          <MultiCombobox
                             id={field.name}
-                            list={tagListId}
-                            autoComplete="off"
+                            options={tags}
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            onBlur={field.onBlur}
+                            creatable={toTagName}
                             placeholder="e.g. RPL"
-                            className="uppercase"
+                            emptyText="Type to add a tag."
                             aria-invalid={fieldState.invalid}
                           />
-                          <datalist id={tagListId}>
-                            {tags.map((tag) => (
-                              <option key={tag} value={tag} />
-                            ))}
-                          </datalist>
                           {fieldState.invalid ? (
-                            <FieldError errors={[fieldState.error]} />
+                            <FieldError errors={tagErrors(fieldState.error)} />
                           ) : (
-                            <FieldDescription>Pick one or type a new tag.</FieldDescription>
+                            <FieldDescription>Pick any number, or type a new tag.</FieldDescription>
                           )}
                         </Field>
                       )}

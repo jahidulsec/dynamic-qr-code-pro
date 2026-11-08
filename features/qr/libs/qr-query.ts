@@ -7,6 +7,11 @@ export type QrListFilters = {
   status?: QrStatusFilter;
 };
 
+const qrTagsSelect = { select: { name: true }, orderBy: { name: "asc" } } satisfies Prisma.QrCode$tagsArgs;
+
+/** a code's tag names, for display and the edit form */
+export const qrTagNames = (qr: { tags: { name: string }[] }) => qr.tags.map((tag) => tag.name);
+
 export const qrListSelect = {
   id: true,
   name: true,
@@ -19,7 +24,7 @@ export const qrListSelect = {
   expiresAt: true,
   createdAt: true,
   deletedAt: true,
-  tag: { select: { name: true } },
+  tags: qrTagsSelect,
   createdBy: { select: { name: true } },
 } satisfies Prisma.QrCodeSelect;
 
@@ -29,7 +34,7 @@ export const qrTopSelect = {
   id: true,
   name: true,
   scanCount: true,
-  tag: { select: { name: true } },
+  tags: qrTagsSelect,
 } satisfies Prisma.QrCodeSelect;
 
 export type QrStatsData = {
@@ -49,7 +54,7 @@ export function buildQrWhere(organizationId: string, { search, tag, status }: Qr
 
   return {
     ...liveQrWhere(organizationId),
-    ...(tag ? { tag: { name: tag } } : {}),
+    ...(tag ? { tags: { some: { name: tag } } } : {}),
     ...(status === "active" ? { status: "ACTIVE" } : status === "paused" ? { status: "PAUSED" } : {}),
     ...(term
       ? {
@@ -58,7 +63,7 @@ export function buildQrWhere(organizationId: string, { search, tag, status }: Qr
             { name: { contains: term } },
             { slug: { contains: term } },
             { destination: { contains: term } },
-            { tag: { name: { contains: term } } },
+            { tags: { some: { name: { contains: term } } } },
             { createdBy: { name: { contains: term } } },
           ],
         }

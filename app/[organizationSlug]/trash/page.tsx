@@ -4,9 +4,9 @@ import { IconTrash } from "@tabler/icons-react";
 import { Section, SectionContainer, SectionDescription, SectionEmpty } from "@/components/shared/section/section";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/features/dashboard/server";
-import { getTrashedQrCodes, TrashRowActions } from "@/features/qr";
+import { getTrashedQrCodes, qrTagNames, TrashRowActions } from "@/features/qr";
 import { isOrganizationAdmin } from "@/features/qr/server";
-import { formatDate, shortLinkLabel } from "@/utils/format";
+import { formatDate, formatTags, shortLinkLabel } from "@/utils/format";
 import { getQrBaseUrl } from "@/utils/short-link";
 
 export const metadata: Metadata = {
@@ -38,7 +38,7 @@ export default async function TrashPage({ params }: PageProps<"/[organizationSlu
                   <TableHead className="pl-4">ID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead className="text-right">Scans</TableHead>
-                  <TableHead>Tag</TableHead>
+                  <TableHead>Tags</TableHead>
                   <TableHead>Trashed</TableHead>
                   <TableHead className="pr-4 text-right">Actions</TableHead>
                 </TableRow>
@@ -54,7 +54,7 @@ export default async function TrashPage({ params }: PageProps<"/[organizationSlu
                       </div>
                     </TableCell>
                     <TableCell className="text-right font-mono tabular-nums">{qr.scanCount.toLocaleString()}</TableCell>
-                    <TableCell className="font-mono text-xs">{qr.tag?.name ?? "—"}</TableCell>
+                    <TableCell className="font-mono text-xs">{formatTags(qrTagNames(qr))}</TableCell>
                     <TableCell className="font-mono text-xs text-muted-foreground">
                       {qr.deletedAt && formatDate(qr.deletedAt)}
                     </TableCell>

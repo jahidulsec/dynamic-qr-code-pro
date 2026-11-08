@@ -30,7 +30,7 @@ export {
 export { QR_ACTIVITY_DAYS, QR_PAGE_SIZE, QR_QUOTA } from "./constants";
 export type { QrAnalytics } from "./libs/qr-analytics";
 export { toQrCheckItem, type QrCheckItem } from "./libs/qr-check";
-export type { QrListItem, QrStatsData } from "./libs/qr-query";
+export { qrTagNames, type QrListItem, type QrStatsData } from "./libs/qr-query";
 export {
   DEFAULT_QR_STYLE,
   parseQrStyle,

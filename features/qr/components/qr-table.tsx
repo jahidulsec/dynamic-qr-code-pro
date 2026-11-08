@@ -11,13 +11,14 @@ import {
 } from "@/components/ui/table";
 import { QrAnalyticsButton } from "@/features/qr/components/qr-analytics-button";
 import { QrRowActions } from "@/features/qr/components/qr-row-actions";
-import type { QrListItem } from "@/features/qr/libs/qr-query";
+import { qrTagNames, type QrListItem } from "@/features/qr/libs/qr-query";
 import { parseQrStyle } from "@/features/qr/schemas/qr-schema";
 import {
   formatCreatedDate,
   formatDate,
   shortLink,
   shortLinkLabel,
+  formatTags,
   toDateInput,
 } from "@/utils/format";
 
@@ -54,7 +55,7 @@ export function QrTable({
           <TableHead>Name</TableHead>
           <TableHead>Destination</TableHead>
           <TableHead className="text-right">Scans</TableHead>
-          <TableHead>Tag</TableHead>
+          <TableHead>Tags</TableHead>
           <TableHead>Created by</TableHead>
           <TableHead>Created</TableHead>
           <TableHead className="pr-4 text-right">Actions</TableHead>
@@ -112,7 +113,7 @@ export function QrTable({
               <TableCell className="text-right">
                 <QrAnalyticsButton
                   organizationSlug={organizationSlug}
-                  qr={{ id: qr.id, name: qr.name, tag: qr.tag?.name ?? null }}
+                  qr={{ id: qr.id, name: qr.name, tags: qrTagNames(qr) }}
                   variant="link"
                   className="h-auto p-0 font-mono font-medium tabular-nums text-foreground"
                   aria-label={`Analytics for ${qr.name}`}
@@ -121,7 +122,7 @@ export function QrTable({
                 </QrAnalyticsButton>
               </TableCell>
               <TableCell className="font-mono text-xs font-medium">
-                {qr.tag?.name ?? "—"}
+                {formatTags(qrTagNames(qr))}
               </TableCell>
               <TableCell>{qr.createdBy.name}</TableCell>
               <TableCell className="font-mono text-xs text-muted-foreground">
@@ -136,7 +137,7 @@ export function QrTable({
                     slug: qr.slug,
                     destination: qr.destination,
                     status: qr.status,
-                    tag: qr.tag?.name ?? null,
+                    tags: qrTagNames(qr),
                   }}
                   check={{
                     state: expired ? "expired" : qr.status === "PAUSED" ? "paused" : "ready",
@@ -153,7 +154,7 @@ export function QrTable({
                     name: qr.name,
                     destination: qr.destination,
                     slug: qr.slug,
-                    tag: qr.tag?.name ?? "",
+                    tags: qrTagNames(qr),
                     expiresAt: qr.expiresAt ? toDateInput(qr.expiresAt) : "",
                     style,
                   }}

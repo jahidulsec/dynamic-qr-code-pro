@@ -16,7 +16,7 @@ export type QrAnalyticsResult = Awaited<ReturnType<typeof getQrAnalytics>>;
 
 type QrAnalyticsDialogProps = {
   organizationSlug: string;
-  qr: { id: number; name: string; tag: string | null };
+  qr: { id: number; name: string; tags: string[] };
   /** started by the trigger on click, so loading begins before the dialog renders */
   analytics: Promise<QrAnalyticsResult>;
   open: boolean;
@@ -38,7 +38,11 @@ export function QrAnalyticsDialog({ organizationSlug, qr, analytics, open, onOpe
         <div className="flex flex-col gap-1.5 border-b p-6 pr-14">
           <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
             # {qr.id}
-            {qr.tag && <Badge variant="secondary">Tag: {qr.tag}</Badge>}
+            {qr.tags.map((tag) => (
+              <Badge key={tag} variant="secondary">
+                Tag: {tag}
+              </Badge>
+            ))}
           </div>
           <DialogTitle className="text-lg">{qr.name}</DialogTitle>
           <DialogDescription className="sr-only">Scan analytics for this QR code</DialogDescription>

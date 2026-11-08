@@ -3,7 +3,7 @@
 import { APIError } from "better-auth/api";
 
 import { buildQrAnalytics } from "@/features/qr/libs/qr-analytics";
-import { buildQrWhere, liveQrWhere, qrListSelect, qrTopSelect, type QrStatsData } from "@/features/qr/libs/qr-query";
+import { buildQrWhere, liveQrWhere, qrListSelect, qrTagNames, qrTopSelect, type QrStatsData } from "@/features/qr/libs/qr-query";
 import { qrIdSchema, qrQuerySchema, type QrQuerySchemaType } from "@/features/qr/schemas/qr-schema";
 import { countQrCodes, getQrCode as findQrCode, getQrCodes as findQrCodes } from "@/features/qr/services/qr";
 import { countQrScans, getQrScans } from "@/features/qr/services/qr-scan";
@@ -20,7 +20,7 @@ const MAX_SCAN_ROWS = 100_000;
 const notFound = () => new APIError("NOT_FOUND", { message: "QR code not found" });
 
 const findLiveQrCode = (organizationId: string, id: number) =>
-  findQrCode({ where: { id, ...liveQrWhere(organizationId) }, include: { tag: { select: { name: true } } } });
+  findQrCode({ where: { id, ...liveQrWhere(organizationId) }, include: { tags: { select: { name: true }, orderBy: { name: "asc" } } } });
 
 export const getQrCodes = async (organizationSlug: string, query: QrQuerySchemaType) => {
   try {
@@ -114,7 +114,7 @@ export const getQrAnalytics = async (organizationSlug: string, id: number) => {
     const analytics = await buildQrAnalytics(qr.id);
 
     return apiResponse.single({
-      data: { qr: { id: qr.id, name: qr.name, tag: qr.tag?.name ?? null }, analytics },
+      data: { qr: { id: qr.id, name: qr.name, tags: qrTagNames(qr) }, analytics },
     });
   } catch (error) {
     return apiResponse.error({ error });
@@ -150,7 +150,7 @@ export const exportQrCodes = async (organizationSlug: string, query: QrQuerySche
     const baseUrl = getQrBaseUrl();
 
     const csv = toCsv(
-      ["ID", "Name", "Short link", "Destination", "Status", "Scans", "Tag", "Created by", "Created at", "Expires at"],
+      ["ID", "Name", "Short link", "Destination", "Status", "Scans", "Tags", "Created by", "Created at", "Expires at"],
       rows.map((qr) => [
         qr.id,
         qr.name,
@@ -158,7 +158,7 @@ export const exportQrCodes = async (organizationSlug: string, query: QrQuerySche
         qr.destination,
         qr.status,
         qr.scanCount,
-        qr.tag?.name,
+        qrTagNames(qr).join(", "),
         qr.createdBy.name,
         qr.createdAt,
         qr.expiresAt,

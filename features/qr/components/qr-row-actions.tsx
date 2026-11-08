@@ -30,7 +30,7 @@ import type { QrFormInput, QrStyle } from "@/features/qr/schemas/qr-schema";
 
 type QrRowActionsProps = {
   organizationSlug: string;
-  qr: { id: number; name: string; slug: string; destination: string; status: "ACTIVE" | "PAUSED"; tag: string | null };
+  qr: { id: number; name: string; slug: string; destination: string; status: "ACTIVE" | "PAUSED"; tags: string[] };
   // check dialog inputs
   check: { state: QrCheckState; createdBy: string; scanCount: number; createdLabel: string };
   // the encoded short link and saved style, used by the check dialog and export menu
@@ -101,7 +101,7 @@ export function QrRowActions({
       </Button>
       <QrAnalyticsButton
         organizationSlug={organizationSlug}
-        qr={{ id: qr.id, name: qr.name, tag: qr.tag }}
+        qr={{ id: qr.id, name: qr.name, tags: qr.tags }}
         variant="ghost"
         size="icon-sm"
         aria-label={`Analytics for ${qr.name}`}
@@ -139,7 +139,7 @@ export function QrRowActions({
             id: qr.id,
             name: qr.name,
             destination: qr.destination,
-            tag: qr.tag,
+            tags: qr.tags,
             createdBy: check.createdBy,
             scanCount: check.scanCount,
           }}

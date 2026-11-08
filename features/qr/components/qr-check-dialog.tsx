@@ -15,7 +15,7 @@ type QrCheckDialogProps = {
     id: number;
     name: string;
     destination: string;
-    tag: string | null;
+    tags: string[];
     createdBy: string;
     scanCount: number;
   };
@@ -150,9 +150,9 @@ export function QrCheckDialog({
 
         <div className="flex items-center justify-between gap-2 border-t p-4 px-6">
           <p className="text-xs text-muted-foreground">
-            {qr.tag && (
+            {qr.tags.length > 0 && (
               <>
-                Tagged under <span className="font-semibold text-foreground">{qr.tag}</span> ·{" "}
+                Tagged under <span className="font-semibold text-foreground">{qr.tags.join(", ")}</span> ·{" "}
               </>
             )}
             Created {createdLabel}

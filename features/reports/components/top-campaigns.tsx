@@ -3,6 +3,7 @@ import { IconScan } from "@tabler/icons-react";
 
 import { Section, SectionCardHeader, SectionLabel, SectionMeta } from "@/components/shared/section/section";
 import type { ScanReportCampaign } from "@/features/reports/libs/reports-analytics";
+import { formatTags } from "@/utils/format";
 
 type TopCampaignsProps = {
   organizationSlug: string;
@@ -26,7 +27,7 @@ export function TopCampaigns({ organizationSlug, rows, department }: TopCampaign
             <thead>
               <tr className="border-b text-left text-xs tracking-wide text-muted-foreground uppercase">
                 <th className="px-5 py-2.5 font-medium">ID &amp; campaign</th>
-                <th className="px-3 py-2.5 font-medium">Tag</th>
+                <th className="px-3 py-2.5 font-medium">Tags</th>
                 <th className="px-3 py-2.5 text-right font-medium">Scans</th>
                 <th className="px-5 py-2.5 text-right font-medium">
                   <span className="sr-only">Action</span>
@@ -44,7 +45,7 @@ export function TopCampaigns({ organizationSlug, rows, department }: TopCampaign
                       {row.destination}
                     </p>
                   </td>
-                  <td className="px-3 py-3 font-mono text-xs whitespace-nowrap">{row.tag ?? "—"}</td>
+                  <td className="px-3 py-3 font-mono text-xs whitespace-nowrap">{formatTags(row.tags)}</td>
                   <td className="px-3 py-3 text-right font-mono font-semibold tabular-nums">
                     {row.scans.toLocaleString()}
                   </td>

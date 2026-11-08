@@ -95,7 +95,7 @@ function reportWindow(period: ReportPeriod, now: Date) {
 
 const scopeSql = (organizationId: string, tagId?: string | null) =>
   Prisma.sql`c.organizationId = ${organizationId} AND c.deletedAt IS NULL${
-    tagId ? Prisma.sql` AND c.tagId = ${tagId}` : Prisma.empty
+    tagId ? Prisma.sql` AND EXISTS (SELECT 1 FROM _QrCodeToQrTag qt WHERE qt.A = c.id AND qt.B = ${tagId})` : Prisma.empty
   }`;
 
 // tag names are unique per organization; null when the department doesn't exist (any more)
@@ -124,9 +124,9 @@ export async function buildScanReport({
   const offsetMinutes = -start.getTimezoneOffset();
   const scope = scopeSql(organizationId, tag?.id);
   const everyDepartment = scopeSql(organizationId);
-  const liveCodes = { organizationId, deletedAt: null, ...(tag ? { tagId: tag.id } : {}) } satisfies Prisma.QrCodeWhereInput;
+  const liveCodes = { organizationId, deletedAt: null, ...(tag ? { tags: { some: { id: tag.id } } } : {}) } satisfies Prisma.QrCodeWhereInput;
 
-  const [seriesRows, previousRows, campaigns, active, tagScanRows, tagCodeRows, tags, topRows] = await Promise.all([
+  const [seriesRows, previousRows, campaigns, active, allScanRows, tagScanRows, untaggedCodes, tags, topRows] = await Promise.all([
     prisma.$queryRaw<{ bucket: string; scans: bigint | number }[]>(
       Prisma.sql`SELECT DATE_FORMAT(DATE_ADD(s.scannedAt, INTERVAL ${offsetMinutes} MINUTE), ${format}) AS bucket, COUNT(*) AS scans
         FROM qr_scan s JOIN qr_code c ON c.id = s.qrCodeId
@@ -141,19 +141,29 @@ export async function buildScanReport({
     prisma.qrCode.count({ where: liveCodes }),
     prisma.qrCode.count({ where: { ...liveCodes, status: "ACTIVE" } }),
     // the distribution always compares every department, so it ignores the selected one
-    prisma.$queryRaw<{ tagId: string | null; scans: bigint | number }[]>(
-      Prisma.sql`SELECT c.tagId AS tagId, COUNT(*) AS scans
+    prisma.$queryRaw<{ scans: bigint | number }[]>(
+      Prisma.sql`SELECT COUNT(*) AS scans
         FROM qr_scan s JOIN qr_code c ON c.id = s.qrCodeId
-        WHERE ${everyDepartment} AND s.scannedAt >= ${start}
-        GROUP BY c.tagId`,
+        WHERE ${everyDepartment} AND s.scannedAt >= ${start}`,
     ),
-    prisma.qrCode.groupBy({ by: ["tagId"], where: { organizationId, deletedAt: null }, _count: { _all: true } }),
-    prisma.qrTag.findMany({ where: { organizationId }, select: { id: true, name: true } }),
+    // a scan of a code with several tags counts toward each of them; untagged scans group under null
+    prisma.$queryRaw<{ tagId: string | null; scans: bigint | number }[]>(
+      Prisma.sql`SELECT qt.B AS tagId, COUNT(*) AS scans
+        FROM qr_scan s JOIN qr_code c ON c.id = s.qrCodeId
+        LEFT JOIN _QrCodeToQrTag qt ON qt.A = c.id
+        WHERE ${everyDepartment} AND s.scannedAt >= ${start}
+        GROUP BY qt.B`,
+    ),
+    prisma.qrCode.count({ where: { organizationId, deletedAt: null, tags: { none: {} } } }),
+    prisma.qrTag.findMany({
+      where: { organizationId },
+      select: { id: true, name: true, _count: { select: { qrCodes: { where: { deletedAt: null } } } } },
+    }),
     // rank on the scan table alone, then join the few winners for their details
     prisma.$queryRaw<
-      { id: number; name: string; destination: string; tag: string | null; scans: bigint | number }[]
+      { id: number; name: string; destination: string; scans: bigint | number }[]
     >(
-      Prisma.sql`SELECT q.id, q.name, q.destination, t.name AS tag, ranked.scans
+      Prisma.sql`SELECT q.id, q.name, q.destination, ranked.scans
         FROM (
           SELECT s.qrCodeId, COUNT(*) AS scans
           FROM qr_scan s JOIN qr_code c ON c.id = s.qrCodeId
@@ -163,7 +173,6 @@ export async function buildScanReport({
           LIMIT ${Prisma.raw(String(TOP_CAMPAIGNS))}
         ) ranked
         JOIN qr_code q ON q.id = ranked.qrCodeId
-        LEFT JOIN qr_tag t ON t.id = q.tagId
         ORDER BY ranked.scans DESC, q.id DESC`,
     ),
   ]);
@@ -182,28 +191,31 @@ export async function buildScanReport({
     : null;
 
   const scansByTag = new Map(tagScanRows.map((row) => [row.tagId, Number(row.scans)]));
-  const codesByTag = new Map(tagCodeRows.map((row) => [row.tagId, row._count._all]));
-  const allTagScans = tagScanRows.reduce((sum, row) => sum + Number(row.scans), 0);
-  const departmentRow = (id: string | null, name: string | null) => {
+  // share of every scan in the window; with multi-tagged codes the shares can add up past 100%
+  const allScans = Number(allScanRows[0]?.scans ?? 0);
+  const departmentRow = (id: string | null, name: string | null, qrCount: number) => {
     const scans = scansByTag.get(id) ?? 0;
-    return {
-      name,
-      qrCount: codesByTag.get(id) ?? 0,
-      scans,
-      percent: allTagScans ? (scans / allTagScans) * 100 : 0,
-    };
+    return { name, qrCount, scans, percent: allScans ? (scans / allScans) * 100 : 0 };
   };
-  const untagged = departmentRow(null, null);
+  const untagged = departmentRow(null, null, untaggedCodes);
   const distribution = [
-    ...tags.map((row) => departmentRow(row.id, row.name)),
+    ...tags.map((row) => departmentRow(row.id, row.name, row._count.qrCodes)),
     ...(untagged.qrCount || untagged.scans ? [untagged] : []),
   ].sort((a, b) => b.scans - a.scans || b.qrCount - a.qrCount || (a.name ?? "~").localeCompare(b.name ?? "~"));
+
+  const topTags = topRows.length
+    ? await prisma.qrCode.findMany({
+        where: { id: { in: topRows.map((row) => Number(row.id)) } },
+        select: { id: true, tags: { select: { name: true }, orderBy: { name: "asc" } } },
+      })
+    : [];
+  const tagsByCode = new Map(topTags.map((row) => [row.id, row.tags.map((tag) => tag.name)]));
 
   const top = topRows.map((row) => ({
     id: Number(row.id),
     name: row.name,
     destination: row.destination,
-    tag: row.tag,
+    tags: tagsByCode.get(Number(row.id)) ?? [],
     scans: Number(row.scans),
   }));
 

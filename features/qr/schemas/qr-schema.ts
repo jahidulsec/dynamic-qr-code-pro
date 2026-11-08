@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { QR_PAGE_SIZE } from "@/features/qr/constants";
+import { QR_MAX_TAGS, QR_PAGE_SIZE } from "@/features/qr/constants";
 
 export const QR_DOT_STYLES = ["square", "rounded", "circle", "diamond", "leaf"] as const;
 export const QR_FINDER_STYLES = ["square", "rounded", "rounded-lg", "circle", "leaf"] as const;
@@ -46,11 +46,18 @@ export const qrFormSchema = z.object({
     // only web links: a javascript: or data: destination would turn the redirect into an attack vector
     .pipe(z.url({ protocol: /^https?$/, message: "Enter a full http:// or https:// URL" })),
   slug: qrSlugSchema,
-  tag: z
-    .string()
-    .trim()
-    .max(32, "Tag must be at most 32 characters")
-    .transform((tag) => tag.toUpperCase()),
+  tags: z
+    .array(
+      z
+        .string()
+        .trim()
+        .min(1)
+        .max(32, "Tag must be at most 32 characters")
+        .transform((tag) => tag.toUpperCase()),
+    )
+    .max(QR_MAX_TAGS, `Use at most ${QR_MAX_TAGS} tags`)
+    // "rpl" and "RPL" are the same tag once uppercased
+    .transform((tags) => [...new Set(tags)]),
   // yyyy-mm-dd from a date input, empty for "never"
   expiresAt: z.union([z.literal(""), z.iso.date("Enter a valid date")]),
   style: qrStyleSchema,
