@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 
 import {
@@ -23,18 +24,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { signOut } from "@/lib/auth/auth-client"
-import { IconSelector, IconLogout } from "@tabler/icons-react"
+import { ProfileDialog, type ProfileUser } from "@/features/profile"
+import { IconSelector, IconLogout, IconUser } from "@tabler/icons-react"
 
-export function NavUser({
-  user,
-}: {
-  user: {
-    name: string
-    email: string
-    image?: string | null
-  }
-}) {
+export function NavUser({ user }: { user: ProfileUser }) {
   const { isMobile } = useSidebar()
+  const [profileOpen, setProfileOpen] = useState(false)
   const router = useRouter()
   const initials = user.name
     .split(" ")
@@ -88,6 +83,10 @@ export function NavUser({
               </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setProfileOpen(true)}>
+              <IconUser />
+              Profile
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={onSignOut}>
               <IconLogout
               />
@@ -95,6 +94,7 @@ export function NavUser({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <ProfileDialog user={user} open={profileOpen} onOpenChange={setProfileOpen} />
       </SidebarMenuItem>
     </SidebarMenu>
   )

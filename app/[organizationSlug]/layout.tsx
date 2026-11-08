@@ -43,7 +43,13 @@ async function OrganizationShell({ children, params }: LayoutProps<"/[organizati
   return (
     <SidebarProvider>
       <AppSidebar
-        user={{ name: session.user.name, email: session.user.email, image: session.user.image }}
+        user={{
+          name: session.user.name,
+          email: session.user.email,
+          image: session.user.image,
+          emailVerified: session.user.emailVerified,
+          createdAt: session.user.createdAt,
+        }}
         organizations={organizations.map(({ name, slug, logo }) => ({ name, slug, logo }))}
         activeSlug={organization.slug}
         baseUrl={getQrBaseUrl()}
