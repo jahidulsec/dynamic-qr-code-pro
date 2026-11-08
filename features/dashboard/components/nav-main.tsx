@@ -24,7 +24,7 @@ export type NavMainGroup = {
   items: NavMainItem[]
 }
 
-export function NavMain({ groups }: { groups: NavMainGroup[] }) {
+export function NavMain({ groups, onNavigate }: { groups: NavMainGroup[]; onNavigate?: () => void }) {
   const pathname = usePathname()
 
   const isActive = (item: NavMainItem) =>
@@ -41,7 +41,7 @@ export function NavMain({ groups }: { groups: NavMainGroup[] }) {
             <SidebarMenuButton
               isActive={isActive(item)}
               tooltip={item.title}
-              render={<Link href={item.url} />}
+              render={<Link href={item.url} onClick={onNavigate} />}
             >
               {item.icon}
               <span>{item.title}</span>

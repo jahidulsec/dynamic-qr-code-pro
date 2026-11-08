@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
-import { AppSidebar } from "@/features/dashboard";
+import { AppSidebar, DashboardFooter } from "@/features/dashboard";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AccessProvider } from "@/features/organizations";
 import { getAccess, getSession, listOrganizations } from "@/features/organizations/server";
@@ -43,20 +43,16 @@ async function OrganizationShell({ children, params }: LayoutProps<"/[organizati
     <AccessProvider value={{ role: access.member.role, permissions: access.permissions, roles: access.roles }}>
       <SidebarProvider>
         <AppSidebar
-          user={{
-            name: session.user.name,
-            email: session.user.email,
-            image: session.user.image,
-            emailVerified: session.user.emailVerified,
-            createdAt: session.user.createdAt,
-          }}
           organizations={organizations.map(({ name, slug, logo }) => ({ name, slug, logo }))}
           activeSlug={organization.slug}
           baseUrl={getQrBaseUrl()}
           qrCount={qrCount.data ?? 0}
           departments={departments.data ?? []}
         />
-        <SidebarInset className="min-w-0">{children}</SidebarInset>
+        <SidebarInset className="min-w-0">
+          {children}
+          <DashboardFooter />
+        </SidebarInset>
       </SidebarProvider>
     </AccessProvider>
   );

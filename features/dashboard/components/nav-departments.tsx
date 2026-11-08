@@ -31,9 +31,11 @@ type NavDepartmentsProps = {
   filterHrefs?: string[]
   /** every QR code, tagged or not */
   total: number
+  /** called when a filter link is clicked (closes the mobile sidebar) */
+  onNavigate?: () => void
 }
 
-export function NavDepartments({ departments, baseHref, filterHrefs = [], total }: NavDepartmentsProps) {
+export function NavDepartments({ departments, baseHref, filterHrefs = [], total, onNavigate }: NavDepartmentsProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   // on a page that filters by department the links stay on it; elsewhere they go to the dashboard
@@ -62,6 +64,7 @@ export function NavDepartments({ departments, baseHref, filterHrefs = [], total 
       {selected && (
         <Link
           href={hrefFor(null)}
+          onClick={onNavigate}
           className="absolute top-3.5 right-3 text-[11px] font-semibold text-sidebar-foreground underline underline-offset-2 hover:text-sidebar-accent-foreground"
         >
           Reset All
@@ -72,7 +75,7 @@ export function NavDepartments({ departments, baseHref, filterHrefs = [], total 
           <SidebarMenuButton
             isActive={!selected}
             className="data-active:font-semibold"
-            render={<Link href={hrefFor(null)} />}
+            render={<Link href={hrefFor(null)} onClick={onNavigate} />}
           >
             <IconTag />
             <span>All Departments</span>
@@ -85,7 +88,7 @@ export function NavDepartments({ departments, baseHref, filterHrefs = [], total 
           <SidebarMenuItem key={department.name}>
             <SidebarMenuButton
               isActive={selected === department.name}
-              render={<Link href={hrefFor(department.name)} />}
+              render={<Link href={hrefFor(department.name)} onClick={onNavigate} />}
             >
               <span className="mx-1.5 size-1.5 shrink-0 rounded-full bg-sidebar-foreground/40" />
               <span className="font-mono">{department.name}</span>
