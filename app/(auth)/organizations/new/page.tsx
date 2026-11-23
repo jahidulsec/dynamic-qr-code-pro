@@ -25,6 +25,11 @@ export default function NewOrganizationPage() {
       <Suspense fallback={<Skeleton className="h-55 rounded-lg" />}>
         <AuthorizedForm />
       </Suspense>
+
+      <p className="text-center text-sm text-balance text-muted-foreground">
+        New organizations are reviewed by our team before they&apos;re activated. We&apos;ll email you when yours is
+        ready.
+      </p>
     </div>
   );
 }

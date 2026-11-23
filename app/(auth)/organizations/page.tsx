@@ -8,7 +8,13 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default function OrganizationsPage() {
+// `?requested=<slug>` arrives from createOrganizationAction
+async function OrganizationListWithNotice({ searchParams }: Pick<PageProps<"/organizations">, "searchParams">) {
+  const { requested } = await searchParams;
+  return <OrganizationList requested={typeof requested === "string" ? requested : undefined} />;
+}
+
+export default function OrganizationsPage({ searchParams }: PageProps<"/organizations">) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col items-center gap-1 text-center">
@@ -18,7 +24,7 @@ export default function OrganizationsPage() {
 
       {/* reads the session, so it streams in behind the boundary */}
       <Suspense fallback={<OrganizationListSkeleton />}>
-        <OrganizationList />
+        <OrganizationListWithNotice searchParams={searchParams} />
       </Suspense>
     </div>
   );

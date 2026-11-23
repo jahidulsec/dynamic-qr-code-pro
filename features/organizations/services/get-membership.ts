@@ -95,6 +95,10 @@ export async function requireMembership(organizationSlug: string) {
   // null when the organization doesn't exist or the user isn't a member
   const access = await getAccess(organizationSlug);
   if (!access) throw new APIError("NOT_FOUND", { message: "Organization not found" });
+
+  // pending, rejected and suspended organizations are read-only to their members; the layout shows the status screen
+  if (access.organization.status !== "ACTIVE")
+    throw new APIError("FORBIDDEN", { message: "This organization isn't active" });
   return access;
 }
 

@@ -7,6 +7,7 @@ export const siteConfig = {
   description:
     "Create branded, dynamic QR codes you can edit after printing. Change destinations anytime, track scans in real time and manage codes with your team.",
   url: env.NEXT_PUBLIC_SITE_URL,
+  supportEmail: env.SUPPORT_EMAIL,
   keywords: [
     "dynamic QR code",
     "QR code generator",

@@ -8,25 +8,32 @@ datasource db {
 }
 
 model User {
-  id            String       @id
-  name          String       @db.Text
-  email         String       @unique
-  emailVerified Boolean      @default(false)
-  image         String?      @db.Text
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  members       Member[]
-  invitations   Invitation[]
-  qrCodes       QrCode[]
-  auditLogs     AuditLog[]
+  id                    String          @id @default(nanoid(10))
+  name                  String          @db.Text
+  email                 String          @unique
+  emailVerified         Boolean         @default(false)
+  image                 String?         @db.Text
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  // better-auth admin plugin: "user" or "superadmin"; never an organization role name
+  role                  String          @default("user")
+  banned                Boolean?        @default(false)
+  banReason             String?         @db.Text
+  banExpires            DateTime?
+  sessions              Session[]
+  accounts              Account[]
+  members               Member[]
+  invitations           Invitation[]
+  qrCodes               QrCode[]
+  auditLogs             AuditLog[]
+  reviewedOrganizations Organization[]  @relation("OrganizationReviewer")
+  adminAuditLogs        AdminAuditLog[] @relation("AdminAuditActor")
 
   @@map("user")
 }
 
 model Session {
-  id                   String   @id
+  id                   String   @id @default(nanoid(10))
   expiresAt            DateTime
   token                String   @unique
   createdAt            DateTime @default(now())
@@ -36,13 +43,15 @@ model Session {
   activeOrganizationId String?
   userId               String
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // better-auth admin plugin; impersonation is not granted in v1
+  impersonatedBy       String?
 
   @@index([userId])
   @@map("session")
 }
 
 model Account {
-  id                    String    @id
+  id                    String    @id @default(nanoid(10))
   accountId             String    @db.Text
   providerId            String    @db.Text
   userId                String
@@ -62,7 +71,7 @@ model Account {
 }
 
 model Verification {
-  id         String   @id
+  id         String   @id @default(nanoid(10))
   identifier String   @db.VarChar(255)
   value      String   @db.Text
   expiresAt  DateTime
@@ -73,25 +82,45 @@ model Verification {
   @@map("verification")
 }
 
-model Organization {
-  id          String       @id
-  name        String       @db.Text
-  slug        String       @unique
-  logo        String?      @db.Text
-  createdAt   DateTime
-  metadata    String?      @db.Text
-  members     Member[]
-  invitations Invitation[]
-  qrCodes     QrCode[]
-  qrTags      QrTag[]
-  roles       OrganizationRole[]
-  auditLogs   AuditLog[]
+enum OrganizationStatus {
+  PENDING // created, waiting for review
+  ACTIVE // approved; normal use
+  REJECTED // review declined; reason shown to owner
+  SUSPENDED // was active; blocked by an admin; QR redirects stop
 
+  @@map("organization_status")
+}
+
+model Organization {
+  id           String             @id @default(nanoid(10))
+  name         String             @db.Text
+  slug         String             @unique
+  logo         String?            @db.Text
+  createdAt    DateTime
+  metadata     String?            @db.Text
+  status       OrganizationStatus @default(PENDING)
+  // shown to owners for REJECTED / SUSPENDED
+  statusReason String?            @db.VarChar(500)
+  // last status change by an admin
+  reviewedAt   DateTime?
+  // admin user id; SetNull if the admin is deleted
+  reviewedById String?
+  reviewedBy   User?              @relation("OrganizationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  members      Member[]
+  invitations  Invitation[]
+  qrCodes      QrCode[]
+  qrTags       QrTag[]
+  roles        OrganizationRole[]
+  auditLogs    AuditLog[]
+  subscription Subscription?
+
+  @@index([status, createdAt])
+  @@index([reviewedById])
   @@map("organization")
 }
 
 model Member {
-  id             String       @id
+  id             String       @id @default(nanoid(10))
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   userId         String
@@ -105,7 +134,7 @@ model Member {
 }
 
 model Invitation {
-  id             String       @id
+  id             String       @id @default(nanoid(10))
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   email          String
@@ -118,12 +147,13 @@ model Invitation {
 
   @@index([organizationId])
   @@index([email])
+  @@index([inviterId], map: "invitation_inviterId_fkey")
   @@map("invitation")
 }
 
 // a custom role, managed through better-auth's dynamic access control; system roles live in code
 model OrganizationRole {
-  id             String       @id
+  id             String       @id @default(nanoid(10))
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   // the key stored in member.role; never renamed, so assignments can't dangle
@@ -158,6 +188,101 @@ model AuditLog {
   @@index([organizationId, createdAt])
   @@index([actorId])
   @@map("audit_log")
+}
+
+// what platform admins did: reviews, subscription and plan changes, user bans
+model AdminAuditLog {
+  id          String   @id @default(nanoid(10))
+  actorId     String?
+  actor       User?    @relation("AdminAuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  // kept when the admin account is deleted
+  actorName   String   @db.VarChar(255)
+  // e.g. "organization.approve", "subscription.update"
+  action      String   @db.VarChar(64)
+  // "organization" | "subscription" | "plan" | "user"
+  targetType  String   @db.VarChar(32)
+  targetId    String   @db.VarChar(191)
+  // name at the time
+  targetLabel String   @db.VarChar(255)
+  // { from, to, reason, … }
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([targetType, targetId, createdAt])
+  @@index([actorId])
+  @@map("admin_audit_log")
+}
+
+model Plan {
+  id             String         @id @default(nanoid(10))
+  // "free", "pro"; stable, lowercase, never renamed
+  key            String         @unique @db.VarChar(32)
+  name           String         @db.VarChar(64)
+  description    String?        @db.VarChar(255)
+  // minor units (cents); display only in v1
+  priceMonthly   Int            @default(0)
+  priceYearly    Int            @default(0)
+  currency       String         @default("USD") @db.Char(3)
+  // null = unlimited
+  maxQrCodes     Int?
+  maxMembers     Int?
+  maxCustomRoles Int?
+  // feature flags, e.g. {"reports":true,"auditLog":false,"csvExport":true}
+  features       Json
+  // exactly one plan; applies when no subscription is in effect
+  isDefault      Boolean        @default(false)
+  // for a future pricing page
+  isPublic       Boolean        @default(true)
+  sortOrder      Int            @default(0)
+  // archived plans can't be newly assigned
+  archivedAt     DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  subscriptions  Subscription[]
+
+  @@map("plan")
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  CANCELED
+
+  @@map("subscription_status")
+}
+
+enum BillingInterval {
+  MONTH
+  YEAR
+  NONE // free / lifetime / custom deal
+
+  @@map("subscription_interval")
+}
+
+model Subscription {
+  id                 String             @id @default(nanoid(10))
+  organizationId     String             @unique
+  organization       Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  planId             String
+  plan               Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)
+  status             SubscriptionStatus
+  interval           BillingInterval    @default(NONE)
+  currentPeriodStart DateTime
+  // null = no end date
+  currentPeriodEnd   DateTime?
+  canceledAt         DateTime?
+  // later: "stripe"
+  provider           String             @default("manual") @db.VarChar(32)
+  externalId         String?            @unique @db.VarChar(255)
+  // admin-only, never shown to users
+  notes              String?            @db.Text
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@index([planId])
+  @@index([currentPeriodEnd])
+  @@map("subscription")
 }
 
 enum QrType {

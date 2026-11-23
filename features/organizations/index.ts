@@ -2,6 +2,7 @@
 // Server-only pieces (session/organization lookups, access checks, server components) live in "./server".
 export { createOrganizationAction } from "./actions/create-organization";
 export { deleteOrganizationAction, updateOrganizationAction } from "./actions/manage-organization";
+export { withdrawOrganizationRequestAction } from "./actions/withdraw-organization-request";
 export { AccessProvider, useAccess } from "./components/access-provider";
 export { CreateOrganizationForm } from "./components/create-organization-form";
 export {

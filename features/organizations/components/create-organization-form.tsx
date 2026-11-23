@@ -36,7 +36,7 @@ export function CreateOrganizationForm({ canGoBack = false, className, ...props 
   const slug = useWatch({ control, name: "slug" });
 
   const onSubmit = handleSubmit(async (values) => {
-    // redirects to the new organization on success
+    // redirects to the organization list on success
     const result = await createOrganizationAction(values);
     if (!result.success) toast.error(result.message);
   });

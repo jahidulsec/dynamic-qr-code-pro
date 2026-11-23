@@ -5,7 +5,12 @@ import { notFound, redirect } from "next/navigation";
 import { AppSidebar, DashboardFooter } from "@/features/dashboard";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AccessProvider } from "@/features/organizations";
-import { getAccess, getSession, listOrganizations } from "@/features/organizations/server";
+import {
+  getAccess,
+  getSession,
+  listOrganizations,
+  OrganizationStatusScreen,
+} from "@/features/organizations/server";
 import { getQrCount } from "@/features/qr";
 import { getQrTags } from "@/features/qr-tags";
 import { getQrBaseUrl } from "@/utils/short-link";
@@ -31,6 +36,9 @@ async function OrganizationShell({ children, params }: LayoutProps<"/[organizati
   const [access, organizations] = await Promise.all([getAccess(organizationSlug), listOrganizations()]);
   if (!access) notFound();
   const { organization } = access;
+
+  // pending, rejected and suspended organizations show one screen for every route; children never render
+  if (organization.status !== "ACTIVE") return <OrganizationStatusScreen access={access} />;
 
   // the sidebar reads fresh so its counts never lag behind the page
   const [qrCount, departments] = await Promise.all([

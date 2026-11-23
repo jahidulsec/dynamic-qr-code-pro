@@ -24,6 +24,18 @@ export const env = createEnv({
     SMTP_USER: z.string().optional(),
     SMTP_PASSWORD: z.string().optional(),
     EMAIL_FROM: z.string().min(1),
+    // comma-separated; each address gets a "new organization request" email
+    ADMIN_NOTIFY_EMAILS: z
+      .string()
+      .optional()
+      .transform((value) =>
+        (value ?? "")
+          .split(",")
+          .map((email) => email.trim())
+          .filter(Boolean),
+      )
+      .pipe(z.array(z.email())),
+    SUPPORT_EMAIL: z.email(),
   },
   client: {
     NEXT_PUBLIC_SITE_URL: z.url().default("http://localhost:3000"),
@@ -42,6 +54,8 @@ export const env = createEnv({
     SMTP_USER: process.env.SMTP_USER,
     SMTP_PASSWORD: process.env.SMTP_PASSWORD,
     EMAIL_FROM: process.env.EMAIL_FROM,
+    ADMIN_NOTIFY_EMAILS: process.env.ADMIN_NOTIFY_EMAILS,
+    SUPPORT_EMAIL: process.env.SUPPORT_EMAIL,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     NEXT_PUBLIC_QR_BASE_URL: process.env.NEXT_PUBLIC_QR_BASE_URL,
   },

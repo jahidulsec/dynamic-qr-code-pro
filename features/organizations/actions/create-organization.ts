@@ -14,14 +14,15 @@ export const createOrganizationAction = async (values: CreateOrganizationValues)
   try {
     const { name, slug } = createOrganizationSchema.parse(values);
 
-    // the creator becomes the owner and the new organization becomes the active one
+    // the creator becomes the owner; the organization starts PENDING until an admin reviews it
     const organization = await auth.api.createOrganization({
       body: { name, slug },
       headers: await headers(),
     });
 
+    // it can't be opened yet, so go back to the list, which confirms the request
     // apiResponse.error rethrows the redirect
-    redirect(`/${organization?.slug ?? slug}`);
+    redirect(`/organizations?requested=${encodeURIComponent(organization?.slug ?? slug)}`);
   } catch (error) {
     return apiResponse.error({ error });
   }

@@ -2,10 +2,11 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
-import { organization } from "better-auth/plugins";
+import { admin, organization } from "better-auth/plugins";
 import prisma from "@/config/db";
 import {
   invitationEmail,
+  organizationRequestEmail,
   passwordChangedEmail,
   resetPasswordLinkEmail,
   sendEmail,
@@ -13,6 +14,7 @@ import {
   welcomeEmail,
 } from "@/features/email/server";
 import { createOrganizationSchema } from "@/features/organizations";
+import { adminAc, adminRoles, SUPERADMIN_ROLE } from "@/lib/auth/admin-permissions";
 import { ac, isSystemRole, roles, SYSTEM_ROLE_DETAILS } from "@/lib/auth/permissions";
 import { env } from "@/lib/env";
 
@@ -21,6 +23,9 @@ const INVITATION_EXPIRES_IN_HOURS = 48;
 
 // keep in sync with the limit stated on the Roles page
 export const MAX_CUSTOM_ROLES = 20;
+
+// requests waiting for review that one user may own at a time; better-auth's organizationLimit counts every membership
+const MAX_PENDING_ORGANIZATIONS = 2;
 
 /**
  * Endpoints that change who can do what. Over HTTP they'd skip the checks and audit entries in our
@@ -84,6 +89,10 @@ export const auth = betterAuth({
     before: createAuthMiddleware(async (ctx) => {
       if (ctx.request && SERVER_ACTION_ONLY_PATHS.has(ctx.path))
         throw new APIError("FORBIDDEN", { message: "Use the organization settings to make this change" });
+
+      // the admin plugin's endpoints would skip our admin audit log; only `auth.api` calls from admin actions may use them
+      if (ctx.request && ctx.path.startsWith("/admin/"))
+        throw new APIError("FORBIDDEN", { message: "Admin endpoints are not available over HTTP" });
     }),
   },
   advanced: {
@@ -92,12 +101,21 @@ export const auth = betterAuth({
   },
   // must be the last plugin so cookies set in server actions are applied
   plugins: [
+    // platform admins; separate from organization roles, see admin-permissions.ts
+    admin({ ac: adminAc, roles: adminRoles, defaultRole: "user", adminRoles: [SUPERADMIN_ROLE] }),
     organization({
       // the permission catalogue and system roles; custom roles are stored per organization
       ac,
       roles,
       dynamicAccessControl: { enabled: true, maximumRolesPerOrganization: MAX_CUSTOM_ROLES },
       schema: {
+        organization: {
+          // review state; only admin actions change it, through Prisma, so clients can never set it
+          additionalFields: {
+            status: { type: "string", required: true, defaultValue: "PENDING", input: false },
+            statusReason: { type: "string", required: false, input: false },
+          },
+        },
         organizationRole: {
           additionalFields: {
             label: { type: "string", required: true },
@@ -122,8 +140,25 @@ export const auth = betterAuth({
       },
       // the client can call these endpoints directly, so the server action's validation isn't enough
       organizationHooks: {
-        beforeCreateOrganization: async ({ organization }) => ({ data: parseOrganization(organization) }),
+        beforeCreateOrganization: async ({ organization, user }) => {
+          const data = parseOrganization(organization);
+          if ((await countPendingOwnedOrganizations(user.id)) >= MAX_PENDING_ORGANIZATIONS)
+            throw new APIError("FORBIDDEN", { message: "You already have organizations waiting for review." });
+          return { data };
+        },
+        // a failed notice must not fail the create, which has already been saved
+        afterCreateOrganization: async ({ organization, user }) => notifyAdminsOfRequest(organization, user),
         beforeUpdateOrganization: async ({ organization }) => ({ data: parseOrganization(organization, true) }),
+        // invite is server-action-only and the action already refuses these organizations; this is defense in depth
+        beforeCreateInvitation: async ({ organization }) => {
+          if (organization.status !== "ACTIVE")
+            throw new APIError("FORBIDDEN", { message: "This organization isn't active" });
+        },
+        // accept can be called over HTTP, and invitations sent before a suspension are still pending
+        beforeAcceptInvitation: async ({ organization }) => {
+          if (organization.status !== "ACTIVE")
+            throw new APIError("FORBIDDEN", { message: "This organization isn't accepting new members right now" });
+        },
       },
     }),
     nextCookies(),
@@ -141,6 +176,34 @@ async function invitationRoleLabel(organizationId: string, role: string) {
     isSystemRole(key) ? SYSTEM_ROLE_DETAILS[key].label : (custom.find((r) => r.role === key)?.label ?? key),
   );
   return labels.join(", ").toLowerCase();
+}
+
+// organizations still waiting for review that the user owns
+async function countPendingOwnedOrganizations(userId: string) {
+  const memberships = await prisma.member.findMany({
+    where: { userId, role: { contains: "owner" }, organization: { status: "PENDING" } },
+    select: { role: true },
+  });
+  // roles are a comma-separated list of keys; `contains` alone would also match e.g. "co-owner"
+  return memberships.filter(({ role }) => role.split(",").some((key) => key.trim() === "owner")).length;
+}
+
+async function notifyAdminsOfRequest(
+  organization: { id: string; name: string; slug: string },
+  user: { name: string; email: string },
+) {
+  const email = organizationRequestEmail({
+    organizationId: organization.id,
+    organizationName: organization.name,
+    organizationSlug: organization.slug,
+    requesterName: user.name,
+    requesterEmail: user.email,
+  });
+
+  // one message per address so admins don't see each other's addresses, and one bad address doesn't stop the rest
+  const results = await Promise.allSettled(env.ADMIN_NOTIFY_EMAILS.map((to) => sendEmail({ ...email, to })));
+  for (const result of results)
+    if (result.status === "rejected") console.error("Failed to send organization request email", result.reason);
 }
 
 function parseOrganization(organization: { name?: string; slug?: string; logo?: string | null }, partial = false) {

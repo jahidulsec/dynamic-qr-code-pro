@@ -23,6 +23,12 @@ export const cacheTags = {
   qrTagCount: "qr-tags-count",
   qrScans: "qr-scans",
   qrScanCount: "qr-scans-count",
+  plans: "plans",
+  planCount: "plans-count",
+  subscriptions: "subscriptions",
+  subscriptionCount: "subscriptions-count",
+  adminAuditLogs: "admin-audit-logs",
+  adminAuditLogCount: "admin-audit-logs-count",
 } as const;
 
 export type CacheTag = (typeof cacheTags)[keyof typeof cacheTags];
