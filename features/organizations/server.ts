@@ -27,5 +27,8 @@ export { RoleFormDialog } from "./components/role-form-dialog";
 export { RolePermissionMatrix, RoleSummary } from "./components/role-permission-matrix";
 export { SettingsNav } from "./components/settings-nav";
 export { AUDIT_PAGE_SIZE, getAuditLog } from "./libs/audit-log";
+
+// platform team reviews (admin feature), written inside the review's transaction
+export { PLATFORM_AUDIT_TAGS, writePlatformAudit, type PlatformAuditEntry } from "./libs/audit";
 export { isOwnerRole, parseRoles } from "./libs/roles";
 export { toInvitationRows, type InvitationRow, type MemberRow } from "./libs/settings-types";

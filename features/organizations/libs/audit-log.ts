@@ -30,6 +30,11 @@ function describe(action: string, metadata: unknown): string | null {
         parts.push(`${count("from")} → ${plural(count("to")!, "permission")}`);
       return parts.join(", ") || null;
     }
+    case "organization.approve":
+      return text("plan") ? `Plan: ${text("plan")}` : null;
+    case "organization.reject":
+    case "organization.suspend":
+      return text("reason") ? `Reason: ${text("reason")}` : null;
     default:
       return null;
   }
