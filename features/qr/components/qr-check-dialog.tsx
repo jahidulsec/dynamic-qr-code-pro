@@ -12,7 +12,7 @@ import type { QrStyle } from "@/features/qr/schemas/qr-schema";
 
 type QrCheckDialogProps = {
   qr: {
-    id: number;
+    id: string;
     name: string;
     destination: string;
     tags: string[];

@@ -7,13 +7,13 @@ import { Suspense } from "react";
 import prisma from "@/config/db";
 import { brandConfig } from "@/config/brand";
 import { recordScan } from "@/features/qr/server";
-import { qrSlugSchema } from "@/features/qr";
+import { qrIdSchema } from "@/features/qr";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function QrRedirectPage({ params }: PageProps<"/q/[slug]">) {
+export default function QrRedirectPage({ params }: PageProps<"/q/[id]">) {
   return (
     <Suspense>
       <QrRedirect params={params} />
@@ -21,18 +21,27 @@ export default function QrRedirectPage({ params }: PageProps<"/q/[slug]">) {
   );
 }
 
-async function QrRedirect({ params }: Pick<PageProps<"/q/[slug]">, "params">) {
-  const { slug } = await params;
+async function QrRedirect({ params }: Pick<PageProps<"/q/[id]">, "params">) {
+  const { id } = await params;
 
-  const parsed = qrSlugSchema.safeParse(slug.toLowerCase());
+  const parsed = qrIdSchema.safeParse(id);
   const qr = parsed.success
     ? await prisma.qrCode.findUnique({
-        where: { slug: parsed.data },
-        select: { id: true, destination: true, status: true, expiresAt: true, deletedAt: true },
+        where: { id: parsed.data },
+        select: {
+          id: true,
+          destination: true,
+          status: true,
+          expiresAt: true,
+          deletedAt: true,
+          organization: { select: { status: true } },
+        },
       })
     : null;
 
   if (!qr || qr.deletedAt) return <InactiveQr title="This QR code doesn't exist" />;
+  // suspended (or otherwise not active) organizations stop redirecting; no scan is recorded
+  if (qr.organization.status !== "ACTIVE") return <InactiveQr title="This QR code is unavailable" />;
   if (qr.status === "PAUSED") return <InactiveQr title="This QR code is paused" />;
   if (qr.expiresAt && qr.expiresAt <= new Date()) return <InactiveQr title="This QR code has expired" />;
 

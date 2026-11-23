@@ -31,7 +31,7 @@ import type { QrFormInput, QrStyle } from "@/features/qr/schemas/qr-schema";
 
 type QrRowActionsProps = {
   organizationSlug: string;
-  qr: { id: number; name: string; slug: string; destination: string; status: "ACTIVE" | "PAUSED"; tags: string[] };
+  qr: { id: string; name: string; destination: string; status: "ACTIVE" | "PAUSED"; tags: string[] };
   // check dialog inputs
   check: { state: QrCheckState; createdBy: string; scanCount: number; createdLabel: string };
   // the encoded short link and saved style, used by the check dialog and export menu
@@ -113,7 +113,7 @@ export function QrRowActions({
         </QrAnalyticsButton>
       )}
       {can({ qr: ["export"] }) && (
-        <QrExportButton value={qrValue} style={qrStyle} fileName={qr.slug} label={qr.name} />
+        <QrExportButton value={qrValue} style={qrStyle} fileName={`qr-${qr.id}`} label={qr.name} />
       )}
       {(canToggle || canTrash) && (
         <DropdownMenu>

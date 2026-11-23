@@ -96,7 +96,7 @@ export function QrTable({
                     {expired && <Badge variant="destructive">Expired</Badge>}
                   </div>
                   <div className="truncate font-mono text-xs text-muted-foreground">
-                    {shortLinkLabel(baseUrl, qr.slug)}
+                    {shortLinkLabel(baseUrl, qr.id)}
                   </div>
                   {qr.expiresAt && !expired && (
                     <div className="text-xs text-muted-foreground">
@@ -148,7 +148,6 @@ export function QrTable({
                     qr={{
                       id: qr.id,
                       name: qr.name,
-                      slug: qr.slug,
                       destination: qr.destination,
                       status: qr.status,
                       tags: qrTagNames(qr),
@@ -163,15 +162,14 @@ export function QrTable({
                       scanCount: qr.scanCount,
                       createdLabel: formatCreatedDate(qr.createdAt),
                     }}
-                    qrValue={shortLink(baseUrl, qr.slug)}
-                    qrLabel={shortLinkLabel(baseUrl, qr.slug)}
+                    qrValue={shortLink(baseUrl, qr.id)}
+                    qrLabel={shortLinkLabel(baseUrl, qr.id)}
                     qrStyle={style}
                     baseUrl={baseUrl}
                     tags={tags}
                     editValues={{
                       name: qr.name,
                       destination: qr.destination,
-                      slug: qr.slug,
                       tags: qrTagNames(qr),
                       expiresAt: qr.expiresAt ? toDateInput(qr.expiresAt) : "",
                       style,

@@ -26,7 +26,7 @@ const toShares = (rows: { label: string; count: number }[], total: number, limit
 const dayKey = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
-export async function buildQrAnalytics(qrCodeId: number) {
+export async function buildQrAnalytics(qrCodeId: string) {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   start.setDate(start.getDate() - (QR_ACTIVITY_DAYS - 1));

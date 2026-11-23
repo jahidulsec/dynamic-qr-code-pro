@@ -10,10 +10,10 @@ import { useAccess } from "@/features/organizations";
 import { trashQrCodesAction } from "@/features/qr/actions/manage-qr";
 
 type SelectionContextValue = {
-  selected: number[];
+  selected: string[];
   allSelected: boolean;
-  isSelected: (id: number) => boolean;
-  toggle: (id: number, checked: boolean) => void;
+  isSelected: (id: string) => boolean;
+  toggle: (id: string, checked: boolean) => void;
   toggleAll: (checked: boolean) => void;
   clear: () => void;
 };
@@ -28,12 +28,12 @@ const useSelection = () => {
 
 type QrTableSelectionProps = {
   // ids on the current page; selection never reaches past them
-  ids: number[];
+  ids: string[];
   children: React.ReactNode;
 };
 
 export function QrTableSelection({ ids, children }: QrTableSelectionProps) {
-  const [picked, setPicked] = useState<number[]>([]);
+  const [picked, setPicked] = useState<string[]>([]);
 
   const value = useMemo<SelectionContextValue>(() => {
     // rows that left the page (trashed, filtered, paged away) drop out of the selection
@@ -72,7 +72,7 @@ export function QrSelectAllCheckbox() {
   );
 }
 
-export function QrRowCheckbox({ id, name }: { id: number; name: string }) {
+export function QrRowCheckbox({ id, name }: { id: string; name: string }) {
   const { isSelected, toggle } = useSelection();
   if (!useCanSelect()) return null;
 

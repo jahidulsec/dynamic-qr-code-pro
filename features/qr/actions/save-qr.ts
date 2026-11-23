@@ -5,7 +5,13 @@ import { APIError } from "better-auth/api";
 
 import { QR_QUOTA } from "@/features/qr/constants";
 import { liveQrWhere } from "@/features/qr/libs/qr-query";
-import { qrFormSchema, type QrFormInput, type QrFormValues } from "@/features/qr/schemas/qr-schema";
+import {
+  qrFormSchema,
+  qrIdSchema,
+  qrNewIdSchema,
+  type QrFormInput,
+  type QrFormValues,
+} from "@/features/qr/schemas/qr-schema";
 import { countQrCodes, createQrCode, getQrCode, updateQrCode } from "@/features/qr/services/qr";
 import { requirePermission, type Access } from "@/features/organizations/server";
 import { missingQrTagNames } from "@/features/qr-tags/server";
@@ -41,8 +47,11 @@ const sharedData = (values: QrFormValues) => ({
   expiresAt: values.expiresAt ? new Date(`${values.expiresAt}T23:59:59`) : null,
 });
 
-export const createQrAction = async (organizationSlug: string, input: QrFormInput) => {
+// the dialog generates the id so its preview encodes the final link; the format is checked here
+// and the primary key rejects a duplicate
+export const createQrAction = async (organizationSlug: string, id: string, input: QrFormInput) => {
   try {
+    const qrId = qrNewIdSchema.parse(id);
     const values = qrFormSchema.parse(input);
     const access = await requirePermission(organizationSlug, { qr: ["create"] }, "You can't create QR codes");
     const { session, organization } = access;
@@ -57,18 +66,18 @@ export const createQrAction = async (organizationSlug: string, input: QrFormInpu
     const qr = await createQrCode(
       {
         data: {
+          id: qrId,
           ...sharedData(values),
-          slug: values.slug,
           organization: { connect: { id: organization.id } },
           createdBy: { connect: { id: session.user.id } },
           tags: { connectOrCreate: tagConnect(organization.id, values.tags) },
         },
-        select: { id: true, slug: true },
+        select: { id: true },
       },
       revalidateTags,
     ).catch((error) => {
       if (prismaCode(error) === "P2002")
-        throw new APIError("CONFLICT", { message: "This short alias is already taken. Try another one." });
+        throw new APIError("CONFLICT", { message: "This link is already in use. Reopen the dialog to get a new one." });
       throw error;
     });
 
@@ -79,9 +88,10 @@ export const createQrAction = async (organizationSlug: string, input: QrFormInpu
   }
 };
 
-// the alias is printed into the code, so it can't change; only what it points to can
-export const updateQrAction = async (organizationSlug: string, id: number, input: QrFormInput) => {
+// the id is printed into the code, so it can't change; only what it points to can
+export const updateQrAction = async (organizationSlug: string, id: string, input: QrFormInput) => {
   try {
+    const qrId = qrIdSchema.parse(id);
     const values = qrFormSchema.parse(input);
     const access = await requirePermission(organizationSlug, { qr: ["update"] }, "You can't edit QR codes");
     const { organization } = access;
@@ -89,7 +99,7 @@ export const updateQrAction = async (organizationSlug: string, id: number, input
 
     // read fresh: the current tags decide which ones to unlink
     const current = await getQrCode(
-      { where: { id, ...liveQrWhere(organization.id) }, select: { tags: { select: { name: true } } } },
+      { where: { id: qrId, ...liveQrWhere(organization.id) }, select: { tags: { select: { name: true } } } },
       { cache: false },
     );
     if (!current) throw new APIError("NOT_FOUND", { message: "QR code not found" });
@@ -98,7 +108,7 @@ export const updateQrAction = async (organizationSlug: string, id: number, input
     // the where is scoped to the organization; P2025 means the code went away in between
     await updateQrCode(
       {
-        where: { id, ...liveQrWhere(organization.id) },
+        where: { id: qrId, ...liveQrWhere(organization.id) },
         data: {
           ...sharedData(values),
           // the two lists never overlap, so the order Prisma applies them in doesn't matter
@@ -116,7 +126,7 @@ export const updateQrAction = async (organizationSlug: string, id: number, input
     });
 
     refresh();
-    return apiResponse.single({ message: "QR code updated", data: { id } });
+    return apiResponse.single({ message: "QR code updated", data: { id: qrId } });
   } catch (error) {
     return apiResponse.error({ error });
   }

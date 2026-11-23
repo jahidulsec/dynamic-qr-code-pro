@@ -58,7 +58,7 @@ export default async function TrashPage({ params }: PageProps<"/[organizationSlu
                     <TableCell className="max-w-72">
                       <div className="truncate font-medium">{qr.name}</div>
                       <div className="truncate font-mono text-xs text-muted-foreground">
-                        {shortLinkLabel(baseUrl, qr.slug)}
+                        {shortLinkLabel(baseUrl, qr.id)}
                       </div>
                     </TableCell>
                     <TableCell className="text-right font-mono tabular-nums">{qr.scanCount.toLocaleString()}</TableCell>

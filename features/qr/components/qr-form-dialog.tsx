@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useRef, useState, type ReactNode } from "react";
+import { useDeferredValue, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch, type FieldErrors } from "react-hook-form";
@@ -28,6 +28,7 @@ import { createQrAction, updateQrAction } from "@/features/qr/actions/save-qr";
 import { DEFAULT_QR_FRAME, type QrFrame } from "@/features/qr/components/qr-code-image";
 import { QrFrameFields } from "@/features/qr/components/qr-frame-fields";
 import { QrPreview } from "@/features/qr/components/qr-preview";
+import { generateQrId } from "@/features/qr/libs/qr-id";
 import {
   DEFAULT_QR_STYLE,
   QR_DOT_STYLES,
@@ -36,8 +37,8 @@ import {
   type QrFormInput,
   type QrFormValues,
 } from "@/features/qr/schemas/qr-schema";
-import { randomSlug, shortLink, shortLinkLabel } from "@/utils/format";
-import { slugify, useAccess } from "@/features/organizations";
+import { shortLink, shortLinkLabel } from "@/utils/format";
+import { useAccess } from "@/features/organizations";
 import { cn } from "@/lib/utils";
 
 const DESTINATION_TYPES = [
@@ -67,7 +68,7 @@ const finderItems = toItems(QR_FINDER_STYLES);
 
 // errors on a hidden tab would otherwise go unnoticed, so jump to the first tab that has one
 const firstTabWithError = (errors: FieldErrors<QrFormInput>) => {
-  if (errors.name || errors.destination || errors.slug || errors.tags) return "target";
+  if (errors.name || errors.destination || errors.tags) return "target";
   if (errors.style) return "style";
   return "security";
 };
@@ -77,7 +78,7 @@ type QrFormDialogProps = {
   baseUrl: string;
   tags: string[];
   /** set when editing an existing code */
-  qr?: { id: number; values: QrFormInput };
+  qr?: { id: string; values: QrFormInput };
   /** overrides the default "Create new dynamic QR" / "Edit QR # id" heading */
   title?: ReactNode;
   /** controlled open state; omit for dialogs that are only mounted while open */
@@ -99,10 +100,10 @@ export function QrFormDialog({
 }: QrFormDialogProps) {
   const router = useRouter();
   const isEdit = !!qr;
-  // the alias follows the name until the user edits it directly
-  const slugEdited = useRef(isEdit);
   const canCreateTags = useAccess().can({ tag: ["create"] });
-  const [initialSlug] = useState(randomSlug);
+  // a new code gets its id up front, so the preview (and any download) already encodes the final link
+  const [newId] = useState(generateQrId);
+  const qrId = qr?.id ?? newId;
   const [tab, setTab] = useState("target");
   // local only: frames and logos decorate the preview and downloads, never the saved code
   const [frame, setFrame] = useState<QrFrame>(DEFAULT_QR_FRAME);
@@ -111,21 +112,18 @@ export function QrFormDialog({
   const {
     control,
     handleSubmit,
-    setValue,
-    formState: { isSubmitting, isSubmitted },
+    formState: { isSubmitting },
   } = useForm<QrFormInput, unknown, QrFormValues>({
     resolver: zodResolver(qrFormSchema),
     defaultValues: qr?.values ?? {
       name: "",
       destination: "https://",
-      slug: initialSlug,
       tags: [],
       expiresAt: "",
       style: DEFAULT_QR_STYLE,
     },
   });
 
-  const slug = useWatch({ control, name: "slug" });
   const style = useDeferredValue(useWatch({ control, name: "style" }));
   const name = useWatch({ control, name: "name" });
 
@@ -138,7 +136,7 @@ export function QrFormDialog({
     async (values) => {
       const result = isEdit
         ? await updateQrAction(organizationSlug, qr.id, values)
-        : await createQrAction(organizationSlug, values);
+        : await createQrAction(organizationSlug, newId, values);
 
       if (!result.success) {
         toast.error(result.message);
@@ -222,13 +220,6 @@ export function QrFormDialog({
                           autoComplete="off"
                           placeholder="New Year fb frame Wish Card - Jannat"
                           aria-invalid={fieldState.invalid}
-                          onChange={(event) => {
-                            field.onChange(event);
-                            if (!slugEdited.current) {
-                              const next = slugify(event.target.value).slice(0, 64);
-                              setValue("slug", next.length >= 3 ? next : initialSlug, { shouldValidate: isSubmitted });
-                            }
-                          }}
                         />
                         {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                       </Field>
@@ -263,35 +254,17 @@ export function QrFormDialog({
                   />
 
                   <div className="grid gap-5 sm:grid-cols-2">
-                    <Controller
-                      name="slug"
-                      control={control}
-                      render={({ field, fieldState }) => (
-                        <Field data-invalid={fieldState.invalid}>
-                          <FieldLabel htmlFor={field.name}>Short alias</FieldLabel>
-                          <Input
-                            {...field}
-                            id={field.name}
-                            autoComplete="off"
-                            spellCheck={false}
-                            readOnly={isEdit}
-                            className="font-mono"
-                            aria-invalid={fieldState.invalid}
-                            onChange={(event) => {
-                              slugEdited.current = event.target.value !== "";
-                              field.onChange(event.target.value.toLowerCase());
-                            }}
-                          />
-                          {fieldState.invalid ? (
-                            <FieldError errors={[fieldState.error]} />
-                          ) : (
-                            <FieldDescription className="truncate">
-                              {isEdit ? "Printed into the code, so it can't change." : shortLinkLabel(baseUrl, slug || "…")}
-                            </FieldDescription>
-                          )}
-                        </Field>
-                      )}
-                    />
+                    <Field>
+                      <FieldLabel htmlFor="qr-short-link">Short link</FieldLabel>
+                      <Input
+                        id="qr-short-link"
+                        value={shortLinkLabel(baseUrl, qrId)}
+                        readOnly
+                        spellCheck={false}
+                        className="font-mono"
+                      />
+                      <FieldDescription>Printed into the code, so it never changes.</FieldDescription>
+                    </Field>
 
                     <Controller
                       name="tags"
@@ -424,11 +397,11 @@ export function QrFormDialog({
           <div className="flex flex-col gap-4 border-t bg-muted/30 p-6 md:border-t-0 md:border-l">
             <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase">Live preview</span>
             <QrPreview
-              value={shortLink(baseUrl, slug || initialSlug)}
+              value={shortLink(baseUrl, qrId)}
               style={style}
               frame={deferredFrame}
-              label={shortLinkLabel(baseUrl, slug || initialSlug)}
-              fileName={slug || name || "qr-code"}
+              label={shortLinkLabel(baseUrl, qrId)}
+              fileName={name || `qr-${qrId}`}
             />
             <div className="mt-auto flex flex-col gap-2 pt-4">
               <FormButton type="submit" isPending={isSubmitting}>

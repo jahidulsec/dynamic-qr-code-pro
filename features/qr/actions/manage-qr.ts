@@ -6,12 +6,11 @@ import { z } from "zod";
 
 import { QR_QUOTA } from "@/features/qr/constants";
 import { liveQrWhere } from "@/features/qr/libs/qr-query";
+import { qrIdSchema } from "@/features/qr/schemas/qr-schema";
 import { countQrCodes, deleteQrCode, updateQrCode, updateQrCodes } from "@/features/qr/services/qr";
 import { requirePermission } from "@/features/organizations/server";
 import { cacheTags } from "@/lib/cache/cache-tags";
 import { apiResponse } from "@/utils/response";
-
-const idSchema = z.number().int().positive();
 
 const notFound = () => new APIError("NOT_FOUND", { message: "QR code not found" });
 
@@ -24,9 +23,9 @@ const orNotFound = (error: unknown): never => {
 // tag counts include only codes outside the trash, so trash moves bust them too
 const revalidateTags = [cacheTags.qrTags];
 
-export const setQrStatusAction = async (organizationSlug: string, id: number, status: "ACTIVE" | "PAUSED") => {
+export const setQrStatusAction = async (organizationSlug: string, id: string, status: "ACTIVE" | "PAUSED") => {
   try {
-    const qrId = idSchema.parse(id);
+    const qrId = qrIdSchema.parse(id);
     const nextStatus = z.enum(["ACTIVE", "PAUSED"]).parse(status);
     const { organization } = await requirePermission(organizationSlug, { qr: ["status"] }, "You can't pause or resume QR codes");
 
@@ -44,9 +43,9 @@ export const setQrStatusAction = async (organizationSlug: string, id: number, st
 };
 
 // trashed codes stop redirecting but keep their scans and can be restored
-export const trashQrAction = async (organizationSlug: string, id: number) => {
+export const trashQrAction = async (organizationSlug: string, id: string) => {
   try {
-    const qrId = idSchema.parse(id);
+    const qrId = qrIdSchema.parse(id);
     const { organization } = await requirePermission(organizationSlug, { qr: ["trash"] }, "You can't move QR codes to the trash");
 
     await updateQrCode(
@@ -62,9 +61,9 @@ export const trashQrAction = async (organizationSlug: string, id: number) => {
 };
 
 // bulk variant: codes already trashed or outside this organization are skipped, not failed
-export const trashQrCodesAction = async (organizationSlug: string, ids: number[]) => {
+export const trashQrCodesAction = async (organizationSlug: string, ids: string[]) => {
   try {
-    const qrIds = z.array(idSchema).min(1).max(QR_QUOTA).parse(ids);
+    const qrIds = z.array(qrIdSchema).min(1).max(QR_QUOTA).parse(ids);
     const { organization } = await requirePermission(organizationSlug, { qr: ["trash"] }, "You can't move QR codes to the trash");
 
     const { count } = await updateQrCodes(
@@ -83,9 +82,9 @@ export const trashQrCodesAction = async (organizationSlug: string, ids: number[]
   }
 };
 
-export const restoreQrAction = async (organizationSlug: string, id: number) => {
+export const restoreQrAction = async (organizationSlug: string, id: string) => {
   try {
-    const qrId = idSchema.parse(id);
+    const qrId = qrIdSchema.parse(id);
     const { organization } = await requirePermission(organizationSlug, { qr: ["restore"] }, "You can't restore QR codes");
 
     // quota checks read fresh: a cached count could let a code slip past the limit
@@ -108,10 +107,10 @@ export const restoreQrAction = async (organizationSlug: string, id: number) => {
   }
 };
 
-// permanent: the alias becomes free again and its scan history is removed
-export const deleteQrAction = async (organizationSlug: string, id: number) => {
+// permanent: the code and its scan history are removed
+export const deleteQrAction = async (organizationSlug: string, id: string) => {
   try {
-    const qrId = idSchema.parse(id);
+    const qrId = qrIdSchema.parse(id);
     const { organization } = await requirePermission(organizationSlug, { qr: ["delete"] }, "You can't permanently delete QR codes");
 
     await deleteQrCode(

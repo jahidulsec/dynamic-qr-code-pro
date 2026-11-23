@@ -20,7 +20,7 @@ import { deleteQrAction, restoreQrAction } from "@/features/qr/actions/manage-qr
 
 type TrashRowActionsProps = {
   organizationSlug: string;
-  qr: { id: number; name: string };
+  qr: { id: string; name: string };
   canRestore: boolean;
   canDelete: boolean;
 };

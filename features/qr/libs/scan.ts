@@ -53,7 +53,7 @@ export function visitorHash(ip: string, userAgent: string, date = new Date()) {
   return createHash("sha256").update(`${ip}|${userAgent}|${day}|${env.SESSION_SECRET}`).digest("hex");
 }
 
-export async function recordScan(qrCodeId: number, headers: Headers) {
+export async function recordScan(qrCodeId: string, headers: Headers) {
   const userAgent = headers.get("user-agent") ?? "";
   if (isBot(userAgent)) return;
 

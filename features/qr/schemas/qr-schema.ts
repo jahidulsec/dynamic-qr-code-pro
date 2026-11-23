@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { QR_MAX_TAGS, QR_PAGE_SIZE } from "@/features/qr/constants";
+import { QR_ID_LENGTH, QR_MAX_TAGS, QR_PAGE_SIZE } from "@/features/qr/constants";
 
 export const QR_DOT_STYLES = ["square", "rounded", "circle", "diamond", "leaf"] as const;
 export const QR_FINDER_STYLES = ["square", "rounded", "rounded-lg", "circle", "leaf"] as const;
@@ -30,12 +30,12 @@ export const parseQrStyle = (value: unknown): QrStyle => {
   return { ...DEFAULT_QR_STYLE, ...(result.success ? result.data : {}) };
 };
 
-export const qrSlugSchema = z
-  .string()
-  .trim()
-  .min(3, "Alias must be at least 3 characters")
-  .max(64, "Alias must be at most 64 characters")
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers and single hyphens");
+// the code's id is its short link (<base>/q/<id>): nanoid(10) for new codes, a numeric string for
+// codes from before the string-id change
+export const qrIdSchema = z.string().trim().regex(/^[A-Za-z0-9_-]{1,64}$/, "Invalid QR code id");
+
+// an id the create dialog generated up front, so the preview can encode the final link
+export const qrNewIdSchema = z.string().regex(new RegExp(`^[A-Za-z0-9_-]{${QR_ID_LENGTH}}$`), "Invalid QR code id");
 
 export const qrFormSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(255, "Name must be at most 255 characters"),
@@ -45,7 +45,6 @@ export const qrFormSchema = z.object({
     .max(2048, "URL must be at most 2048 characters")
     // only web links: a javascript: or data: destination would turn the redirect into an attack vector
     .pipe(z.url({ protocol: /^https?$/, message: "Enter a full http:// or https:// URL" })),
-  slug: qrSlugSchema,
   tags: z
     .array(
       z
@@ -88,5 +87,3 @@ const urlParam = z.string().optional().catch(undefined);
 export const qrSearchParamsSchema = z
   .object({ page: urlParam, size: urlParam, q: urlParam, department: urlParam, status: urlParam })
   .transform(({ q, department, ...rest }) => qrQuerySchema.parse({ ...rest, search: q, tag: department }));
-
-export const qrIdSchema = z.coerce.number().int().positive();

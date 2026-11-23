@@ -15,7 +15,6 @@ export const qrTagNames = (qr: { tags: { name: string }[] }) => qr.tags.map((tag
 export const qrListSelect = {
   id: true,
   name: true,
-  slug: true,
   type: true,
   destination: true,
   status: true,
@@ -50,7 +49,8 @@ export const liveQrWhere = (organizationId: string) => ({ organizationId, delete
 
 export function buildQrWhere(organizationId: string, { search, tag, status }: QrListFilters): Prisma.QrCodeWhereInput {
   const term = search?.trim();
-  const id = term ? Number(term.replace(/^#\s*/, "")) : NaN;
+  // "# V1StGXR8_Z" or the bare id: the short link's last segment, as shown in the list
+  const id = term?.replace(/^#\s*/, "");
 
   return {
     ...liveQrWhere(organizationId),
@@ -59,9 +59,8 @@ export function buildQrWhere(organizationId: string, { search, tag, status }: Qr
     ...(term
       ? {
           OR: [
-            ...(Number.isInteger(id) && id > 0 ? [{ id }] : []),
+            ...(id ? [{ id }] : []),
             { name: { contains: term } },
-            { slug: { contains: term } },
             { destination: { contains: term } },
             { tags: { some: { name: { contains: term } } } },
             { createdBy: { name: { contains: term } } },

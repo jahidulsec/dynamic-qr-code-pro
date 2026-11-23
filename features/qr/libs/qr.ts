@@ -2,6 +2,7 @@
 
 import { APIError } from "better-auth/api";
 
+import type { Prisma } from "@/generated/prisma/client";
 import { buildQrAnalytics } from "@/features/qr/libs/qr-analytics";
 import { buildQrWhere, liveQrWhere, qrListSelect, qrTagNames, qrTopSelect, type QrStatsData } from "@/features/qr/libs/qr-query";
 import { qrIdSchema, qrQuerySchema, type QrQuerySchemaType } from "@/features/qr/schemas/qr-schema";
@@ -17,9 +18,12 @@ import { getQrBaseUrl } from "@/utils/short-link";
 // raw scans can grow large; cap the export
 const MAX_SCAN_ROWS = 100_000;
 
+// ids are random (nanoid), so they say nothing about age
+const newestFirst = [{ createdAt: "desc" }, { id: "desc" }] satisfies Prisma.QrCodeOrderByWithRelationInput[];
+
 const notFound = () => new APIError("NOT_FOUND", { message: "QR code not found" });
 
-const findLiveQrCode = (organizationId: string, id: number) =>
+const findLiveQrCode = (organizationId: string, id: string) =>
   findQrCode({ where: { id, ...liveQrWhere(organizationId) }, include: { tags: { select: { name: true }, orderBy: { name: "asc" } } } });
 
 export const getQrCodes = async (organizationSlug: string, query: QrQuerySchemaType) => {
@@ -29,7 +33,7 @@ export const getQrCodes = async (organizationSlug: string, query: QrQuerySchemaT
     const where = buildQrWhere(organization.id, { search, tag, status });
 
     const [data, count] = await Promise.all([
-      findQrCodes({ where, select: qrListSelect, orderBy: { id: "desc" }, skip: (page - 1) * size, take: size }),
+      findQrCodes({ where, select: qrListSelect, orderBy: newestFirst, skip: (page - 1) * size, take: size }),
       countQrCodes({ where }),
     ]);
 
@@ -39,7 +43,7 @@ export const getQrCodes = async (organizationSlug: string, query: QrQuerySchemaT
   }
 };
 
-export const getQrCode = async (organizationSlug: string, id: number) => {
+export const getQrCode = async (organizationSlug: string, id: string) => {
   try {
     const qrId = qrIdSchema.parse(id);
     const { organization } = await requireMembership(organizationSlug);
@@ -54,7 +58,7 @@ export const getQrCode = async (organizationSlug: string, id: number) => {
 };
 
 // one code in the list shape, for pages that show a code outside the current search results
-export const getQrListItem = async (organizationSlug: string, id: number) => {
+export const getQrListItem = async (organizationSlug: string, id: string) => {
   try {
     const qrId = qrIdSchema.parse(id);
     const { organization } = await requireMembership(organizationSlug);
@@ -103,7 +107,7 @@ export const getQrStats = async (organizationSlug: string) => {
   }
 };
 
-export const getQrAnalytics = async (organizationSlug: string, id: number) => {
+export const getQrAnalytics = async (organizationSlug: string, id: string) => {
   try {
     const qrId = qrIdSchema.parse(id);
     const { organization } = await requirePermission(organizationSlug, { report: ["read"] }, "You can't view scan analytics");
@@ -144,7 +148,7 @@ export const exportQrCodes = async (organizationSlug: string, query: QrQuerySche
 
     // a one-off download: don't keep the whole list in the cache
     const rows = await findQrCodes(
-      { where: buildQrWhere(organization.id, { search, tag, status }), select: qrListSelect, orderBy: { id: "desc" } },
+      { where: buildQrWhere(organization.id, { search, tag, status }), select: qrListSelect, orderBy: newestFirst },
       { cache: false },
     );
     const baseUrl = getQrBaseUrl();
@@ -154,7 +158,7 @@ export const exportQrCodes = async (organizationSlug: string, query: QrQuerySche
       rows.map((qr) => [
         qr.id,
         qr.name,
-        shortLink(baseUrl, qr.slug),
+        shortLink(baseUrl, qr.id),
         qr.destination,
         qr.status,
         qr.scanCount,
@@ -171,7 +175,7 @@ export const exportQrCodes = async (organizationSlug: string, query: QrQuerySche
   }
 };
 
-export const exportQrScans = async (organizationSlug: string, id: number) => {
+export const exportQrScans = async (organizationSlug: string, id: string) => {
   try {
     const qrId = qrIdSchema.parse(id);
     const { organization } = await requirePermission(

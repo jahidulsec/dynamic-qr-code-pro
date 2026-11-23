@@ -54,10 +54,10 @@ export function QrCheckWorkspace({
 
   // optimistic counts per code: the real scan is recorded by the short link after the redirect is sent,
   // so show whichever is higher until the server catches up
-  const [optimistic, setOptimistic] = useState<Record<number, number>>({});
+  const [optimistic, setOptimistic] = useState<Record<string, number>>({});
   const scansOf = (item: QrCheckItem) => Math.max(item.scanCount, optimistic[item.id] ?? 0);
 
-  const select = (id: number) => {
+  const select = (id: string) => {
     setSelectedId(id);
     const params = new URLSearchParams(searchParams.toString());
     params.set("id", String(id));
@@ -75,10 +75,10 @@ export function QrCheckWorkspace({
     const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>("button[data-qr-id]"));
     const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
     const next = buttons[index + (event.key === "ArrowDown" ? 1 : -1)] ?? buttons[event.key === "ArrowDown" ? 0 : buttons.length - 1];
-    if (!next) return;
+    if (!next?.dataset.qrId) return;
     event.preventDefault();
     next.focus();
-    select(Number(next.dataset.qrId));
+    select(next.dataset.qrId);
   };
 
   return (

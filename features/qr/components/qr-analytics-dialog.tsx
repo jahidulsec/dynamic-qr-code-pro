@@ -17,7 +17,7 @@ export type QrAnalyticsResult = Awaited<ReturnType<typeof getQrAnalytics>>;
 
 type QrAnalyticsDialogProps = {
   organizationSlug: string;
-  qr: { id: number; name: string; tags: string[] };
+  qr: { id: string; name: string; tags: string[] };
   /** started by the trigger on click, so loading begins before the dialog renders */
   analytics: Promise<QrAnalyticsResult>;
   open: boolean;

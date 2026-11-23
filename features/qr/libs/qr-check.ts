@@ -5,7 +5,7 @@ import { shortLink, shortLinkLabel, toDateInput } from "@/utils/format";
 
 // everything the Click to Check page needs for one code, already serialized for the client
 export type QrCheckItem = {
-  id: number;
+  id: string;
   name: string;
   destination: string;
   tags: string[];
@@ -30,13 +30,12 @@ export function toQrCheckItem(qr: QrListItem, baseUrl: string, now = new Date())
     tags: qrTagNames(qr),
     scanCount: qr.scanCount,
     state: expired ? "expired" : qr.status === "PAUSED" ? "paused" : "ready",
-    qrValue: shortLink(baseUrl, qr.slug),
-    qrLabel: shortLinkLabel(baseUrl, qr.slug),
+    qrValue: shortLink(baseUrl, qr.id),
+    qrLabel: shortLinkLabel(baseUrl, qr.id),
     qrStyle: style,
     editValues: {
       name: qr.name,
       destination: qr.destination,
-      slug: qr.slug,
       tags: qrTagNames(qr),
       expiresAt: qr.expiresAt ? toDateInput(qr.expiresAt) : "",
       style,

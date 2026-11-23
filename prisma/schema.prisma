@@ -295,16 +295,15 @@ enum QrStatus {
 }
 
 model QrCode {
-  // global auto-increment, shown as "# 542"
-  id             Int          @id @default(autoincrement())
+  // nanoid, printed into the code as <base>/q/<id>; rows from before the string-id change keep
+  // their old integer as a string
+  id             String       @id @default(nanoid(10))
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdById    String
   createdBy      User         @relation(fields: [createdById], references: [id])
   tags           QrTag[]
   name           String       @db.VarChar(255)
-  // printed into the code, so it never changes once created
-  slug           String       @unique @db.VarChar(64)
   type           QrType       @default(WEBSITE)
   // the dynamic part: can be edited at any time
   destination    String       @db.Text
@@ -338,7 +337,7 @@ model QrTag {
 
 model QrScan {
   id          BigInt   @id @default(autoincrement())
-  qrCodeId    Int
+  qrCodeId    String
   qrCode      QrCode   @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
   scannedAt   DateTime @default(now())
   // sha256 of ip + user agent + day + secret: counts unique visitors without storing the IP

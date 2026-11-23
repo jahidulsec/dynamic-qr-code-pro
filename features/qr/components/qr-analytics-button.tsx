@@ -9,7 +9,7 @@ import { getQrAnalytics } from "@/features/qr/libs/qr";
 
 type QrAnalyticsButtonProps = Omit<ComponentProps<typeof Button>, "onClick"> & {
   organizationSlug: string;
-  qr: { id: number; name: string; tags: string[] };
+  qr: { id: string; name: string; tags: string[] };
 };
 
 export function QrAnalyticsButton({ organizationSlug, qr, ...props }: QrAnalyticsButtonProps) {

@@ -37,7 +37,6 @@ export {
   qrFormSchema,
   qrIdSchema,
   qrSearchParamsSchema,
-  qrSlugSchema,
   QR_STATUS_FILTERS,
   type QrFormInput,
   type QrFormValues,

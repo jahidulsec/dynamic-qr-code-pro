@@ -161,7 +161,7 @@ export async function buildScanReport({
     }),
     // rank on the scan table alone, then join the few winners for their details
     prisma.$queryRaw<
-      { id: number; name: string; destination: string; scans: bigint | number }[]
+      { id: string; name: string; destination: string; scans: bigint | number }[]
     >(
       Prisma.sql`SELECT q.id, q.name, q.destination, ranked.scans
         FROM (
@@ -205,17 +205,17 @@ export async function buildScanReport({
 
   const topTags = topRows.length
     ? await prisma.qrCode.findMany({
-        where: { id: { in: topRows.map((row) => Number(row.id)) } },
+        where: { id: { in: topRows.map((row) => row.id) } },
         select: { id: true, tags: { select: { name: true }, orderBy: { name: "asc" } } },
       })
     : [];
   const tagsByCode = new Map(topTags.map((row) => [row.id, row.tags.map((tag) => tag.name)]));
 
   const top = topRows.map((row) => ({
-    id: Number(row.id),
+    id: row.id,
     name: row.name,
     destination: row.destination,
-    tags: tagsByCode.get(Number(row.id)) ?? [],
+    tags: tagsByCode.get(row.id) ?? [],
     scans: Number(row.scans),
   }));
 
