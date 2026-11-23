@@ -117,7 +117,7 @@ The UI hides things, but each of these checks applies on the server whatever the
    - `beforeCreateInvitation`: refuse if the organization isn't active. This is defense in depth, since invite is already server-action-only.
    - `beforeAcceptInvitation`: refuse with "This organization isn't accepting new members right now" if it isn't active.
    - `organization/set-active` is harmless and stays allowed.
-4. **QR redirects** (`app/q/[slug]/page.tsx`): select `organization: { select: { status: true } }`. If the status is `SUSPENDED`, render `InactiveQr` with "This QR code is unavailable". PENDING and REJECTED organizations can't have QR codes, but any status other than ACTIVE is treated the same way.
+4. **QR redirects** (`app/q/[id]/page.tsx`): select `organization: { select: { status: true } }`. If the status is `SUSPENDED`, render `InactiveQr` with "This QR code is unavailable". PENDING and REJECTED organizations can't have QR codes, but any status other than ACTIVE is treated the same way.
 
 ## Emails
 
@@ -150,7 +150,7 @@ reactivateOrganizationAction(id)
 - [ ] A user can't have more than 2 pending organizations.
 - [ ] Approving sends the activation email to every owner. The org becomes a link in their list, and the app opens normally.
 - [ ] Rejecting requires a reason, which appears in the list, on the status screen and in the email. The owner can withdraw the request, which frees the slug.
-- [ ] Suspending stops `/q/<slug>` redirects for all of that organization's codes. Reactivating restores them.
+- [ ] Suspending stops `/q/<id>` redirects for all of that organization's codes. Reactivating restores them.
 - [ ] Two admins approving the same request at the same time: one succeeds, and the other gets "already reviewed". Only one email and one subscription are created.
 - [ ] Organizations that existed before the migration are ACTIVE, and nothing changes for their members.
 - [ ] A failing SMTP server doesn't fail approve, reject, suspend, reactivate or create.

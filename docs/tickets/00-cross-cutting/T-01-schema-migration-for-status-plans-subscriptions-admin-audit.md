@@ -18,8 +18,8 @@
 - Run `npm run db:migrate`.
 
 **Done when**
-- [ ] `prisma migrate status` is clean, and `generated/prisma` has been regenerated.
-- [ ] Every existing org is `ACTIVE` and has exactly one subscription, every user has `role = 'user'`, and exactly one plan has `isDefault = true`.
+- [x] `prisma migrate status` is clean, and `generated/prisma` has been regenerated.
+- [x] Every existing org is `ACTIVE` and has exactly one subscription, every user has `role = 'user'`, and exactly one plan has `isDefault = true`.
 
 ## Related findings
 
@@ -29,3 +29,11 @@
 | F7 | **The migration needs fixed ids for seeded rows.** Plain SQL can't call `cuid()`. | Low | Seed plans with fixed ids (`plan_free`, `plan_pro`, …), and backfill subscriptions with `CONCAT('sub_', organization.id)`. | T-01 |
 | F10 | **The phases depend on each other.** Approval (phase 2) creates a subscription, which needs plans that phase 3 manages. | Low | Plans are seeded in the phase 1 migration. `QR_QUOTA` stays in force until T-19, so there's no gap in limits. | T-01, T-15 |
 | F13 | **New relations need back-relations.** `reviewedBy`, `AdminAuditLog.actor` and `Organization.subscription` need named back-relations on `User` and `Organization`, or the Prisma schema won't validate. | Low | Add them in the schema change. | T-01 |
+
+## Notes
+
+- **Migration reconstructed.** `20261110000000_admin_approval_subscriptions` was applied to the shared dev database on 2026-11-08 but never committed. On 2026-11-23 the file was rebuilt with `prisma migrate diff` (committed schema → T-01 schema) plus the backfill and seed statements, and the checksum in `_prisma_migrations` was updated to match. `migrate diff` between the database and `schema.prisma` is empty. Other environments that haven't run it yet get the reconstructed file.
+- **F6 resolved as `legacy`.** A hidden `plan_legacy` is seeded (500 QR codes, unlimited members, 20 custom roles, all features), and existing orgs are backfilled onto it as `sub_<orgId>`, `ACTIVE`, `interval = NONE`, with no end date. This differs from spec 03, which says to backfill onto `pro`.
+- **Ids.** New models use `@default(nanoid(10))` to match the rest of the schema, not the spec's `cuid()`. Seeded rows use fixed ids (F7).
+- **DB names.** The models are PascalCase but map to the existing table and enum names (`plan`, `subscription`, `admin_audit_log`, `organization_status`, `subscription_status`, `subscription_interval`).
+- **Data check.** When verified, the shared database had 0 organizations and one user already promoted to `superadmin` after the migration. Every other user is `role = 'user'`.

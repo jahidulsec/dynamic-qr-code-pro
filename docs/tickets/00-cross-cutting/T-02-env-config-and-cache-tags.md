@@ -11,10 +11,14 @@
 - Add these keys to `lib/cache/cache-tags.ts`: `plans`, `planCount`, `subscriptions`, `subscriptionCount`, `adminAuditLogs` and `adminAuditLogCount`.
 
 **Done when**
-- [ ] The app boots with the new variables, and a malformed `ADMIN_NOTIFY_EMAILS` fails env validation.
+- [x] The app boots with the new variables, and a malformed `ADMIN_NOTIFY_EMAILS` fails env validation.
 
 ## Related findings
 
 | # | Finding | Severity | Resolution | Ticket |
 | --- | --- | --- | --- | --- |
 | F8 | **There's no support contact anywhere.** Emails and the billing page say "contact support", but `siteConfig` has no support address. | Low | Add a `SUPPORT_EMAIL` env var, exposed through `siteConfig.supportEmail`. | T-02 |
+
+**Notes**
+- `env.ADMIN_NOTIFY_EMAILS` is parsed to a `string[]` (trimmed, empty entries dropped, `[]` when unset), so T-13 can use it directly without splitting.
+- `SUPPORT_EMAIL` is a server-only variable, so `siteConfig.supportEmail` can only be read on the server. If a client component ever needs it, pass it down as a prop.

@@ -20,6 +20,22 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Creating the first admin
+
+There's no way to sign up as an admin. Sign up through the normal flow and verify your email, then promote the account:
+
+```bash
+npm run admin:create -- --email owner@example.com
+```
+
+This sets the user's platform role to `superadmin`, which gives access to `/admin`. To demote them again:
+
+```bash
+npm run admin:create -- --email owner@example.com --revoke
+```
+
+The script reads `DATABASE_URL` from `.env`. It exits with code 1 and a message if no user has that email, the email isn't verified, or the user already has the requested role.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
