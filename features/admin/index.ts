@@ -2,6 +2,7 @@
 // The guard (getAdminSession, requireAdmin) is server-only and lives in "./server".
 
 /* -------------------------------- Components ------------------------------- */
+export { AdminDashboard } from "./components/admin-dashboard";
 export { AdminLoginForm } from "./components/admin-login-form";
 export { AdminOrganizationDetail } from "./components/organization-detail";
 export { AdminOrganizationFilters } from "./components/organization-filters";
@@ -21,6 +22,7 @@ export {
 } from "./actions/review-organization";
 export { getAdminOrganization, getAdminOrganizations, getPendingOrganizationCount } from "./libs/admin-organizations";
 export { getAdminPlan, getAdminPlans } from "./libs/admin-plans";
+export { getAdminDashboard } from "./libs/admin-stats";
 
 /* --------------------------- Schemas, constants, types --------------------------- */
 export { ADMIN_HOME_PATH, ADMIN_LOGIN_PATH, ADMIN_PAGE_TITLES, ADMIN_PATHS } from "./constants";
