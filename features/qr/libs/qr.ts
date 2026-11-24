@@ -2,9 +2,8 @@
 
 import { APIError } from "better-auth/api";
 
-import type { Prisma } from "@/generated/prisma/client";
 import { buildQrAnalytics } from "@/features/qr/libs/qr-analytics";
-import { buildQrWhere, liveQrWhere, qrListSelect, qrTagNames, qrTopSelect, type QrStatsData } from "@/features/qr/libs/qr-query";
+import { buildQrOrderBy, buildQrWhere, liveQrWhere, qrListSelect, qrTagNames, qrTopSelect, type QrStatsData } from "@/features/qr/libs/qr-query";
 import { qrIdSchema, qrQuerySchema, type QrQuerySchemaType } from "@/features/qr/schemas/qr-schema";
 import { countQrCodes, getQrCode as findQrCode, getQrCodes as findQrCodes } from "@/features/qr/services/qr";
 import { countQrScans, getQrScans } from "@/features/qr/services/qr-scan";
@@ -19,9 +18,6 @@ import { getQrBaseUrl } from "@/utils/short-link";
 // raw scans can grow large; cap the export
 const MAX_SCAN_ROWS = 100_000;
 
-// ids are random (nanoid), so they say nothing about age
-const newestFirst = [{ createdAt: "desc" }, { id: "desc" }] satisfies Prisma.QrCodeOrderByWithRelationInput[];
-
 const notFound = () => new APIError("NOT_FOUND", { message: "QR code not found" });
 
 const findLiveQrCode = (organizationId: string, id: string) =>
@@ -29,12 +25,12 @@ const findLiveQrCode = (organizationId: string, id: string) =>
 
 export const getQrCodes = async (organizationSlug: string, query: QrQuerySchemaType) => {
   try {
-    const { page, size, search, tag, status } = qrQuerySchema.parse(query);
+    const { page, size, search, tag, status, sort, order } = qrQuerySchema.parse(query);
     const { organization } = await requireMembership(organizationSlug);
     const where = buildQrWhere(organization.id, { search, tag, status });
 
     const [data, count] = await Promise.all([
-      findQrCodes({ where, select: qrListSelect, orderBy: newestFirst, skip: (page - 1) * size, take: size }),
+      findQrCodes({ where, select: qrListSelect, orderBy: buildQrOrderBy(sort, order), skip: (page - 1) * size, take: size }),
       countQrCodes({ where }),
     ]);
 
@@ -147,13 +143,13 @@ export const getTrashedQrCodes = async (organizationSlug: string) => {
 // everything matching the list filters, ignoring pagination
 export const exportQrCodes = async (organizationSlug: string, query: QrQuerySchemaType) => {
   try {
-    const { search, tag, status } = qrQuerySchema.parse(query);
+    const { search, tag, status, sort, order } = qrQuerySchema.parse(query);
     const { organization } = await requirePermission(organizationSlug, { qr: ["export"] }, "You can't export QR codes");
     requireEntitlement(await getEntitlements(organization.id), "csvExport");
 
     // a one-off download: don't keep the whole list in the cache
     const rows = await findQrCodes(
-      { where: buildQrWhere(organization.id, { search, tag, status }), select: qrListSelect, orderBy: newestFirst },
+      { where: buildQrWhere(organization.id, { search, tag, status }), select: qrListSelect, orderBy: buildQrOrderBy(sort, order) },
       { cache: false },
     );
     const baseUrl = getQrBaseUrl();

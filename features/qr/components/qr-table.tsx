@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { QrAnalyticsButton } from "@/features/qr/components/qr-analytics-button";
 import { QrRowActions } from "@/features/qr/components/qr-row-actions";
+import { QrSortHead } from "@/features/qr/components/qr-sort-head";
 import {
   QrBulkActions,
   QrRowCheckbox,
@@ -62,13 +63,13 @@ export function QrTable({
             <TableHead className="w-px pl-4">
               <QrSelectAllCheckbox />
             </TableHead>
-            <TableHead>ID</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Destination</TableHead>
-            <TableHead className="text-right">Scans</TableHead>
+            <QrSortHead field="id">ID</QrSortHead>
+            <QrSortHead field="name">Name</QrSortHead>
+            <QrSortHead field="destination">Destination</QrSortHead>
+            <QrSortHead field="scans" className="text-right">Scans</QrSortHead>
             <TableHead>Tags</TableHead>
-            <TableHead>Created by</TableHead>
-            <TableHead>Created</TableHead>
+            <QrSortHead field="createdBy">Created by</QrSortHead>
+            <QrSortHead field="created">Created</QrSortHead>
             <TableHead className="pr-4 text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>

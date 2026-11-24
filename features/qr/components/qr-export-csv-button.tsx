@@ -8,7 +8,7 @@ import { IconDownload } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { useAccess } from "@/features/organizations";
 import { exportQrCodes } from "@/features/qr/libs/qr";
-import type { QrStatusFilter } from "@/features/qr/schemas/qr-schema";
+import { qrQuerySchema } from "@/features/qr/schemas/qr-schema";
 import { downloadCsv } from "@/utils/csv";
 
 export function QrExportCsvButton({ organizationSlug }: { organizationSlug: string }) {
@@ -19,11 +19,14 @@ export function QrExportCsvButton({ organizationSlug }: { organizationSlug: stri
   // exports what the table currently shows, across all pages
   const exportCsv = () =>
     startExport(async () => {
-      const result = await exportQrCodes(organizationSlug, {
+      const { search, tag, status, sort, order } = qrQuerySchema.parse({
         search: searchParams.get("q") ?? undefined,
         tag: searchParams.get("department") ?? undefined,
-        status: (searchParams.get("status") ?? "all") as QrStatusFilter,
+        status: searchParams.get("status") ?? undefined,
+        sort: searchParams.get("sort") ?? undefined,
+        order: searchParams.get("order") ?? undefined,
       });
+      const result = await exportQrCodes(organizationSlug, { search, tag, status, sort, order });
       if (result.success) downloadCsv(result.data.fileName, result.data.csv);
       else toast.error(result.message);
     });

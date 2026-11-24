@@ -68,6 +68,13 @@ export type QrFormValues = z.output<typeof qrFormSchema>;
 export const QR_STATUS_FILTERS = ["all", "active", "paused"] as const;
 export type QrStatusFilter = (typeof QR_STATUS_FILTERS)[number];
 
+// columns the dashboard table can sort by; "created" (newest first) is the default
+export const QR_SORT_FIELDS = ["id", "name", "destination", "scans", "createdBy", "created"] as const;
+export type QrSortField = (typeof QR_SORT_FIELDS)[number];
+export const QR_SORT_ORDERS = ["asc", "desc"] as const;
+export type QrSortOrder = (typeof QR_SORT_ORDERS)[number];
+export const QR_DEFAULT_SORT = { sort: "created", order: "desc" } as const satisfies { sort: QrSortField; order: QrSortOrder };
+
 // list filters as they arrive from the URL; anything invalid falls back instead of failing the page
 export const qrQuerySchema = z.object({
   page: z.coerce.number().int().positive().catch(1),
@@ -75,6 +82,8 @@ export const qrQuerySchema = z.object({
   search: z.string().trim().optional().catch(undefined),
   tag: z.string().trim().optional().catch(undefined),
   status: z.enum(QR_STATUS_FILTERS).catch("all"),
+  sort: z.enum(QR_SORT_FIELDS).catch(QR_DEFAULT_SORT.sort),
+  order: z.enum(QR_SORT_ORDERS).catch(QR_DEFAULT_SORT.order),
 });
 
 // every field is optional: missing or invalid values fall back to the defaults above
@@ -83,7 +92,7 @@ export type QrQuerySchemaType = Partial<z.input<typeof qrQuerySchema>>;
 // a single-valued URL param; repeated (array) or missing values become undefined
 const urlParam = z.string().optional().catch(undefined);
 
-// the dashboard URL (?q=&department=&status=&page=&size=) mapped onto the list filters
+// the dashboard URL (?q=&department=&status=&sort=&order=&page=&size=) mapped onto the list filters
 export const qrSearchParamsSchema = z
-  .object({ page: urlParam, size: urlParam, q: urlParam, department: urlParam, status: urlParam })
+  .object({ page: urlParam, size: urlParam, q: urlParam, department: urlParam, status: urlParam, sort: urlParam, order: urlParam })
   .transform(({ q, department, ...rest }) => qrQuerySchema.parse({ ...rest, search: q, tag: department }));

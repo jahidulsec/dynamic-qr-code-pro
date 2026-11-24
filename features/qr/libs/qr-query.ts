@@ -1,5 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
-import type { QrStatusFilter } from "@/features/qr/schemas/qr-schema";
+import type { QrSortField, QrSortOrder, QrStatusFilter } from "@/features/qr/schemas/qr-schema";
 
 export type QrListFilters = {
   search?: string;
@@ -70,4 +70,22 @@ export function buildQrWhere(organizationId: string, { search, tag, status }: Qr
         }
       : {}),
   };
+}
+
+const qrSortColumns = {
+  id: (order) => ({ id: order }),
+  name: (order) => ({ name: order }),
+  destination: (order) => ({ destination: order }),
+  scans: (order) => ({ scanCount: order }),
+  createdBy: (order) => ({ createdBy: { name: order } }),
+  created: (order) => ({ createdAt: order }),
+} satisfies Record<QrSortField, (order: QrSortOrder) => Prisma.QrCodeOrderByWithRelationInput>;
+
+/** the list order for a sort column; ties fall back to newest first, then id, so paging is stable */
+export function buildQrOrderBy(sort: QrSortField, order: QrSortOrder): Prisma.QrCodeOrderByWithRelationInput[] {
+  return [
+    qrSortColumns[sort](order),
+    ...(sort === "created" ? [] : [{ createdAt: "desc" } as const]),
+    ...(sort === "id" ? [] : [{ id: order }]),
+  ];
 }
