@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -10,7 +11,16 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default async function VerifyEmailPage({ searchParams }: PageProps<"/verify-email">) {
+export default function VerifyEmailPage({ searchParams }: PageProps<"/verify-email">) {
+  // the session and the URL params are runtime data, so they stream in behind the static shell
+  return (
+    <Suspense fallback={null}>
+      <VerifyEmailGate searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function VerifyEmailGate({ searchParams }: Pick<PageProps<"/verify-email">, "searchParams">) {
   const { email, error } = await searchParams;
 
   // a valid link signs the user in (autoSignInAfterVerification) and lands here

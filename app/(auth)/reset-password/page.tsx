@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -12,7 +13,16 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 };
 
-export default async function ResetPasswordPage({ searchParams }: PageProps<"/reset-password">) {
+export default function ResetPasswordPage({ searchParams }: PageProps<"/reset-password">) {
+  // the session and the URL token are runtime data, so they stream in behind the static shell
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordGate searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function ResetPasswordGate({ searchParams }: Pick<PageProps<"/reset-password">, "searchParams">) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (session) redirect("/organizations");
 

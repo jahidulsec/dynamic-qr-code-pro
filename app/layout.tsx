@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono, Outfit, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { siteConfig } from "@/config/site";
@@ -80,7 +81,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       )}
     >
       <body className="min-h-full flex flex-col">
-        <NavigationProgress />
+        {/* reads usePathname(), which is runtime-only; outside Suspense it blocks prerendering */}
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
         <Toaster richColors position="top-right" closeButton />
         {children}
       </body>
