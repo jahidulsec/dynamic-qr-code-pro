@@ -6,10 +6,10 @@ import {
   adminOrganizationDetailSelect,
   adminOrganizationListSelect,
   buildAdminOrganizationWhere,
-  describeAdminAuditMetadata,
   planState,
   TAB_STATUS,
 } from "@/features/admin/libs/admin-organization-query";
+import { describeAdminAuditMetadata } from "@/features/admin/libs/admin-audit-details";
 import { organizationIdSchema } from "@/features/admin/schemas/review-organization";
 import { getAdminAuditLogs } from "@/features/admin/services/admin-audit-log";
 import { adminOrganizationsSearchParamsSchema, type AdminOrganizationTab } from "@/features/admin/schemas/admin-query-schema";
@@ -187,7 +187,7 @@ export const getAdminOrganization = async (organizationId: string) => {
           actorName: entry.actorName,
           action: entry.action,
           targetLabel: entry.targetLabel,
-          detail: describeAdminAuditMetadata(entry.metadata),
+          detail: describeAdminAuditMetadata(entry.metadata, entry.action),
           createdAt: entry.createdAt,
         })),
       },

@@ -1,6 +1,7 @@
 "use server";
 
-import { buildAdminOrganizationWhere, describeAdminAuditMetadata } from "@/features/admin/libs/admin-organization-query";
+import { describeAdminAuditMetadata } from "@/features/admin/libs/admin-audit-details";
+import { buildAdminOrganizationWhere } from "@/features/admin/libs/admin-organization-query";
 import { getAdminAuditLogs } from "@/features/admin/services/admin-audit-log";
 import { requireAdmin } from "@/features/admin/services/admin-session";
 import { countOrganizations, getOrganizations } from "@/features/admin/services/organization";
@@ -81,7 +82,7 @@ export const getAdminDashboard = async () => {
           actorName: entry.actorName,
           action: entry.action,
           targetLabel: entry.targetLabel,
-          detail: describeAdminAuditMetadata(entry.metadata),
+          detail: describeAdminAuditMetadata(entry.metadata, entry.action),
           createdAt: entry.createdAt,
         })),
       },

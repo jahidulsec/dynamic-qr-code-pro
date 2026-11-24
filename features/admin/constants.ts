@@ -44,3 +44,5 @@ export const BAN_DURATIONS = {
 } as const;
 
 export type BanDuration = keyof typeof BAN_DURATIONS;
+
+export const ADMIN_AUDIT_PAGE_SIZE = 50;

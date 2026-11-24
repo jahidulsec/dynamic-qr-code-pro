@@ -2,13 +2,14 @@
 // The guard (getAdminSession, requireAdmin) is server-only and lives in "./server".
 
 /* -------------------------------- Components ------------------------------- */
+export { AdminAuditLogFilters } from "./components/audit-log-filters";
+export { AdminAuditLogTable } from "./components/audit-log-table";
 export { AdminDashboard } from "./components/admin-dashboard";
 export { AdminLoginForm } from "./components/admin-login-form";
 export { AdminOrganizationDetail } from "./components/organization-detail";
 export { AdminOrganizationFilters } from "./components/organization-filters";
 export { AdminOrganizationTable } from "./components/organization-table";
 export { AdminPageHeader } from "./components/admin-page-header";
-export { AdminPlaceholder } from "./components/admin-placeholder";
 export { AdminPlanForm } from "./components/plan-form";
 export { AdminPlanTable } from "./components/plan-table";
 export { AdminSidebar } from "./components/admin-sidebar";
@@ -21,6 +22,7 @@ export {
   rejectOrganizationAction,
   suspendOrganizationAction,
 } from "./actions/review-organization";
+export { getAdminAuditLog } from "./libs/admin-audit-log";
 export { getAdminOrganization, getAdminOrganizations, getPendingOrganizationCount } from "./libs/admin-organizations";
 export { getAdminPlan, getAdminPlans } from "./libs/admin-plans";
 export { getAdminDashboard } from "./libs/admin-stats";

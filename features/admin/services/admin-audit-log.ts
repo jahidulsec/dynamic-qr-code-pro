@@ -16,3 +16,28 @@ export const getAdminAuditLogs = <T extends Prisma.AdminAuditLogFindManyArgs>(
     cacheTags.adminAuditLogs,
     cacheOption,
   );
+
+export const countAdminAuditLogs = (args?: Prisma.AdminAuditLogCountArgs, cacheOption?: ServerCacheOptions) =>
+  cachedRead<number>(
+    // a count `select` returns per-field counts, not a number; keep this to plain counts
+    { model: "adminAuditLog", method: "count", args: { where: args?.where } },
+    cacheTags.adminAuditLogCount,
+    cacheOption,
+  );
+
+/** Every admin who has an entry, once each, under the name on their latest entry. Deleted accounts (no actorId) are left out. */
+export const getAdminAuditActors = (cacheOption?: ServerCacheOptions) =>
+  cachedRead<{ actorId: string | null; actorName: string }[]>(
+    {
+      model: "adminAuditLog",
+      method: "findMany",
+      args: {
+        where: { actorId: { not: null } },
+        distinct: ["actorId"],
+        orderBy: [{ actorId: "asc" }, { createdAt: "desc" }],
+        select: { actorId: true, actorName: true },
+      },
+    },
+    cacheTags.adminAuditLogs,
+    cacheOption,
+  );

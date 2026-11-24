@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-import { ADMIN_ORGANIZATION_TABS, ADMIN_ORGANIZATIONS_PAGE_SIZE, ADMIN_USERS_PAGE_SIZE } from "@/features/admin/constants";
+import {
+  ADMIN_AUDIT_PAGE_SIZE,
+  ADMIN_ORGANIZATION_TABS,
+  ADMIN_ORGANIZATIONS_PAGE_SIZE,
+  ADMIN_USERS_PAGE_SIZE,
+} from "@/features/admin/constants";
+import { ADMIN_AUDIT_ACTIONS, ADMIN_AUDIT_TARGET_TYPES, type AdminAuditAction } from "@/features/admin/libs/admin-audit-actions";
 
 export type AdminOrganizationTab = (typeof ADMIN_ORGANIZATION_TABS)[number];
 
@@ -44,3 +50,25 @@ export const adminUsersSearchParamsSchema = z
   );
 
 export type AdminUsersQuery = z.output<typeof adminUsersSearchParamsSchema>;
+
+const adminAuditActionKeys = Object.keys(ADMIN_AUDIT_ACTIONS) as [AdminAuditAction, ...AdminAuditAction[]];
+
+/**
+ * /admin/audit-log?action=&actor=&target=&page=&size=, newest first. Anything invalid falls back instead of
+ * failing the page; `actor` is an admin's user id.
+ */
+export const adminAuditLogSearchParamsSchema = z
+  .object({ page: urlParam, size: urlParam, action: urlParam, actor: urlParam, target: urlParam })
+  .transform((params) =>
+    z
+      .object({
+        page: z.coerce.number().int().positive().catch(1),
+        size: z.coerce.number().int().positive().max(100).catch(ADMIN_AUDIT_PAGE_SIZE),
+        action: z.enum(adminAuditActionKeys).optional().catch(undefined),
+        actor: z.string().trim().min(1).max(191).optional().catch(undefined),
+        target: z.enum(ADMIN_AUDIT_TARGET_TYPES).optional().catch(undefined),
+      })
+      .parse(params),
+  );
+
+export type AdminAuditLogQuery = z.output<typeof adminAuditLogSearchParamsSchema>;
