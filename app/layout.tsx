@@ -6,6 +6,7 @@ import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { NavigationProgress } from "@/components/shared/nav-progressbar/progress-bar";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/shared/theme-provider";
 
 const spaceGroteskHeading = Space_Grotesk({
   subsets: ["latin"],
@@ -61,8 +62,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fcfbf8" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f1117" },
+    { media: "(prefers-color-scheme: light)", color: "#fdfcf9" },
+    { media: "(prefers-color-scheme: dark)", color: "#090b12" },
   ],
 };
 
@@ -70,6 +71,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      // next-themes sets the theme class on <html> before hydration
+      suppressHydrationWarning
       className={cn(
         "h-full",
         "antialiased",
@@ -82,11 +85,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         {/* reads usePathname(), which is runtime-only; outside Suspense it blocks prerendering */}
-        <Suspense fallback={null}>
-          <NavigationProgress />
-        </Suspense>
-        <Toaster richColors position="top-right" closeButton />
-        {children}
+        <ThemeProvider>
+          <Suspense fallback={null}>
+            <NavigationProgress />
+          </Suspense>
+          <Toaster richColors position="top-right" closeButton />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

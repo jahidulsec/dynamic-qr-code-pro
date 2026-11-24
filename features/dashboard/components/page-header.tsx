@@ -9,6 +9,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { NavUser } from "@/features/dashboard/components/nav-user";
@@ -54,6 +55,8 @@ export async function PageHeader({ organizationSlug, title }: { organizationSlug
           </BreadcrumbList>
         </Breadcrumb>
       </div>
+
+      <ThemeToggle className="shrink-0" />
 
       {session && (
         <div className="shrink-0">
