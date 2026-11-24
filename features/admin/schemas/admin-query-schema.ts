@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { ADMIN_ORGANIZATION_TABS, ADMIN_ORGANIZATIONS_PAGE_SIZE } from "@/features/admin/constants";
+import { ADMIN_ORGANIZATION_TABS, ADMIN_ORGANIZATIONS_PAGE_SIZE, ADMIN_USERS_PAGE_SIZE } from "@/features/admin/constants";
 
 export type AdminOrganizationTab = (typeof ADMIN_ORGANIZATION_TABS)[number];
 
@@ -29,3 +29,18 @@ export const adminOrganizationsSearchParamsSchema = z
   );
 
 export type AdminOrganizationsQuery = z.output<typeof adminOrganizationsSearchParamsSchema>;
+
+/** /admin/users?q=&page=&size=, searched by name or email. Anything invalid falls back instead of failing the page. */
+export const adminUsersSearchParamsSchema = z
+  .object({ page: urlParam, size: urlParam, q: urlParam })
+  .transform((params) =>
+    z
+      .object({
+        page: z.coerce.number().int().positive().catch(1),
+        size: z.coerce.number().int().positive().max(100).catch(ADMIN_USERS_PAGE_SIZE),
+        search: z.string().trim().max(100).optional().catch(undefined),
+      })
+      .parse({ ...params, search: params.q || undefined }),
+  );
+
+export type AdminUsersQuery = z.output<typeof adminUsersSearchParamsSchema>;

@@ -12,6 +12,7 @@ export { AdminPlaceholder } from "./components/admin-placeholder";
 export { AdminPlanForm } from "./components/plan-form";
 export { AdminPlanTable } from "./components/plan-table";
 export { AdminSidebar } from "./components/admin-sidebar";
+export { AdminUserTable } from "./components/user-table";
 
 /* ----------------------------- Actions & loaders ---------------------------- */
 export {
@@ -23,6 +24,7 @@ export {
 export { getAdminOrganization, getAdminOrganizations, getPendingOrganizationCount } from "./libs/admin-organizations";
 export { getAdminPlan, getAdminPlans } from "./libs/admin-plans";
 export { getAdminDashboard } from "./libs/admin-stats";
+export { getAdminUsers } from "./libs/admin-users";
 
 /* --------------------------- Schemas, constants, types --------------------------- */
 export { ADMIN_HOME_PATH, ADMIN_LOGIN_PATH, ADMIN_PAGE_TITLES, ADMIN_PATHS } from "./constants";
