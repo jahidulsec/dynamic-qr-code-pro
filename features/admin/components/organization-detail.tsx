@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { OrganizationReviewActions } from "@/features/admin/components/organization-review-actions";
 import { OrganizationStatusBadge, PlanStateBadge } from "@/features/admin/components/organization-status-badge";
+import { SubscriptionActions } from "@/features/admin/components/subscription-actions";
 import { ADMIN_PATHS } from "@/features/admin/constants";
 import { ADMIN_AUDIT_ACTIONS, type AdminAuditAction } from "@/features/admin/libs/admin-audit-actions";
 import type { getAdminOrganization } from "@/features/admin/libs/admin-organizations";
@@ -56,7 +57,7 @@ export function AdminOrganizationDetail({ data }: { data: AdminOrganizationDetai
 
       <div className="grid gap-4 lg:grid-cols-2">
         <StatusSection organization={organization} />
-        <SubscriptionSection organization={organization} entitlements={entitlements} />
+        <SubscriptionSection organization={organization} entitlements={entitlements} plans={plans} />
       </div>
 
       <UsageSection usage={usage} entitlements={entitlements} />
@@ -112,9 +113,11 @@ function StatusSection({ organization }: { organization: AdminOrganizationDetail
 function SubscriptionSection({
   organization,
   entitlements,
+  plans,
 }: {
   organization: AdminOrganizationDetailData["organization"];
   entitlements: AdminOrganizationDetailData["entitlements"];
+  plans: AdminOrganizationDetailData["plans"];
 }) {
   const { subscription } = organization;
 
@@ -157,6 +160,23 @@ function SubscriptionSection({
           ]}
         />
       )}
+      <div className="mt-auto border-t px-5 py-3">
+        <SubscriptionActions
+          organization={{ id: organization.id, name: organization.name, status: organization.status }}
+          subscription={
+            subscription && {
+              planId: subscription.plan.id,
+              planName: subscription.plan.name,
+              status: subscription.status,
+              interval: subscription.interval,
+              currentPeriodStart: subscription.currentPeriodStart,
+              currentPeriodEnd: subscription.currentPeriodEnd,
+              notes: subscription.notes,
+            }
+          }
+          plans={plans}
+        />
+      </div>
     </Section>
   );
 }

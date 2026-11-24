@@ -12,5 +12,6 @@ export { organizationRequestEmail } from "./templates/organization-request";
 export { organizationSuspendedEmail } from "./templates/organization-suspended";
 export { passwordChangedEmail } from "./templates/password-changed";
 export { resetPasswordLinkEmail } from "./templates/reset-password-link";
+export { subscriptionChangedEmail } from "./templates/subscription-changed";
 export { verificationLinkEmail } from "./templates/verification-link";
 export { welcomeEmail } from "./templates/welcome";
