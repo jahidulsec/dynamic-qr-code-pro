@@ -22,3 +22,11 @@ export const ADMIN_PATHS = {
   users: `${ADMIN_HOME_PATH}/users`,
   auditLog: `${ADMIN_HOME_PATH}/audit-log`,
 } as const;
+
+export const ADMIN_ORGANIZATIONS_PAGE_SIZE = 20;
+
+// the "expiring soon" window, shared with the dashboard tile (spec 04)
+export const ADMIN_EXPIRING_DAYS = 7;
+
+/** Status tabs on /admin/organizations, in display order. */
+export const ADMIN_ORGANIZATION_TABS = ["pending", "active", "suspended", "rejected", "all"] as const;

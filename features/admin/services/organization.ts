@@ -14,3 +14,23 @@ export const countOrganizations = (args?: Prisma.OrganizationCountArgs, cacheOpt
     cacheTags.organizationCount,
     cacheOption,
   );
+
+export const getOrganizations = <T extends Prisma.OrganizationFindManyArgs>(
+  args: Prisma.SelectSubset<T, Prisma.OrganizationFindManyArgs>,
+  cacheOption?: ServerCacheOptions,
+) =>
+  cachedRead<Prisma.OrganizationGetPayload<T>[]>(
+    { model: "organization", method: "findMany", args: args as Prisma.OrganizationFindManyArgs },
+    cacheTags.organizations,
+    cacheOption,
+  );
+
+export const getOrganization = <T extends Prisma.OrganizationFindUniqueArgs>(
+  args: Prisma.SelectSubset<T, Prisma.OrganizationFindUniqueArgs>,
+  cacheOption?: ServerCacheOptions,
+) =>
+  cachedRead<Prisma.OrganizationGetPayload<T> | null>(
+    { model: "organization", method: "findUnique", args: args as Prisma.OrganizationFindUniqueArgs },
+    cacheTags.organizations,
+    cacheOption,
+  );

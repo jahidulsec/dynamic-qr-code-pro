@@ -3,6 +3,9 @@
 
 /* -------------------------------- Components ------------------------------- */
 export { AdminLoginForm } from "./components/admin-login-form";
+export { AdminOrganizationDetail } from "./components/organization-detail";
+export { AdminOrganizationFilters } from "./components/organization-filters";
+export { AdminOrganizationTable } from "./components/organization-table";
 export { AdminPageHeader } from "./components/admin-page-header";
 export { AdminPlaceholder } from "./components/admin-placeholder";
 export { AdminSidebar } from "./components/admin-sidebar";
@@ -14,7 +17,7 @@ export {
   rejectOrganizationAction,
   suspendOrganizationAction,
 } from "./actions/review-organization";
-export { getPendingOrganizationCount } from "./libs/admin-organizations";
+export { getAdminOrganization, getAdminOrganizations, getPendingOrganizationCount } from "./libs/admin-organizations";
 
 /* --------------------------- Schemas, constants, types --------------------------- */
 export { ADMIN_HOME_PATH, ADMIN_LOGIN_PATH, ADMIN_PAGE_TITLES } from "./constants";

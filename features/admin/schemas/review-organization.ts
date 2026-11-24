@@ -29,3 +29,17 @@ export const approveOrganizationSchema = z.object({
 });
 
 export type ApproveOrganizationValues = z.input<typeof approveOrganizationSchema>;
+
+/** The end of `yyyy-mm-dd` in the browser's time zone, so "ends on the 5th" includes the 5th. */
+export const endOfLocalDay = (value: string) => new Date(`${value}T23:59:59.999`);
+
+/** The approve dialog's fields: the date stays the date input's string until submit. */
+export const approveOrganizationFormSchema = z.object({
+  planId: z.string().trim().min(1, "Choose a plan"),
+  status: z.enum(APPROVE_SUBSCRIPTION_STATUSES),
+  currentPeriodEnd: z
+    .string()
+    .refine((value) => !value || endOfLocalDay(value).getTime() > Date.now(), "The period end must be in the future"),
+});
+
+export type ApproveOrganizationFormValues = z.infer<typeof approveOrganizationFormSchema>;
