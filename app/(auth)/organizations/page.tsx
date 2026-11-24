@@ -1,6 +1,11 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import Link from "next/link";
+import { IconShieldLock } from "@tabler/icons-react";
 
+import { buttonVariants } from "@/components/ui/button";
+import { ADMIN_HOME_PATH } from "@/features/admin";
+import { getAdminSession } from "@/features/admin/server";
 import { OrganizationList, OrganizationListSkeleton } from "@/features/organizations/server";
 
 export const metadata: Metadata = {
@@ -14,6 +19,19 @@ async function OrganizationListWithNotice({ searchParams }: Pick<PageProps<"/org
   return <OrganizationList requested={typeof requested === "string" ? requested : undefined} />;
 }
 
+// platform admins (superadmin role) get a shortcut to the admin portal
+async function AdminPortalLink() {
+  const adminSession = await getAdminSession();
+  if (!adminSession) return null;
+
+  return (
+    <Link href={ADMIN_HOME_PATH} className={buttonVariants({ variant: "ghost" })}>
+      <IconShieldLock />
+      Go to admin portal
+    </Link>
+  );
+}
+
 export default function OrganizationsPage({ searchParams }: PageProps<"/organizations">) {
   return (
     <div className="flex flex-col gap-6">
@@ -25,6 +43,10 @@ export default function OrganizationsPage({ searchParams }: PageProps<"/organiza
       {/* reads the session, so it streams in behind the boundary */}
       <Suspense fallback={<OrganizationListSkeleton />}>
         <OrganizationListWithNotice searchParams={searchParams} />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <AdminPortalLink />
       </Suspense>
     </div>
   );

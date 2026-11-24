@@ -13,11 +13,10 @@ export const PAGE_TITLES = {
   billing: "Billing",
 } as const;
 
-/** Dashboard footer links. Point these at the real pages once they exist. */
+/** Dashboard footer links. All but Careers are public pages in app/(viewer). */
 export const FOOTER_LINKS = [
   { label: "Support", href: "/support" },
   { label: "System Status", href: "/status" },
-  { label: "Careers", href: "/careers" },
   { label: "Terms of Use", href: "/terms" },
   { label: "Report Security Issues", href: "/security" },
   { label: "Privacy Policy", href: "/privacy" },

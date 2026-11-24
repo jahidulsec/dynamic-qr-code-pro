@@ -1,12 +1,14 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   IconChartBar,
   IconLayoutDashboard,
   IconPlus,
   IconScan,
   IconSettings,
+  IconShieldLock,
   IconTags,
   IconTrash,
 } from "@tabler/icons-react";
@@ -26,6 +28,7 @@ import { QrFormDialog } from "@/features/qr";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -86,6 +89,8 @@ type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
   baseUrl: string;
   qrCount: number;
   departments: Department[];
+  /** admin portal link, set only for platform admins (checked on the server) */
+  adminHref?: string;
 };
 
 export function AppSidebar({
@@ -94,6 +99,7 @@ export function AppSidebar({
   baseUrl,
   qrCount,
   departments,
+  adminHref,
   ...props
 }: AppSidebarProps) {
   const { can } = useAccess();
@@ -134,7 +140,7 @@ export function AppSidebar({
                   className="justify-center bg-foreground font-medium text-background hover:bg-foreground/70 hover:text-background active:bg-foreground/70 active:text-background dark:bg-foreground/70"
                   onClick={openCreate}
                 >
-                  <IconPlus className="text-secondary" />
+                  <IconPlus className="text-secondary dark:text-green-700" />
                   <span>Generate Dynamic QR</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -153,6 +159,21 @@ export function AppSidebar({
             onNavigate={closeMobile}
           />
         </SidebarContent>
+        {adminHref && (
+          <SidebarFooter>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip="Go to admin portal"
+                  render={<Link href={adminHref} onClick={closeMobile} />}
+                >
+                  <IconShieldLock />
+                  <span>Go to admin portal</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
+        )}
         <SidebarRail />
       </Sidebar>
 

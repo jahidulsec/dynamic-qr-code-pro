@@ -4,6 +4,8 @@ import { notFound, redirect } from "next/navigation";
 
 import { AppSidebar, DashboardFooter } from "@/features/dashboard";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { ADMIN_HOME_PATH } from "@/features/admin";
+import { getAdminSession } from "@/features/admin/server";
 import { getEntitlements } from "@/features/billing/server";
 import { AccessProvider } from "@/features/organizations";
 import {
@@ -42,10 +44,11 @@ async function OrganizationShell({ children, params }: LayoutProps<"/[organizati
   if (organization.status !== "ACTIVE") return <OrganizationStatusScreen access={access} />;
 
   // the sidebar reads fresh so its counts never lag behind the page
-  const [qrCount, departments, entitlements] = await Promise.all([
+  const [qrCount, departments, entitlements, adminSession] = await Promise.all([
     getQrCount(organization.slug),
     getQrTags(organization.slug, { cache: false }),
     getEntitlements(organization.id),
+    getAdminSession(),
   ]);
 
   return (
@@ -65,6 +68,7 @@ async function OrganizationShell({ children, params }: LayoutProps<"/[organizati
           baseUrl={getQrBaseUrl()}
           qrCount={qrCount.data ?? 0}
           departments={departments.data ?? []}
+          adminHref={adminSession ? ADMIN_HOME_PATH : undefined}
         />
         <SidebarInset className="min-w-0">
           {children}

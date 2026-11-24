@@ -3,16 +3,26 @@ import type { Metadata } from "next";
 
 import { SignInForm, SwitchAccountButton } from "@/features/auth";
 import { getSession, OrganizationList } from "@/features/organizations/server";
+import { CookieConsentGate } from "@/features/site-pages";
 
 export const metadata: Metadata = {
   title: "Sign in",
   alternates: { canonical: "/sign-in" },
 };
 
+// signing in needs a recorded cookie choice
+function GatedSignInForm() {
+  return (
+    <CookieConsentGate>
+      <SignInForm />
+    </CookieConsentGate>
+  );
+}
+
 // signed-in users pick a workspace instead of seeing the form again
 async function SignInGate() {
   const session = await getSession();
-  if (!session) return <SignInForm />;
+  if (!session) return <GatedSignInForm />;
 
   return (
     <div className="flex flex-col gap-6">
@@ -34,7 +44,7 @@ async function SignInGate() {
 export default function SignInPage() {
   return (
     // the form is the static shell; the session check streams in behind it
-    <Suspense fallback={<SignInForm />}>
+    <Suspense fallback={<GatedSignInForm />}>
       <SignInGate />
     </Suspense>
   );
