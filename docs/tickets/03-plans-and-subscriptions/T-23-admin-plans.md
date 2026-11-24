@@ -13,4 +13,11 @@
 - An "{n} organizations on this plan" warning when editing.
 
 **Done when**
-- [ ] There is always exactly one default plan, the default can't be archived, and a plan that's in use can't be deleted.
+- [x] There is always exactly one default plan, the default can't be archived, and a plan that's in use can't be deleted.
+
+**Notes**
+- There is no delete action. A plan that's in use is protected by `onDelete: Restrict` on `subscription.planId`, and the panel only offers archive, as the spec says.
+- `setDefaultPlan` clears the old default and sets the new one in one transaction. Both writes are `updateMany` (locking reads in InnoDB), and setting the default is conditional on `archivedAt: null`. Archiving is conditional on `isDefault: false`, so an archive and a default switch that run at the same time can't leave the default archived.
+- The form takes prices in major units (`9.99`) and sends cents to the actions. An empty limit needs its "Unlimited" box ticked.
+- "{n} organizations" counts every subscription row on the plan, including expired and canceled ones, because those rows also keep the plan from being deleted. On the default plan, the warning also says it covers organizations without a subscription in effect.
+- `describeAdminAuditMetadata` no longer adds "No end date" to entries with `before`/`after` metadata that have no period fields, such as `plan.update`.

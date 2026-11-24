@@ -8,6 +8,8 @@ export { AdminOrganizationFilters } from "./components/organization-filters";
 export { AdminOrganizationTable } from "./components/organization-table";
 export { AdminPageHeader } from "./components/admin-page-header";
 export { AdminPlaceholder } from "./components/admin-placeholder";
+export { AdminPlanForm } from "./components/plan-form";
+export { AdminPlanTable } from "./components/plan-table";
 export { AdminSidebar } from "./components/admin-sidebar";
 
 /* ----------------------------- Actions & loaders ---------------------------- */
@@ -18,9 +20,10 @@ export {
   suspendOrganizationAction,
 } from "./actions/review-organization";
 export { getAdminOrganization, getAdminOrganizations, getPendingOrganizationCount } from "./libs/admin-organizations";
+export { getAdminPlan, getAdminPlans } from "./libs/admin-plans";
 
 /* --------------------------- Schemas, constants, types --------------------------- */
-export { ADMIN_HOME_PATH, ADMIN_LOGIN_PATH, ADMIN_PAGE_TITLES } from "./constants";
+export { ADMIN_HOME_PATH, ADMIN_LOGIN_PATH, ADMIN_PAGE_TITLES, ADMIN_PATHS } from "./constants";
 export {
   ADMIN_AUDIT_ACTIONS,
   ADMIN_AUDIT_TARGET_TYPES,
