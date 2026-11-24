@@ -2,6 +2,8 @@
 
 import { APIError } from "better-auth/api";
 
+import { getEntitlements, requireEntitlement } from "@/features/billing/server";
+import type { PlanFeature } from "@/features/billing";
 import { requirePermission } from "@/features/organizations/server";
 import type { Permissions } from "@/lib/auth/permissions";
 import { buildScanReport, findReportTag } from "@/features/reports/libs/reports-analytics";
@@ -9,9 +11,16 @@ import { reportQuerySchema, type ReportQueryInput } from "@/features/reports/sch
 import { toCsv } from "@/utils/csv";
 import { apiResponse } from "@/utils/response";
 
-const loadReport = async (organizationSlug: string, query: ReportQueryInput, permissions: Permissions) => {
+const loadReport = async (
+  organizationSlug: string,
+  query: ReportQueryInput,
+  permissions: Permissions,
+  features: PlanFeature[],
+) => {
   const { period, department } = reportQuerySchema.parse(query);
   const { organization } = await requirePermission(organizationSlug, permissions, "You can't view reports");
+  const entitlements = await getEntitlements(organization.id);
+  for (const feature of features) requireEntitlement(entitlements, feature);
 
   const tag = department ? await findReportTag(organization.id, department) : null;
   if (department && !tag) throw new APIError("NOT_FOUND", { message: `Department "${department}" not found` });
@@ -22,7 +31,7 @@ const loadReport = async (organizationSlug: string, query: ReportQueryInput, per
 
 export const getScanReport = async (organizationSlug: string, query: ReportQueryInput) => {
   try {
-    const { report } = await loadReport(organizationSlug, query, { report: ["read"] });
+    const { report } = await loadReport(organizationSlug, query, { report: ["read"] }, ["reports"]);
     return apiResponse.single({ data: report });
   } catch (error) {
     return apiResponse.error({ error });
@@ -31,7 +40,10 @@ export const getScanReport = async (organizationSlug: string, query: ReportQuery
 
 export const exportScanReport = async (organizationSlug: string, query: ReportQueryInput) => {
   try {
-    const { organization, report } = await loadReport(organizationSlug, query, { report: ["read"], qr: ["export"] });
+    const { organization, report } = await loadReport(organizationSlug, query, { report: ["read"], qr: ["export"] }, [
+      "reports",
+      "csvExport",
+    ]);
     const department = report.department ?? "All departments";
     const percent = (value: number) => value.toFixed(1);
 

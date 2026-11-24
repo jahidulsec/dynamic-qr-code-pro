@@ -4,6 +4,7 @@ import { IconPlus } from "@tabler/icons-react";
 
 import { Section, SectionCardHeader, SectionLabel, SectionMeta } from "@/components/shared/section/section";
 import { Button } from "@/components/ui/button";
+import { getEntitlements } from "@/features/billing/server";
 import { PAGE_TITLES } from "@/features/dashboard";
 import {
   getAccess,
@@ -29,7 +30,10 @@ export default async function RolesSettingsPage({ params }: PageProps<"/[organiz
 
   const systemCount = roles.filter((role) => role.system).length;
   const customCount = roles.length - systemCount;
-  const canCreate = access.can({ ac: ["create"] }) && customCount < MAX_CUSTOM_ROLES;
+  // the plan's limit, never above better-auth's hard cap
+  const planLimit = (await getEntitlements(organization.id)).limits.customRoles;
+  const maxCustom = planLimit === null ? MAX_CUSTOM_ROLES : Math.min(planLimit, MAX_CUSTOM_ROLES);
+  const canCreate = access.can({ ac: ["create"] }) && customCount < maxCustom;
 
   return (
     <>
@@ -38,7 +42,7 @@ export default async function RolesSettingsPage({ params }: PageProps<"/[organiz
           <div className="flex items-center gap-3">
             <SectionLabel>Roles</SectionLabel>
             <SectionMeta>
-              {systemCount} built-in · {customCount} of {MAX_CUSTOM_ROLES} custom
+              {systemCount} built-in · {customCount} of {maxCustom} custom
             </SectionMeta>
           </div>
           {canCreate && (

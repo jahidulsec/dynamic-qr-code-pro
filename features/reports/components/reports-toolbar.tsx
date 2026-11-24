@@ -25,7 +25,8 @@ export function ReportsToolbar({ organizationSlug, period, department }: Reports
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [isExporting, startExport] = useTransition();
-  const canExport = useAccess().can({ qr: ["export"] });
+  const access = useAccess();
+  const canExport = access.can({ qr: ["export"] }) && access.has("csvExport");
 
   const navigate = (changes: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());

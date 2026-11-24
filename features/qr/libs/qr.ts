@@ -8,6 +8,7 @@ import { buildQrWhere, liveQrWhere, qrListSelect, qrTagNames, qrTopSelect, type 
 import { qrIdSchema, qrQuerySchema, type QrQuerySchemaType } from "@/features/qr/schemas/qr-schema";
 import { countQrCodes, getQrCode as findQrCode, getQrCodes as findQrCodes } from "@/features/qr/services/qr";
 import { countQrScans, getQrScans } from "@/features/qr/services/qr-scan";
+import { getEntitlements, requireEntitlement } from "@/features/billing/server";
 import { requireMembership, requirePermission } from "@/features/organizations/server";
 import { cacheTags } from "@/lib/cache/cache-tags";
 import { toCsv } from "@/utils/csv";
@@ -91,16 +92,18 @@ export const getQrStats = async (organizationSlug: string) => {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    const [total, active, scans, scansToday, top] = await Promise.all([
+    const [total, active, scans, scansToday, top, entitlements] = await Promise.all([
       countQrCodes({ where: live }),
       countQrCodes({ where: { ...live, status: "ACTIVE" } }),
       // scans are trashed along with their code, so they're tagged with QR codes too
       countQrScans({ where: { qrCode: live } }, { tags: cacheTags.qrCodes }),
       countQrScans({ where: { scannedAt: { gte: startOfToday }, qrCode: live } }, { tags: cacheTags.qrCodes }),
       findQrCode({ where: { ...live, scanCount: { gt: 0 } }, orderBy: { scanCount: "desc" }, select: qrTopSelect }),
+      getEntitlements(organization.id),
     ]);
 
-    const data: QrStatsData = { total, active, scans, scansToday, top };
+    const plan = { name: entitlements.plan.name, qrLimit: entitlements.limits.qrCodes };
+    const data: QrStatsData = { total, active, scans, scansToday, top, plan };
     return apiResponse.single({ data });
   } catch (error) {
     return apiResponse.error({ error });
@@ -111,6 +114,7 @@ export const getQrAnalytics = async (organizationSlug: string, id: string) => {
   try {
     const qrId = qrIdSchema.parse(id);
     const { organization } = await requirePermission(organizationSlug, { report: ["read"] }, "You can't view scan analytics");
+    requireEntitlement(await getEntitlements(organization.id), "reports");
 
     const qr = await findLiveQrCode(organization.id, qrId);
     if (!qr) throw notFound();
@@ -145,6 +149,7 @@ export const exportQrCodes = async (organizationSlug: string, query: QrQuerySche
   try {
     const { search, tag, status } = qrQuerySchema.parse(query);
     const { organization } = await requirePermission(organizationSlug, { qr: ["export"] }, "You can't export QR codes");
+    requireEntitlement(await getEntitlements(organization.id), "csvExport");
 
     // a one-off download: don't keep the whole list in the cache
     const rows = await findQrCodes(
@@ -183,6 +188,10 @@ export const exportQrScans = async (organizationSlug: string, id: string) => {
       { qr: ["export"], report: ["read"] },
       "You can't export scan data",
     );
+    // raw scan data: needs both reports and CSV export on the plan
+    const entitlements = await getEntitlements(organization.id);
+    requireEntitlement(entitlements, "reports");
+    requireEntitlement(entitlements, "csvExport");
 
     const qr = await findLiveQrCode(organization.id, qrId);
     if (!qr) throw notFound();

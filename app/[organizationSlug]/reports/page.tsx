@@ -10,9 +10,11 @@ import {
   SectionTitle,
 } from "@/components/shared/section/section";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PlanUpgradeNotice } from "@/features/billing";
+import { getEntitlements } from "@/features/billing/server";
 import { PAGE_TITLES } from "@/features/dashboard";
 import { PageHeader } from "@/features/dashboard/server";
-import { getOrganizationBySlug, hasPermission } from "@/features/organizations/server";
+import { getAccess, getOrganizationBySlug, hasPermission } from "@/features/organizations/server";
 import {
   getScanReport,
   reportSearchParamsSchema,
@@ -27,6 +29,12 @@ import type { SearchParams } from "@/types/params";
 
 export const metadata: Metadata = {
   title: PAGE_TITLES.reports,
+};
+
+// the plan in effect; null when the viewer has no access (the loader then explains why)
+const getPlanEntitlements = async (organizationSlug: string) => {
+  const access = await getAccess(organizationSlug);
+  return access ? getEntitlements(access.organization.id) : null;
 };
 
 export default async function ReportsPage({ params, searchParams }: PageProps<"/[organizationSlug]/reports">) {
@@ -60,12 +68,13 @@ async function ReportsActions({
   organizationSlug: string;
   searchParams: Promise<SearchParams>;
 }) {
-  const [query, canRead] = await Promise.all([
+  const [query, canRead, entitlements] = await Promise.all([
     searchParams.then((params) => reportSearchParamsSchema.parse(params)),
     hasPermission(organizationSlug, { report: ["read"] }),
+    getPlanEntitlements(organizationSlug),
   ]);
-  // without report access the section below explains why; there is nothing to filter
-  if (!canRead) return null;
+  // without report access or reports on the plan, the section below explains why; there is nothing to filter
+  if (!canRead || !entitlements?.features.reports) return null;
 
   return <ReportsToolbar organizationSlug={organizationSlug} period={query.period} department={query.department ?? null} />;
 }
@@ -78,6 +87,11 @@ async function ReportsSection({
   searchParams: Promise<SearchParams>;
 }) {
   const query = reportSearchParamsSchema.parse(await searchParams);
+  const entitlements = await getPlanEntitlements(organizationSlug);
+  if (entitlements && !entitlements.features.reports) {
+    return <PlanUpgradeNotice feature="reports" planName={entitlements.plan.name} />;
+  }
+
   const [result, organization] = await Promise.all([
     getScanReport(organizationSlug, query),
     getOrganizationBySlug(organizationSlug),

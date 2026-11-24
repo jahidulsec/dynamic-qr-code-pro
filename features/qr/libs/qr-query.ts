@@ -42,6 +42,8 @@ export type QrStatsData = {
   scans: number;
   scansToday: number;
   top: Prisma.QrCodeGetPayload<{ select: typeof qrTopSelect }> | null;
+  /** the plan in effect; qrLimit null = unlimited */
+  plan: { name: string; qrLimit: number | null };
 };
 
 // codes outside the trash: the ones that count toward quota and show on the dashboard

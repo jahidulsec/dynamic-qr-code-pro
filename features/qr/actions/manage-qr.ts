@@ -4,10 +4,11 @@ import { refresh } from "next/cache";
 import { APIError } from "better-auth/api";
 import { z } from "zod";
 
-import { QR_QUOTA } from "@/features/qr/constants";
+import { QR_BULK_MAX } from "@/features/qr/constants";
 import { liveQrWhere } from "@/features/qr/libs/qr-query";
 import { qrIdSchema } from "@/features/qr/schemas/qr-schema";
 import { countQrCodes, deleteQrCode, updateQrCode, updateQrCodes } from "@/features/qr/services/qr";
+import { assertWithinLimit, getEntitlements } from "@/features/billing/server";
 import { requirePermission } from "@/features/organizations/server";
 import { cacheTags } from "@/lib/cache/cache-tags";
 import { apiResponse } from "@/utils/response";
@@ -63,7 +64,7 @@ export const trashQrAction = async (organizationSlug: string, id: string) => {
 // bulk variant: codes already trashed or outside this organization are skipped, not failed
 export const trashQrCodesAction = async (organizationSlug: string, ids: string[]) => {
   try {
-    const qrIds = z.array(qrIdSchema).min(1).max(QR_QUOTA).parse(ids);
+    const qrIds = z.array(qrIdSchema).min(1).max(QR_BULK_MAX).parse(ids);
     const { organization } = await requirePermission(organizationSlug, { qr: ["trash"] }, "You can't move QR codes to the trash");
 
     const { count } = await updateQrCodes(
@@ -87,9 +88,14 @@ export const restoreQrAction = async (organizationSlug: string, id: string) => {
     const qrId = qrIdSchema.parse(id);
     const { organization } = await requirePermission(organizationSlug, { qr: ["restore"] }, "You can't restore QR codes");
 
-    // quota checks read fresh: a cached count could let a code slip past the limit
-    if ((await countQrCodes({ where: liveQrWhere(organization.id) }, { cache: false })) >= QR_QUOTA)
-      throw new APIError("FORBIDDEN", { message: `You've reached your plan's limit of ${QR_QUOTA} QR codes.` });
+    // limit checks read fresh: a cached count could let a code slip past the limit
+    const [entitlements, used] = await Promise.all([
+      getEntitlements(organization.id),
+      countQrCodes({ where: liveQrWhere(organization.id) }, { cache: false }),
+    ]);
+    assertWithinLimit(entitlements, "qrCodes", used, 1, {
+      message: (n) => `Restoring would exceed your plan's limit of ${n} QR codes.`,
+    });
 
     await updateQrCode(
       {

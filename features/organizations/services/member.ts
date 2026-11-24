@@ -17,3 +17,6 @@ export const getMembers = <T extends Prisma.MemberFindManyArgs>(
     cacheTags.members,
     cacheOption,
   );
+
+export const countMembers = (args: { where?: Prisma.MemberWhereInput }, cacheOption?: ServerCacheOptions) =>
+  cachedRead<number>({ model: "member", method: "count", args: { where: args.where } }, cacheTags.memberCount, cacheOption);

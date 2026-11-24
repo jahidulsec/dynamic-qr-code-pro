@@ -12,7 +12,7 @@ import type { QrStatusFilter } from "@/features/qr/schemas/qr-schema";
 import { downloadCsv } from "@/utils/csv";
 
 export function QrExportCsvButton({ organizationSlug }: { organizationSlug: string }) {
-  const { can } = useAccess();
+  const { can, has } = useAccess();
   const searchParams = useSearchParams();
   const [isExporting, startExport] = useTransition();
 
@@ -28,7 +28,7 @@ export function QrExportCsvButton({ organizationSlug }: { organizationSlug: stri
       else toast.error(result.message);
     });
 
-  if (!can({ qr: ["export"] })) return null;
+  if (!can({ qr: ["export"] }) || !has("csvExport")) return null;
 
   return (
     <Button variant="outline" onClick={exportCsv} disabled={isExporting}>

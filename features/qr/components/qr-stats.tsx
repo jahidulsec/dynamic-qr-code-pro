@@ -2,7 +2,6 @@ import { IconChartBar, IconQrcode, IconScan, IconTrophy } from "@tabler/icons-re
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { QrAnalyticsButton } from "@/features/qr/components/qr-analytics-button";
-import { QR_QUOTA } from "@/features/qr/constants";
 import { qrTagNames, type QrStatsData } from "@/features/qr/libs/qr-query";
 
 type QrStatsProps = {
@@ -11,18 +10,21 @@ type QrStatsProps = {
 };
 
 export function QrStats({ stats, organizationSlug }: QrStatsProps) {
-  const used = Math.min(100, (stats.total / QR_QUOTA) * 100);
+  const limit = stats.plan.qrLimit;
+  const used = limit ? Math.min(100, (stats.total / limit) * 100) : 0;
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <StatCard label="QR codes" icon={<IconQrcode />}>
         <div className="flex items-baseline gap-2">
           <span className="font-mono text-3xl font-semibold tabular-nums">{stats.total}</span>
-          <span className="font-mono text-sm text-muted-foreground">/ {QR_QUOTA} quota</span>
+          <span className="font-mono text-sm text-muted-foreground">{limit === null ? "Unlimited" : `/ ${limit} quota`}</span>
         </div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-muted" role="presentation">
-          <div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(used, stats.total ? 1 : 0)}%` }} />
-        </div>
+        {limit !== null && (
+          <div className="h-1.5 overflow-hidden rounded-full bg-muted" role="presentation">
+            <div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(used, stats.total ? 1 : 0)}%` }} />
+          </div>
+        )}
         <p className="text-xs text-muted-foreground">
           {stats.active} active · {stats.total - stats.active} paused
         </p>
@@ -60,8 +62,12 @@ export function QrStats({ stats, organizationSlug }: QrStatsProps) {
       </StatCard>
 
       <StatCard label="Plan" icon={<IconChartBar />}>
-        <span className="text-xl font-semibold">{QR_QUOTA} QR codes</span>
-        <p className="text-xs text-muted-foreground">{Math.max(0, QR_QUOTA - stats.total)} remaining</p>
+        <span className="text-xl font-semibold">{stats.plan.name}</span>
+        <p className="text-xs text-muted-foreground">
+          {limit === null
+            ? "Unlimited QR codes"
+            : `${limit} QR codes · ${Math.max(0, limit - stats.total)} remaining`}
+        </p>
       </StatCard>
     </div>
   );

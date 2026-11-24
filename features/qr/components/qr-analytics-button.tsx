@@ -13,7 +13,8 @@ type QrAnalyticsButtonProps = Omit<ComponentProps<typeof Button>, "onClick"> & {
 };
 
 export function QrAnalyticsButton({ organizationSlug, qr, ...props }: QrAnalyticsButtonProps) {
-  const canRead = useAccess().can({ report: ["read"] });
+  const access = useAccess();
+  const canRead = access.can({ report: ["read"] }) && access.has("reports");
   const [open, setOpen] = useState(false);
   // a fresh request per opening, so the numbers are never stale
   const [analytics, setAnalytics] = useState<Promise<QrAnalyticsResult> | null>(null);
@@ -23,7 +24,7 @@ export function QrAnalyticsButton({ organizationSlug, qr, ...props }: QrAnalytic
     setOpen(true);
   };
 
-  // without report access the label (e.g. a scan count) still shows, just not as a button
+  // without report access (or reports on the plan) the label (e.g. a scan count) still shows, just not as a button
   if (!canRead) return <span className="font-mono tabular-nums">{props.children}</span>;
 
   return (

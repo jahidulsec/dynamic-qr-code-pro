@@ -27,7 +27,7 @@ export {
 } from "./libs/qr";
 
 /* --------------------------- Schemas, constants, types --------------------------- */
-export { QR_ACTIVITY_DAYS, QR_PAGE_SIZE, QR_QUOTA } from "./constants";
+export { QR_ACTIVITY_DAYS, QR_PAGE_SIZE } from "./constants";
 export type { QrAnalytics } from "./libs/qr-analytics";
 export { toQrCheckItem, type QrCheckItem } from "./libs/qr-check";
 export { qrTagNames, type QrListItem, type QrStatsData } from "./libs/qr-query";

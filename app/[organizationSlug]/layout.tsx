@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { AppSidebar, DashboardFooter } from "@/features/dashboard";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { getEntitlements } from "@/features/billing/server";
 import { AccessProvider } from "@/features/organizations";
 import {
   getAccess,
@@ -41,14 +42,22 @@ async function OrganizationShell({ children, params }: LayoutProps<"/[organizati
   if (organization.status !== "ACTIVE") return <OrganizationStatusScreen access={access} />;
 
   // the sidebar reads fresh so its counts never lag behind the page
-  const [qrCount, departments] = await Promise.all([
+  const [qrCount, departments, entitlements] = await Promise.all([
     getQrCount(organization.slug),
     getQrTags(organization.slug, { cache: false }),
+    getEntitlements(organization.id),
   ]);
 
   return (
-    // only shapes the UI; every action re-checks permissions on the server
-    <AccessProvider value={{ role: access.member.role, permissions: access.permissions, roles: access.roles }}>
+    // only shapes the UI; every action re-checks permissions and plan features on the server
+    <AccessProvider
+      value={{
+        role: access.member.role,
+        permissions: access.permissions,
+        roles: access.roles,
+        features: entitlements.features,
+      }}
+    >
       <SidebarProvider>
         <AppSidebar
           organizations={organizations.map(({ name, slug, logo }) => ({ name, slug, logo }))}

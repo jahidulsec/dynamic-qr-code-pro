@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconBuilding, IconHistory, IconShieldLock, IconUsers } from "@tabler/icons-react";
+import { IconBuilding, IconCreditCard, IconHistory, IconShieldLock, IconUsers } from "@tabler/icons-react";
 
 import { useAccess } from "@/features/organizations/components/access-provider";
 import type { Permissions } from "@/lib/auth/permissions";
@@ -13,6 +13,7 @@ const TABS: { segment: string; label: string; icon: React.ReactNode; requires?: 
   { segment: "members", label: "Members", icon: <IconUsers /> },
   { segment: "roles", label: "Roles", icon: <IconShieldLock />, requires: { ac: ["read"] } },
   { segment: "audit-log", label: "Audit log", icon: <IconHistory />, requires: { audit: ["read"] } },
+  { segment: "billing", label: "Billing", icon: <IconCreditCard /> },
 ];
 
 export function SettingsNav({ organizationSlug, memberCount }: { organizationSlug: string; memberCount: number }) {

@@ -25,7 +25,8 @@ type QrAnalyticsDialogProps = {
 };
 
 export function QrAnalyticsDialog({ organizationSlug, qr, analytics, open, onOpenChange }: QrAnalyticsDialogProps) {
-  const canExport = useAccess().can({ qr: ["export"] });
+  const access = useAccess();
+  const canExport = access.can({ qr: ["export"] }) && access.has("csvExport");
   const [isExporting, startExport] = useTransition();
   const exportCsv = () =>
     startExport(async () => {

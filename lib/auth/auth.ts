@@ -13,6 +13,7 @@ import {
   verificationLinkEmail,
   welcomeEmail,
 } from "@/features/email/server";
+import { getEntitlements } from "@/features/billing/server";
 import { createOrganizationSchema } from "@/features/organizations";
 import { adminAc, adminRoles, SUPERADMIN_ROLE } from "@/lib/auth/admin-permissions";
 import { ac, isSystemRole, roles, SYSTEM_ROLE_DETAILS } from "@/lib/auth/permissions";
@@ -158,6 +159,13 @@ export const auth = betterAuth({
         beforeAcceptInvitation: async ({ organization }) => {
           if (organization.status !== "ACTIVE")
             throw new APIError("FORBIDDEN", { message: "This organization isn't accepting new members right now" });
+
+          // F3: invitations sent before a downgrade or expiry must not push the organization past its member limit
+          const { limits } = await getEntitlements(organization.id);
+          if (limits.members !== null && (await prisma.member.count({ where: { organizationId: organization.id } })) >= limits.members)
+            throw new APIError("FORBIDDEN", {
+              message: "This organization has reached its plan's member limit. Ask an owner to upgrade or free up a seat.",
+            });
         },
       },
     }),

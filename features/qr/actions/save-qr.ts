@@ -3,7 +3,6 @@
 import { refresh } from "next/cache";
 import { APIError } from "better-auth/api";
 
-import { QR_QUOTA } from "@/features/qr/constants";
 import { liveQrWhere } from "@/features/qr/libs/qr-query";
 import {
   qrFormSchema,
@@ -13,6 +12,7 @@ import {
   type QrFormValues,
 } from "@/features/qr/schemas/qr-schema";
 import { countQrCodes, createQrCode, getQrCode, updateQrCode } from "@/features/qr/services/qr";
+import { assertWithinLimit, getEntitlements } from "@/features/billing/server";
 import { requirePermission, type Access } from "@/features/organizations/server";
 import { missingQrTagNames } from "@/features/qr-tags/server";
 import { cacheTags } from "@/lib/cache/cache-tags";
@@ -57,11 +57,12 @@ export const createQrAction = async (organizationSlug: string, id: string, input
     const { session, organization } = access;
     await assertCanUseTags(access, values.tags);
 
-    // quota checks read fresh: a cached count could let a code slip past the limit
-    if ((await countQrCodes({ where: liveQrWhere(organization.id) }, { cache: false })) >= QR_QUOTA)
-      throw new APIError("FORBIDDEN", {
-        message: `You've reached your plan's limit of ${QR_QUOTA} QR codes. Empty the trash or upgrade to add more.`,
-      });
+    // limit checks read fresh: a cached count could let a code slip past the limit
+    const [entitlements, used] = await Promise.all([
+      getEntitlements(organization.id),
+      countQrCodes({ where: liveQrWhere(organization.id) }, { cache: false }),
+    ]);
+    assertWithinLimit(entitlements, "qrCodes", used);
 
     const qr = await createQrCode(
       {

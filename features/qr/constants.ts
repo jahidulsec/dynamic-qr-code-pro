@@ -1,7 +1,7 @@
-// TODO: read from the organization's subscription once billing exists
-export const QR_QUOTA = 500;
-
 export const QR_PAGE_SIZE = 20;
+
+// most codes one bulk action may take; the plan limit is enforced separately
+export const QR_BULK_MAX = 500;
 
 export const QR_MAX_TAGS = 10;
 

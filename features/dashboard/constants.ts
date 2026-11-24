@@ -10,6 +10,7 @@ export const PAGE_TITLES = {
   members: "Members",
   roles: "Roles",
   auditLog: "Audit log",
+  billing: "Billing",
 } as const;
 
 /** Dashboard footer links. Point these at the real pages once they exist. */

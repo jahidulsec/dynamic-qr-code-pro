@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { refresh, updateTag } from "next/cache";
 import { APIError } from "better-auth/api";
 
+import { assertWithinLimit, getEntitlements } from "@/features/billing/server";
 import { recordAudit } from "@/features/organizations/libs/audit";
 import { parseRoles, roleKeyFromLabel } from "@/features/organizations/libs/roles";
 import { roleFormSchema, roleKeySchema, type RoleFormSubmit } from "@/features/organizations/schemas/role-schema";
@@ -40,8 +41,11 @@ export const createRoleAction = async (organizationSlug: string, input: RoleForm
 
     if (access.roles.some((role) => role.key === key || role.label.toLowerCase() === label.toLowerCase()))
       throw new APIError("CONFLICT", { message: `A role named ${label} already exists` });
-    if (access.roles.filter((role) => !role.system).length >= MAX_CUSTOM_ROLES)
+    // access.roles is read fresh (getRoles); MAX_CUSTOM_ROLES is better-auth's hard cap, the plan limit sits below it
+    const customCount = access.roles.filter((role) => !role.system).length;
+    if (customCount >= MAX_CUSTOM_ROLES)
       throw new APIError("BAD_REQUEST", { message: `An organization can have up to ${MAX_CUSTOM_ROLES} custom roles` });
+    assertWithinLimit(await getEntitlements(access.organization.id), "customRoles", customCount);
     assertHolds(access, permissions, "You can only grant permissions you have yourself");
 
     await auth.api.createOrgRole({

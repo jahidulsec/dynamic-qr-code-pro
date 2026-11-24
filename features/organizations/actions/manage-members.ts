@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { refresh, updateTag } from "next/cache";
 import { APIError } from "better-auth/api";
 
+import { assertWithinLimit, getEntitlements } from "@/features/billing/server";
 import { recordAudit } from "@/features/organizations/libs/audit";
 import { cannotAssignReason, cannotManageReason, isOwnerRole, roleLabel } from "@/features/organizations/libs/roles";
 import {
@@ -13,6 +14,8 @@ import {
   type InviteMemberValues,
 } from "@/features/organizations/schemas/invite-member-schema";
 import { requireMembership, requirePermission, type Access } from "@/features/organizations/services/get-membership";
+import { countInvitations } from "@/features/organizations/services/invitation";
+import { countMembers } from "@/features/organizations/services/member";
 import { auth } from "@/lib/auth/auth";
 import { cacheTags, organizationTag } from "@/lib/cache/cache-tags";
 import { apiResponse } from "@/utils/response";
@@ -46,6 +49,21 @@ function findAssignableRole(access: Access, roleKey: string) {
   return role;
 }
 
+/**
+ * Members plus pending, unexpired invitations, read fresh. A pending invitation for `email` is left out: re-inviting
+ * replaces it (cancelPendingInvitationsOnReInvite) rather than taking another seat.
+ */
+async function countSeats(organizationId: string, email: string) {
+  const [members, invitations] = await Promise.all([
+    countMembers({ where: { organizationId } }, { cache: false }),
+    countInvitations(
+      { where: { organizationId, status: "pending", expiresAt: { gt: new Date() }, email: { not: email } } },
+      { cache: false },
+    ),
+  ]);
+  return members + invitations;
+}
+
 function findPendingInvitation({ organization }: Access, invitationId: string) {
   const invitation = organization.invitations.find((i) => i.id === invitationId && i.status === "pending");
   if (!invitation) throw new APIError("NOT_FOUND", { message: "Invitation not found" });
@@ -61,6 +79,9 @@ export const inviteMemberAction = async (organizationSlug: string, values: Invit
 
     if (organization.members.some((m) => m.user.email.toLowerCase() === email))
       throw new APIError("BAD_REQUEST", { message: `${email} is already a member` });
+
+    const [entitlements, seats] = await Promise.all([getEntitlements(organization.id), countSeats(organization.id, email)]);
+    assertWithinLimit(entitlements, "members", seats);
 
     // a pending invitation for the same email is replaced (cancelPendingInvitationsOnReInvite)
     await auth.api.createInvitation({

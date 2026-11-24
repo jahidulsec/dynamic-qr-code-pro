@@ -1,3 +1,4 @@
+import { getEntitlements, requireEntitlement } from "@/features/billing/server";
 import { AUDIT_ACTIONS, type AuditAction, type AuditLogRow } from "@/features/organizations/libs/audit-actions";
 import { countAuditLogs, getAuditLogs } from "@/features/organizations/services/audit-log";
 import { requirePermission } from "@/features/organizations/services/get-membership";
@@ -50,6 +51,7 @@ export const getAuditLog = async (
 ) => {
   try {
     const { organization } = await requirePermission(organizationSlug, { audit: ["read"] }, "You can't view the audit log");
+    requireEntitlement(await getEntitlements(organization.id), "auditLog");
     const where = { organizationId: organization.id };
     const current = Math.max(1, Math.floor(page ?? 1) || 1);
     const take = Math.min(MAX_AUDIT_PAGE_SIZE, Math.max(1, Math.floor(size ?? AUDIT_PAGE_SIZE) || AUDIT_PAGE_SIZE));

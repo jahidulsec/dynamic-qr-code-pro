@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 
 import PagePagination from "@/components/shared/pagination/pagination";
 import { Section, SectionCardHeader, SectionLabel, SectionMeta } from "@/components/shared/section/section";
+import { PlanUpgradeNotice } from "@/features/billing";
+import { getEntitlements } from "@/features/billing/server";
 import { PAGE_TITLES } from "@/features/dashboard";
-import { AUDIT_PAGE_SIZE, AuditLogTable, getAuditLog, hasPermission } from "@/features/organizations/server";
+import { AUDIT_PAGE_SIZE, AuditLogTable, getAccess, getAuditLog, hasPermission } from "@/features/organizations/server";
 import { formatDate } from "@/utils/format";
 
 export const metadata: Metadata = {
@@ -19,6 +21,13 @@ export default async function AuditLogSettingsPage({
 }: PageProps<"/[organizationSlug]/settings/audit-log">) {
   const [{ organizationSlug }, query] = await Promise.all([params, searchParams]);
   if (!(await hasPermission(organizationSlug, { audit: ["read"] }))) notFound();
+  const access = await getAccess(organizationSlug);
+  if (!access) notFound();
+
+  const entitlements = await getEntitlements(access.organization.id);
+  if (!entitlements.features.auditLog) {
+    return <PlanUpgradeNotice feature="auditLog" planName={entitlements.plan.name} />;
+  }
 
   const log = await getAuditLog(
     organizationSlug,
